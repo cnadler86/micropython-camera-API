@@ -53,6 +53,12 @@
     }; \
     MP_REGISTER_MODULE(MP_QSTR_example, mp_module_example, MODULE_EXAMPLE_ENABLED);
 
+//Hier kommt dann ein kompiler switch
+
+#ifndef CONFIG_OV2640_SUPPORT
+#define CONFIG_OV2640_SUPPORT 1
+#endif
+
 typedef camera_config_t mp_camera_config_t;
 typedef pixformat_t  mp_camera_pixformat_t;
 typedef framesize_t  mp_camera_framesize_t;
