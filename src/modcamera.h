@@ -97,7 +97,7 @@ extern void mp_camera_hal_construct(
 
 extern void mp_camera_hal_init(mp_camera_obj_t *self); //since we are not passing handles at construction, init() is used to create those handles
 extern void mp_camera_hal_deinit(mp_camera_obj_t *self);
-extern void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t frame_size, mp_camera_pixformat_t pixel_format, mp_camera_camera_grab_mode_t grab_mode, mp_int_t framebuffer_count);
+extern void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t frame_size, mp_camera_pixformat_t pixel_format, mp_camera_grab_mode_t grab_mode, mp_int_t framebuffer_count);
 
 extern mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms);
 

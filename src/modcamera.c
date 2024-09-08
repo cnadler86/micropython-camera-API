@@ -31,7 +31,7 @@
 #include "esp_err.h"
 
 #if !CONFIG_SPIRAM //TODO: Better test if enought RAM is available on runtime
-#error espcamera only works on boards configured with spiram
+#error Camera only works on boards configured with spiram
 #endif
 
 void raise_micropython_error_from_esp_err(esp_err_t err) {
@@ -126,10 +126,15 @@ void mp_camera_hal_init(mp_camera_obj_t *self) {
     camera_config_t temp_config = self->camera_config;
     temp_config.frame_size = FRAMESIZE_QVGA;       //use values supported by all cameras
     temp_config.pixel_format = PIXFORMAT_RGB565;    //use values supported by all cameras
-    esp_err_t err = esp_camera_init(&temp_config);
-    raise_micropython_error_from_esp_err(err);
-    self->initialized = true;
-    mp_camera_hal_reconfigure(self);
+    raise_micropython_error_from_esp_err(esp_camera_init(&temp_config));
+    raise_micropython_error_from_esp_err(esp_camera_deinit());
+    esp_err_t err = esp_camera_init(&self->camera_config);
+    if (err != ESP_OK) {
+        self->initialized = false;
+        raise_micropython_error_from_esp_err(err);
+    } else {
+        self->initialized = true;
+    }
 }
 
 void mp_camera_hal_deinit(mp_camera_obj_t *self) {
@@ -140,7 +145,7 @@ void mp_camera_hal_deinit(mp_camera_obj_t *self) {
     }
 }
 
-void mp_camera_hal_reconfigure(mp_camera_obj_t *self) {
+void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t frame_size, mp_camera_pixformat_t pixel_format, mp_camera_grab_mode_t grab_mode, mp_int_t framebuffer_count) {
     if (self->initialized) {
         sensor_t *sensor = esp_camera_sensor_get();
         camera_sensor_info_t *sensor_info = esp_camera_sensor_get_info(&sensor->id);
@@ -153,7 +158,10 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self) {
             mp_warning(NULL, "Frame size will be scaled down to maximal frame size supported by the camera sensor");
             self->camera_config.frame_size = sensor_info->max_size;
         }
-        
+        self->camera_config.pixel_format = pixel_format;
+        self->camera_config.grab_mode = grab_mode;
+        self->camera_config.fb_count = framebuffer_count;
+
         raise_micropython_error_from_esp_err(esp_camera_deinit());
 
         esp_err_t err = esp_camera_init(&self->camera_config);

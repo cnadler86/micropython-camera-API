@@ -106,7 +106,7 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(camera_capture_obj, 1, 2, camera_capt
 
 static mp_obj_t camera_reconfigure(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args){
     //OPEN: Validate inputs
-    espcamera_camera_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+    mp_camera_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
     enum { ARG_frame_size, ARG_pixel_format, ARG_grab_mode, ARG_framebuffer_count };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_frame_size, MP_ARG_OBJ, {.u_obj = MP_ROM_NONE} },
@@ -118,27 +118,41 @@ static mp_obj_t camera_reconfigure(mp_uint_t n_args, const mp_obj_t *pos_args, m
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
+    //TODO: validate and typecast values from api to hal types
     mp_camera_framesize_t frame_size =
         args[ARG_frame_size].u_obj != MP_ROM_NONE
-        ? args[ARG_frame_size].u_obj
+        ?  mp_obj_get_int(args[ARG_frame_size].u_obj)
         : mp_camera_hal_get_frame_size(self);
     mp_camera_pixformat_t pixel_format =
         args[ARG_pixel_format].u_obj != MP_ROM_NONE
-        ? args[ARG_pixel_format].u_obj
+        ?  mp_obj_get_int(args[ARG_pixel_format].u_obj)
         : mp_camera_hal_get_pixel_format(self);
     mp_camera_grab_mode_t grab_mode =
         args[ARG_grab_mode].u_obj != MP_ROM_NONE
-        ? args[ARG_grab_mode].u_obj
+        ?  mp_obj_get_int(args[ARG_grab_mode].u_obj)
         : mp_camera_hal_get_grab_mode(self);
     bool framebuffer_count =
         args[ARG_framebuffer_count].u_obj != MP_ROM_NONE
-        ? mp_obj_get_int(args[ARG_framebuffer_count].u_obj)
+        ?  mp_obj_get_int(args[ARG_framebuffer_count].u_obj)
         : mp_camera_hal_get_framebuffer_count(self);
     
     mp_camera_hal_reconfigure(self,frame_size, pixel_format, grab_mode, framebuffer_count);
     return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(camera_reconfigure_obj, 1, camera_reconfigure);
+
+static mp_obj_t mp_camera_deinit(mp_obj_t self_in) {
+    mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_camera_hal_deinit(self);
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(mp_camera_deinit_obj, mp_camera_deinit);
+
+static mp_obj_t mp_camera_obj___exit__(size_t n_args, const mp_obj_t *args) {
+    (void)n_args;
+    return mp_camera_deinit(args[0]);
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_camera___exit___obj, 4, 4, mp_camera_obj___exit__);
 
 // Camera properties definitions
 CREATE_PROPERTY_WITH_ACCESSORS(contrast, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
