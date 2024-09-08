@@ -69,7 +69,7 @@ void raise_micropython_error_from_esp_err(esp_err_t err) {
     }
 }
 
-void machine_hw_camera_construct(
+void mp_camera_hal_construct(
     mp_camera_obj_t *self,
     uint8_t data_pins[8],
     uint8_t external_clock_pin,
@@ -119,7 +119,7 @@ void machine_hw_camera_construct(
         self->capture_buffer = NULL;
     }
 
-void machine_hw_camera_init(mp_camera_obj_t *self) {
+void mp_camera_hal_init(mp_camera_obj_t *self) {
     if (self->initialized) {
         return;
     }
@@ -129,10 +129,10 @@ void machine_hw_camera_init(mp_camera_obj_t *self) {
     esp_err_t err = esp_camera_init(&temp_config);
     raise_micropython_error_from_esp_err(err);
     self->initialized = true;
-    machine_hw_camera_reconfigure(self);
+    mp_camera_hal_reconfigure(self);
 }
 
-void machine_hw_camera_deinit(mp_camera_obj_t *self) {
+void mp_camera_hal_deinit(mp_camera_obj_t *self) {
     if (self->initialized) {
         esp_err_t err = esp_camera_deinit();
         raise_micropython_error_from_esp_err(err);
@@ -140,7 +140,7 @@ void machine_hw_camera_deinit(mp_camera_obj_t *self) {
     }
 }
 
-void machine_hw_camera_reconfigure(mp_camera_obj_t *self) {
+void mp_camera_hal_reconfigure(mp_camera_obj_t *self) {
     if (self->initialized) {
         sensor_t *sensor = esp_camera_sensor_get();
         camera_sensor_info_t *sensor_info = esp_camera_sensor_get_info(&sensor->id);
@@ -164,7 +164,7 @@ void machine_hw_camera_reconfigure(mp_camera_obj_t *self) {
     }
 }
 
-mp_obj_t machine_hw_camera_capture(mp_camera_obj_t *self, int timeout_ms) {
+mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms) {
     // Timeout not used at the moment
     if (!self->initialized) {
         mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture image: Camera not initialized"));
@@ -191,18 +191,28 @@ mp_obj_t machine_hw_camera_capture(mp_camera_obj_t *self, int timeout_ms) {
     }
 }
 
+//OPEN: Makros with convertion function, since the API will use standarized values.
 // Helper functions to get and set camera and sensor information
-// TODO: add init flag to helper methods or at this in higher level api
+#define SENSOR_STATUS_GETSET_IN_RANGE(type, name, status_field_name, setter_function_name, min_val, max_val) \
+    SENSOR_GETSET_IN_RANGE(type, name, status.status_field_name, setter_function_name, min_val, max_val)
 
 #define SENSOR_STATUS_GETSET(type, name, status_field_name, setter_function_name) \
     SENSOR_GETSET(type, name, status.status_field_name, setter_function_name)
 
+// For subsequent modules using this as example, you will probably only need the makros below.
 #define SENSOR_GETSET(type, name, field_name, setter_function_name) \
     SENSOR_GET(type, name, field_name, setter_function_name) \
     SENSOR_SET(type, name, setter_function_name)
 
+#define SENSOR_GETSET_IN_RANGE(type, name, field_name, setter_function_name, min_val, max_val) \
+    SENSOR_GET(type, name, field_name, setter_function_name) \
+    SENSOR_SET_IN_RANGE(type, name, setter_function_name, min_val, max_val)
+
 #define SENSOR_GET(type, name, status_field_name, getter_function_name) \
-    type machine_hw_camera_get_##name(mp_camera_obj_t * self) { \
+    type mp_camera_hal_get_##name(mp_camera_obj_t * self) { \
+        if (!self->initialized) { \
+            mp_raise_ValueError(MP_ERROR_TEXT("Camera not initialized")); \
+        } \
         sensor_t *sensor = esp_camera_sensor_get(); \
         if (!sensor->getter_function_name) { \
             mp_raise_ValueError(MP_ERROR_TEXT("no such attribute")); \
@@ -211,7 +221,10 @@ mp_obj_t machine_hw_camera_capture(mp_camera_obj_t *self, int timeout_ms) {
     }
 
 #define SENSOR_SET(type, name, setter_function_name) \
-    void machine_hw_camera_set_##name(mp_camera_obj_t * self, type value) { \
+    void mp_camera_hal_set_##name(mp_camera_obj_t * self, type value) { \
+        if (!self->initialized) { \
+            mp_raise_ValueError(MP_ERROR_TEXT("Camera not initialized")); \
+        } \
         sensor_t *sensor = esp_camera_sensor_get(); \
         if (!sensor->setter_function_name) { \
             mp_raise_ValueError(MP_ERROR_TEXT("no such attribute")); \
@@ -221,13 +234,30 @@ mp_obj_t machine_hw_camera_capture(mp_camera_obj_t *self, int timeout_ms) {
         } \
     }
 
-SENSOR_STATUS_GETSET(int, contrast, contrast, set_contrast);
-SENSOR_STATUS_GETSET(int, brightness, brightness, set_brightness);
-SENSOR_STATUS_GETSET(int, saturation, saturation, set_saturation);
-SENSOR_STATUS_GETSET(int, sharpness, sharpness, set_sharpness);
+#define SENSOR_SET_IN_RANGE(type, name, setter_function_name, min_val, max_val) \
+    void mp_camera_hal_set_##name(mp_camera_obj_t * self, type value) { \
+        sensor_t *sensor = esp_camera_sensor_get(); \
+        if (!self->initialized) { \
+            mp_raise_ValueError(MP_ERROR_TEXT("Camera not initialized")); \
+        } \
+        if (value < min_val || value > max_val) { \
+            mp_raise_ValueError(MP_ERROR_TEXT(#name " value must be between " #min_val " and " #max_val)); \
+        } \
+        if (!sensor->setter_function_name) { \
+            mp_raise_ValueError(MP_ERROR_TEXT("no such attribute")); \
+        } \
+        if (sensor->setter_function_name(sensor, value) < 0) { \
+            mp_raise_ValueError(MP_ERROR_TEXT("invalid setting")); \
+        } \
+    }
+
+SENSOR_STATUS_GETSET_IN_RANGE(int, contrast, contrast, set_contrast, -2, 2);
+SENSOR_STATUS_GETSET_IN_RANGE(int, brightness, brightness, set_brightness, -2, 2);
+SENSOR_STATUS_GETSET_IN_RANGE(int, saturation, saturation, set_saturation, -2, 2);
+SENSOR_STATUS_GETSET_IN_RANGE(int, sharpness, sharpness, set_sharpness, -2, 2);
 SENSOR_STATUS_GETSET(int, denoise, denoise, set_denoise);
 SENSOR_STATUS_GETSET(mp_camera_gainceiling_t, gainceiling, gainceiling, set_gainceiling);
-SENSOR_STATUS_GETSET(int, quality, quality, set_quality);
+SENSOR_STATUS_GETSET(int, quality, quality, set_quality); //in_Range not needed since driver limits value
 SENSOR_STATUS_GETSET(bool, colorbar, colorbar, set_colorbar);
 SENSOR_STATUS_GETSET(bool, whitebal, awb, set_whitebal);
 SENSOR_STATUS_GETSET(bool, gain_ctrl, agc, set_gain_ctrl);
@@ -236,67 +266,65 @@ SENSOR_STATUS_GETSET(bool, hmirror, hmirror, set_hmirror);
 SENSOR_STATUS_GETSET(bool, vflip, vflip, set_vflip);
 SENSOR_STATUS_GETSET(bool, aec2, aec2, set_aec2);
 SENSOR_STATUS_GETSET(bool, awb_gain, awb_gain, set_awb_gain);
-SENSOR_STATUS_GETSET(int, agc_gain, agc_gain, set_agc_gain);
-SENSOR_STATUS_GETSET(int, aec_value, aec_value, set_aec_value);
-SENSOR_STATUS_GETSET(int, special_effect, special_effect, set_special_effect);
-SENSOR_STATUS_GETSET(int, wb_mode, wb_mode, set_wb_mode);
-SENSOR_STATUS_GETSET(int, ae_level, ae_level, set_ae_level);
+SENSOR_STATUS_GETSET(int, agc_gain, agc_gain, set_agc_gain); //in_Range not needed since driver limits value
+SENSOR_STATUS_GETSET(int, aec_value, aec_value, set_aec_value); //in_Range not needed since driver limits value
+SENSOR_STATUS_GETSET_IN_RANGE(int, special_effect, special_effect, set_special_effect, 0, 6);
+SENSOR_STATUS_GETSET_IN_RANGE(int, wb_mode, wb_mode, set_wb_mode, 0, 4);
+SENSOR_STATUS_GETSET_IN_RANGE(int, ae_level, ae_level, set_ae_level, -2, 2);
 SENSOR_STATUS_GETSET(bool, dcw, dcw, set_dcw);
 SENSOR_STATUS_GETSET(bool, bpc, bpc, set_bpc);
 SENSOR_STATUS_GETSET(bool, wpc, wpc, set_wpc);
 SENSOR_STATUS_GETSET(bool, raw_gma, raw_gma, set_raw_gma);
 SENSOR_STATUS_GETSET(bool, lenc, lenc, set_lenc);
 
-
-mp_camera_pixformat_t machine_hw_camera_get_pixel_format(mp_camera_obj_t *self) {
+mp_camera_pixformat_t mp_camera_hal_get_pixel_format(mp_camera_obj_t *self) {
     return self->camera_config.pixel_format;
 }
 
-mp_camera_framesize_t machine_hw_camera_get_frame_size(mp_camera_obj_t *self) {
+mp_camera_framesize_t mp_camera_hal_get_frame_size(mp_camera_obj_t *self) {
     return self->camera_config.frame_size;
 }
 
-const camera_grab_mode_t machine_hw_camera_get_grab_mode(mp_camera_obj_t *self) {
+const camera_grab_mode_t mp_camera_hal_get_grab_mode(mp_camera_obj_t *self) {
     return self->camera_config.grab_mode;
 }
 
-const int machine_hw_camera_get_framebuffer_count(mp_camera_obj_t *self) {
+const int mp_camera_hal_get_framebuffer_count(mp_camera_obj_t *self) {
     return self->camera_config.fb_count;
 }
 
-const char *machine_hw_camera_get_sensor_name(mp_camera_obj_t *self) {
+const char *mp_camera_hal_get_sensor_name(mp_camera_obj_t *self) {
     sensor_t *sensor = esp_camera_sensor_get();
     camera_sensor_info_t *sensor_info = esp_camera_sensor_get_info(&sensor->id);
     return sensor_info->name;
 }
 
-const bool machine_hw_camera_get_supports_jpeg(mp_camera_obj_t *self) {
+const bool mp_camera_hal_get_supports_jpeg(mp_camera_obj_t *self) {
     sensor_t *sensor = esp_camera_sensor_get();
     camera_sensor_info_t *sensor_info = esp_camera_sensor_get_info(&sensor->id);
     return sensor_info->support_jpeg;
 }
 
-const mp_camera_framesize_t machine_hw_camera_get_max_frame_size(mp_camera_obj_t *self) {
+const mp_camera_framesize_t mp_camera_hal_get_max_frame_size(mp_camera_obj_t *self) {
     sensor_t *sensor = esp_camera_sensor_get();
     camera_sensor_info_t *sensor_info = esp_camera_sensor_get_info(&sensor->id);
     return sensor_info->max_size;
 }
 
-const int machine_hw_camera_get_address(mp_camera_obj_t *self) {
+const int mp_camera_hal_get_address(mp_camera_obj_t *self) {
     sensor_t *sensor = esp_camera_sensor_get();
     camera_sensor_info_t *sensor_info = esp_camera_sensor_get_info(&sensor->id);
     return sensor_info->sccb_addr;
 }
 
-// TODO: Need to take a look at resolution
-// const int machine_hw_camera_get_width(mp_camera_obj_t *self) {
-//     sensor_t *sensor = esp_camera_sensor_get();
-//     framesize_t framesize = sensor->status.framesize;
-//     return resolution[framesize].width;
-// }
+const int mp_camera_hal_get_width(mp_camera_obj_t *self) {
+    sensor_t *sensor = esp_camera_sensor_get();
+    framesize_t framesize = sensor->status.framesize;
+    return resolution[framesize].width;
+}
 
-// const int machine_hw_camera_get_height(mp_camera_obj_t *self) {
-//     sensor_t *sensor = esp_camera_sensor_get();
-//     framesize_t framesize = sensor->status.framesize;
-//     return resolution[framesize].height;
-// }
+const int mp_camera_hal_get_height(mp_camera_obj_t *self) {
+    sensor_t *sensor = esp_camera_sensor_get();
+    framesize_t framesize = sensor->status.framesize;
+    return resolution[framesize].height;
+}

@@ -77,7 +77,7 @@ typedef struct mp_camera_obj {
 
 // TODO:    Define how to integrate external time source in constructor (e.g. in ESP is LED-Timer).
 //          Now the plattform defines a default pwm-time source and also frame buffer location in its constructor
-extern void machine_hw_camera_construct(
+extern void mp_camera_hal_construct(
     mp_camera_obj_t *self,
     uint8_t data_pins[8],
     uint8_t external_clock_pin,
@@ -95,11 +95,11 @@ extern void machine_hw_camera_construct(
     uint8_t framebuffer_count,
     mp_camera_grab_mode_t grab_mode);
 
-extern void machine_hw_camera_init(mp_camera_obj_t *self); //since we are not passing handles at construction, init() is used to create those handles
-extern void machine_hw_camera_deinit(mp_camera_obj_t *self);
-extern void machine_hw_camera_reconfigure(mp_camera_obj_t *self);
+extern void mp_camera_hal_init(mp_camera_obj_t *self); //since we are not passing handles at construction, init() is used to create those handles
+extern void mp_camera_hal_deinit(mp_camera_obj_t *self);
+extern void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t frame_size, mp_camera_pixformat_t pixel_format, mp_camera_camera_grab_mode_t grab_mode, mp_int_t framebuffer_count);
 
-extern mp_obj_t machine_hw_camera_capture(mp_camera_obj_t *self, int timeout_ms);
+extern mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms);
 
 // From here on are helper functions to get and set sensor properties and might not be imlemented yet
 #define DECLARE_SENSOR_GETSET(type, name, field_name, setter_function_name) \
@@ -113,10 +113,10 @@ extern mp_obj_t machine_hw_camera_capture(mp_camera_obj_t *self, int timeout_ms)
     DECLARE_SENSOR_GET(type, name, status.status_field_name, setter_function_name)
 
 #define DECLARE_SENSOR_GET(type, name, status_field_name, setter_function_name) \
-    extern type machine_hw_camera_get_##name(mp_camera_obj_t * self);
+    extern type mp_camera_hal_get_##name(mp_camera_obj_t * self);
 
 #define DECLARE_SENSOR_SET(type, name, setter_function_name) \
-    extern void machine_hw_camera_set_##name(mp_camera_obj_t * self, type value);
+    extern void mp_camera_hal_set_##name(mp_camera_obj_t * self, type value);
 
 DECLARE_SENSOR_GET(mp_camera_pixformat_t, pixel_format, pixformat, set_pixformat)
 DECLARE_SENSOR_STATUS_GET(mp_camera_framesize_t, frame_size, framesize, set_framesize)
@@ -147,15 +147,15 @@ DECLARE_SENSOR_STATUS_GETSET(bool, raw_gma, raw_gma, set_raw_gma);
 DECLARE_SENSOR_STATUS_GETSET(bool, lenc, lenc, set_lenc);
 
 // From settings
-extern camera_grab_mode_t machine_hw_camera_get_grab_mode(mp_camera_obj_t *self);
-extern int machine_hw_camera_get_framebuffer_count(mp_camera_obj_t *self);
+extern camera_grab_mode_t mp_camera_hal_get_grab_mode(mp_camera_obj_t *self);
+extern int mp_camera_hal_get_framebuffer_count(mp_camera_obj_t *self);
 
 // From camera_sensor_info_t
-extern int machine_hw_camera_get_address(mp_camera_obj_t *self);
-extern const char *machine_hw_camera_get_sensor_name(mp_camera_obj_t *self);
-extern bool machine_hw_camera_get_supports_jpeg(mp_camera_obj_t *self);
-extern mp_camera_framesize_t machine_hw_camera_get_max_frame_size(mp_camera_obj_t *self);
-extern int machine_hw_camera_get_width(mp_camera_obj_t *self);
-extern int machine_hw_camera_get_height(mp_camera_obj_t *self);
+extern int mp_camera_hal_get_address(mp_camera_obj_t *self);
+extern const char *mp_camera_hal_get_sensor_name(mp_camera_obj_t *self);
+extern bool mp_camera_hal_get_supports_jpeg(mp_camera_obj_t *self);
+extern mp_camera_framesize_t mp_camera_hal_get_max_frame_size(mp_camera_obj_t *self);
+extern int mp_camera_hal_get_width(mp_camera_obj_t *self);
+extern int mp_camera_hal_get_height(mp_camera_obj_t *self);
 
 #endif // MICROPY_INCLUDED_MODCAMERA_H
