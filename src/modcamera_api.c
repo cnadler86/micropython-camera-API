@@ -31,7 +31,7 @@
 #include "py/runtime.h"
 #include "modcamera.h"
 
-//OPEN: check initi of camera
+//OPEN: check initi of camera in macro
 
 #define CREATE_GETTER(property, get_function) \
     static mp_obj_t camera_get_##property(const mp_obj_t self_in) { \
@@ -48,10 +48,7 @@
     } \
     MP_DEFINE_CONST_FUN_OBJ_2(camera_set_##property##_obj, camera_set_##property);
 
-#define CREATE_PROPERTY(property) \
-    MP_PROPERTY_GETSET(camera_##property##_obj, (mp_obj_t)&camera_get_##property##_obj, (mp_obj_t)&camera_set_##property##_obj) //no MP_PROPERTY_GETSET makro defined in MP
-
-#define CREATE_PROPERTY_WITH_ACCESSORS(property, get_function, set_conversion) \
+#define CREATE_GETSET_FUNCTIONS(property, get_function, set_conversion) \
     CREATE_GETTER(property, get_function) \
     CREATE_SETTER(property, set_conversion)
 
@@ -63,6 +60,42 @@ typedef struct mp_camera_obj_t mp_camera_obj;
 const mp_obj_type_t camera_type;
 
 //Constructor
+static mp_obj_t camera_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
+    enum { ARG_data_pins, ARG_pixel_clock_pin, ARG_vsync_pin, ARG_href_pin, ARG_sda_pin, ARG_scl_pin, ARG_xclock_pin, ARG_xclock_frequency, ARG_powerdown_pin, ARG_reset_pin, ARG_pixel_format, ARG_frame_size, ARG_jpeg_quality, ARG_framebuffer_count, ARG_grab_mode, NUM_ARGS };
+    static const mp_arg_t allowed_args[] = {
+        { MP_QSTR_data_pins, MP_ARG_OBJ | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
+        { MP_QSTR_pixel_clock_pin, MP_ARG_OBJ | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
+        { MP_QSTR_vsync_pin, MP_ARG_OBJ | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
+        { MP_QSTR_href_pin, MP_ARG_OBJ | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
+        { MP_QSTR_sda_pin, MP_ARG_OBJ | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
+        { MP_QSTR_scl_pin, MP_ARG_OBJ | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
+        { MP_QSTR_xclock_pin, MP_ARG_OBJ | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_NONE } },
+        { MP_QSTR_xclock_frequency, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = 20000000L } },
+        { MP_QSTR_powerdown_pin, MP_ARG_OBJ | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_NONE } },
+        { MP_QSTR_reset_pin, MP_ARG_OBJ | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_NONE } },
+        { MP_QSTR_pixel_format, MP_ARG_OBJ | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_PTR((void *)&pixel_format_RGB565_obj) } },
+        { MP_QSTR_frame_size, MP_ARG_OBJ | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_PTR((void *)&frame_size_QQVGA_obj) } },
+        { MP_QSTR_jpeg_quality, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = 15 } },
+        { MP_QSTR_framebuffer_count, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = 1 } },
+        { MP_QSTR_grab_mode, MP_ARG_OBJ | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_PTR((void *)&grab_mode_WHEN_EMPTY_obj) } },
+    };
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    MP_STATIC_ASSERT(MP_ARRAY_SIZE(allowed_args) == NUM_ARGS);
+    mp_arg_parse_all_kw_array(n_args, n_kw, all_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+    
+    //TODO: declare variables and validate inputs
+
+
+    mp_camera_obj_t *self = mp_obj_malloc_with_finaliser(mp_camera_obj_t, &camera_type);
+    self->base.type = &camera_type;
+
+    mp_camera_hal_construct(self, data_pins, pixel_clock_pin, vsync_pin, href_pin, sda_pin, scl_pin, xclock_pin, xclock_frequency, 
+        powerdown_pin, reset_pin, pixel_format, frame_size, jpeg_quality, framebuffer_count, grab_mode);
+    mp_camera_hal_init(self);
+    (void)mp_camera_hal_capture(self, 100); //used in order to reserve a memory block for framebuffer while construction
+    return MP_OBJ_FROM_PTR(self);
+}
+
 static mp_obj_t camera_make_new_stub(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
     (void)type;
     (void)n_args;
@@ -89,8 +122,8 @@ static mp_obj_t camera_make_new_stub(const mp_obj_type_t *type, size_t n_args, s
         10,
         2,
         grab_mode);
-        mp_camera_hal_init(self);
-        (void)mp_camera_hal_capture(self, 100);
+    mp_camera_hal_init(self);
+    (void)mp_camera_hal_capture(self, 100);
     return MP_OBJ_FROM_PTR(self);
 }
 
@@ -99,8 +132,7 @@ static mp_obj_t camera_capture(size_t n_args, const mp_obj_t *args){
     //DONE
     mp_camera_obj_t *self = MP_OBJ_TO_PTR(args[0]);
     mp_float_t timeout = n_args < 2 ? MICROPY_FLOAT_CONST(0.25) : mp_obj_get_float(args[1]);
-    mp_obj_t img = mp_camera_hal_capture(self, timeout);
-    return img;
+    return mp_camera_hal_capture(self, timeout);
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(camera_capture_obj, 1, 2, camera_capture);
 
@@ -136,10 +168,17 @@ static mp_obj_t camera_reconfigure(mp_uint_t n_args, const mp_obj_t *pos_args, m
         ?  mp_obj_get_int(args[ARG_framebuffer_count].u_obj)
         : mp_camera_hal_get_framebuffer_count(self);
     
-    mp_camera_hal_reconfigure(self,frame_size, pixel_format, grab_mode, framebuffer_count);
+    mp_camera_hal_reconfigure(self, frame_size, pixel_format, grab_mode, framebuffer_count);
     return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(camera_reconfigure_obj, 1, camera_reconfigure);
+
+static mp_obj_t camera_init(mp_obj_t self_in) {
+    mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_camera_hal_init(self);
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(camera_init_obj, camera_init);
 
 static mp_obj_t mp_camera_deinit(mp_obj_t self_in) {
     mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in);
@@ -154,38 +193,40 @@ static mp_obj_t mp_camera_obj___exit__(size_t n_args, const mp_obj_t *args) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_camera___exit___obj, 4, 4, mp_camera_obj___exit__);
 
-// Camera properties definitions
-CREATE_PROPERTY_WITH_ACCESSORS(contrast, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
-CREATE_PROPERTY_WITH_ACCESSORS(brightness, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
-CREATE_PROPERTY_WITH_ACCESSORS(saturation, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
-CREATE_PROPERTY_WITH_ACCESSORS(sharpness, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
-CREATE_PROPERTY_WITH_ACCESSORS(denoise, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
-// CREATE_PROPERTY_WITH_ACCESSORS(gainceiling, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int); //TODO
-CREATE_PROPERTY_WITH_ACCESSORS(quality, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
-CREATE_PROPERTY_WITH_ACCESSORS(colorbar, mp_obj_new_bool, mp_obj_is_true);
-CREATE_PROPERTY_WITH_ACCESSORS(whitebal, mp_obj_new_bool, mp_obj_is_true);
-CREATE_PROPERTY_WITH_ACCESSORS(gain_ctrl, mp_obj_new_bool, mp_obj_is_true);
-CREATE_PROPERTY_WITH_ACCESSORS(exposure_ctrl, mp_obj_new_bool, mp_obj_is_true);
-CREATE_PROPERTY_WITH_ACCESSORS(hmirror, mp_obj_new_bool, mp_obj_is_true);
-CREATE_PROPERTY_WITH_ACCESSORS(vflip, mp_obj_new_bool, mp_obj_is_true);
-CREATE_PROPERTY_WITH_ACCESSORS(aec2, mp_obj_new_bool, mp_obj_is_true);
-CREATE_PROPERTY_WITH_ACCESSORS(awb_gain, mp_obj_new_bool, mp_obj_is_true);
-CREATE_PROPERTY_WITH_ACCESSORS(agc_gain, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
-CREATE_PROPERTY_WITH_ACCESSORS(aec_value, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
-CREATE_PROPERTY_WITH_ACCESSORS(special_effect, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
-CREATE_PROPERTY_WITH_ACCESSORS(wb_mode, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
-CREATE_PROPERTY_WITH_ACCESSORS(ae_level, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
-CREATE_PROPERTY_WITH_ACCESSORS(dcw, mp_obj_new_bool, mp_obj_is_true);
-CREATE_PROPERTY_WITH_ACCESSORS(bpc, mp_obj_new_bool, mp_obj_is_true);
-CREATE_PROPERTY_WITH_ACCESSORS(wpc, mp_obj_new_bool, mp_obj_is_true);
-CREATE_PROPERTY_WITH_ACCESSORS(raw_gma, mp_obj_new_bool, mp_obj_is_true);
-CREATE_PROPERTY_WITH_ACCESSORS(lenc, mp_obj_new_bool, mp_obj_is_true);
+// Camera propertiy functions
+CREATE_GETSET_FUNCTIONS(contrast, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+CREATE_GETSET_FUNCTIONS(brightness, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+CREATE_GETSET_FUNCTIONS(saturation, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+CREATE_GETSET_FUNCTIONS(sharpness, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+CREATE_GETSET_FUNCTIONS(denoise, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+// CREATE_GETSET_FUNCTIONS(gainceiling, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int); //TODO
+CREATE_GETSET_FUNCTIONS(quality, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+CREATE_GETSET_FUNCTIONS(colorbar, mp_obj_new_bool, mp_obj_is_true);
+CREATE_GETSET_FUNCTIONS(whitebal, mp_obj_new_bool, mp_obj_is_true);
+CREATE_GETSET_FUNCTIONS(gain_ctrl, mp_obj_new_bool, mp_obj_is_true);
+CREATE_GETSET_FUNCTIONS(exposure_ctrl, mp_obj_new_bool, mp_obj_is_true);
+CREATE_GETSET_FUNCTIONS(hmirror, mp_obj_new_bool, mp_obj_is_true);
+CREATE_GETSET_FUNCTIONS(vflip, mp_obj_new_bool, mp_obj_is_true);
+CREATE_GETSET_FUNCTIONS(aec2, mp_obj_new_bool, mp_obj_is_true);
+CREATE_GETSET_FUNCTIONS(awb_gain, mp_obj_new_bool, mp_obj_is_true);
+CREATE_GETSET_FUNCTIONS(agc_gain, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+CREATE_GETSET_FUNCTIONS(aec_value, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+CREATE_GETSET_FUNCTIONS(special_effect, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+CREATE_GETSET_FUNCTIONS(wb_mode, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+CREATE_GETSET_FUNCTIONS(ae_level, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+CREATE_GETSET_FUNCTIONS(dcw, mp_obj_new_bool, mp_obj_is_true);
+CREATE_GETSET_FUNCTIONS(bpc, mp_obj_new_bool, mp_obj_is_true);
+CREATE_GETSET_FUNCTIONS(wpc, mp_obj_new_bool, mp_obj_is_true);
+CREATE_GETSET_FUNCTIONS(raw_gma, mp_obj_new_bool, mp_obj_is_true);
+CREATE_GETSET_FUNCTIONS(lenc, mp_obj_new_bool, mp_obj_is_true);
 
 //API-Tables
 static const mp_rom_map_elem_t camera_camera_locals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_reconfigure), MP_ROM_PTR(&camera_reconfigure_obj) },
     { MP_ROM_QSTR(MP_QSTR_capture), MP_ROM_PTR(&camera_capture_obj) },
+    { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&camera_init_obj) },
     { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&mp_camera_deinit_obj) },
+    { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&mp_camera_deinit_obj) },
     { MP_ROM_QSTR(MP_QSTR___exit__), MP_ROM_PTR(&mp_camera___exit___obj) },
     ADD_PROPERTY_TO_LOCALS(contrast),
     ADD_PROPERTY_TO_LOCALS(brightness),
