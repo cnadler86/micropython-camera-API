@@ -42,17 +42,11 @@
 #include "sensor.h"
 
 #define X(enum_value) MP_REGISTER_ENUM_CONST(enum_value),
-#define MP_REGISTER_ENUM_CONST_LIST(enum_list) \
-    const mp_rom_map_elem_t example_module_globals_table[] = { \
+#define ADD_ENUM_CONSTS_TO_LIST(module_name, enum_list) \
+    enum_list \
+    const mp_rom_map_elem_t module_name##_globals_table[] = { \
         enum_list \
-    }; \
-    static MP_DEFINE_CONST_DICT(mp_module_example_globals, example_module_globals_table); \
-    const mp_obj_module_t mp_module_example = { \
-        .base = { &mp_type_module }, \
-        .globals = (mp_obj_dict_t*)&mp_module_example_globals, \
-    }; \
-    MP_REGISTER_MODULE(MP_QSTR_example, mp_module_example, MODULE_EXAMPLE_ENABLED);
-
+    };
 //Hier kommt dann ein kompiler switch
 
 #ifndef CONFIG_OV2640_SUPPORT
