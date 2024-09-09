@@ -156,12 +156,62 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_camera___exit___obj, 4, 4, mp_came
 
 // Camera properties definitions
 CREATE_PROPERTY_WITH_ACCESSORS(contrast, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+CREATE_PROPERTY_WITH_ACCESSORS(brightness, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+CREATE_PROPERTY_WITH_ACCESSORS(saturation, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+CREATE_PROPERTY_WITH_ACCESSORS(sharpness, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+CREATE_PROPERTY_WITH_ACCESSORS(denoise, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+// CREATE_PROPERTY_WITH_ACCESSORS(gainceiling, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int); //TODO
+CREATE_PROPERTY_WITH_ACCESSORS(quality, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+CREATE_PROPERTY_WITH_ACCESSORS(colorbar, mp_obj_new_bool, mp_obj_is_true);
+CREATE_PROPERTY_WITH_ACCESSORS(whitebal, mp_obj_new_bool, mp_obj_is_true);
+CREATE_PROPERTY_WITH_ACCESSORS(gain_ctrl, mp_obj_new_bool, mp_obj_is_true);
+CREATE_PROPERTY_WITH_ACCESSORS(exposure_ctrl, mp_obj_new_bool, mp_obj_is_true);
+CREATE_PROPERTY_WITH_ACCESSORS(hmirror, mp_obj_new_bool, mp_obj_is_true);
+CREATE_PROPERTY_WITH_ACCESSORS(vflip, mp_obj_new_bool, mp_obj_is_true);
+CREATE_PROPERTY_WITH_ACCESSORS(aec2, mp_obj_new_bool, mp_obj_is_true);
+CREATE_PROPERTY_WITH_ACCESSORS(awb_gain, mp_obj_new_bool, mp_obj_is_true);
+CREATE_PROPERTY_WITH_ACCESSORS(agc_gain, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+CREATE_PROPERTY_WITH_ACCESSORS(aec_value, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+CREATE_PROPERTY_WITH_ACCESSORS(special_effect, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+CREATE_PROPERTY_WITH_ACCESSORS(wb_mode, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+CREATE_PROPERTY_WITH_ACCESSORS(ae_level, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+CREATE_PROPERTY_WITH_ACCESSORS(dcw, mp_obj_new_bool, mp_obj_is_true);
+CREATE_PROPERTY_WITH_ACCESSORS(bpc, mp_obj_new_bool, mp_obj_is_true);
+CREATE_PROPERTY_WITH_ACCESSORS(wpc, mp_obj_new_bool, mp_obj_is_true);
+CREATE_PROPERTY_WITH_ACCESSORS(raw_gma, mp_obj_new_bool, mp_obj_is_true);
+CREATE_PROPERTY_WITH_ACCESSORS(lenc, mp_obj_new_bool, mp_obj_is_true);
 
 //API-Tables
 static const mp_rom_map_elem_t camera_camera_locals_table[] = {
-//    { MP_ROM_QSTR(MP_QSTR_reconfigure), MP_ROM_PTR(&camera_reconfigure_obj) },
+    { MP_ROM_QSTR(MP_QSTR_reconfigure), MP_ROM_PTR(&camera_reconfigure_obj) },
     { MP_ROM_QSTR(MP_QSTR_capture), MP_ROM_PTR(&camera_capture_obj) },
+    { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&mp_camera_deinit_obj) },
+    { MP_ROM_QSTR(MP_QSTR___exit__), MP_ROM_PTR(&mp_camera___exit___obj) },
     ADD_PROPERTY_TO_LOCALS(contrast),
+    ADD_PROPERTY_TO_LOCALS(brightness),
+    ADD_PROPERTY_TO_LOCALS(saturation),
+    ADD_PROPERTY_TO_LOCALS(sharpness),
+    ADD_PROPERTY_TO_LOCALS(denoise),
+    // ADD_PROPERTY_TO_LOCALS(gainceiling),
+    ADD_PROPERTY_TO_LOCALS(quality),
+    ADD_PROPERTY_TO_LOCALS(colorbar),
+    ADD_PROPERTY_TO_LOCALS(whitebal),
+    ADD_PROPERTY_TO_LOCALS(gain_ctrl),
+    ADD_PROPERTY_TO_LOCALS(exposure_ctrl),
+    ADD_PROPERTY_TO_LOCALS(hmirror),
+    ADD_PROPERTY_TO_LOCALS(vflip),
+    ADD_PROPERTY_TO_LOCALS(aec2),
+    ADD_PROPERTY_TO_LOCALS(awb_gain),
+    ADD_PROPERTY_TO_LOCALS(agc_gain),
+    ADD_PROPERTY_TO_LOCALS(aec_value),
+    ADD_PROPERTY_TO_LOCALS(special_effect),
+    ADD_PROPERTY_TO_LOCALS(wb_mode),
+    ADD_PROPERTY_TO_LOCALS(ae_level),
+    ADD_PROPERTY_TO_LOCALS(dcw),
+    ADD_PROPERTY_TO_LOCALS(bpc),
+    ADD_PROPERTY_TO_LOCALS(wpc),
+    ADD_PROPERTY_TO_LOCALS(raw_gma),
+    ADD_PROPERTY_TO_LOCALS(lenc),
 };
 static const mp_rom_map_elem_t camera_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_camera) },
