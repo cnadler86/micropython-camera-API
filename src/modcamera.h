@@ -47,8 +47,8 @@
     const mp_rom_map_elem_t module_name##_globals_table[] = { \
         enum_list \
     };
-//Hier kommt dann ein kompiler switch
-
+//Hier kommt dann ein kompiler switch, um den entsprechenden header zu importieren
+//ESP32-Camera specifics-> will go in separate header file
 #ifndef CONFIG_OV2640_SUPPORT
 #define CONFIG_OV2640_SUPPORT 1
 #endif
@@ -67,7 +67,17 @@ typedef struct mp_camera_obj {
     bool                initialized;
     mp_camera_fb_t      *capture_buffer;
 } mp_camera_obj_t;
+#ifndef MICROPY_CAMERA_DEFAULT_FRAME_SIZE
+#define MICROPY_CAMERA_DEFAULT_FRAME_SIZE FRAMESIZE_QVGA
+#endif
 
+#ifndef MICROPY_CAMERA_DEFAULT_PIXEL_FORMAT
+#define MICROPY_CAMERA_DEFAULT_PIXEL_FORMAT PIXFORMAT_RGB565
+#endif
+
+#ifndef MICROPY_CAMERA_DEFAULT_GRAB_MODE
+#define MICROPY_CAMERA_DEFAULT_GRAB_MODE CAMERA_GRAB_WHEN_EMPTY
+#endif
 
 // TODO:    Define how to integrate external time source in constructor (e.g. in ESP is LED-Timer).
 //          Now the plattform defines a default pwm-time source and also frame buffer location in its constructor
