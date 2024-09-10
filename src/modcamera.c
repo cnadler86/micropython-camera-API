@@ -80,7 +80,7 @@ void mp_camera_hal_construct(
     uint8_t reset_pin,
     uint8_t sccb_sda_pin,
     uint8_t sccb_scl_pin,
-    int xclk_freq_hz,
+    uint32_t xclk_freq_hz,
     mp_camera_pixformat_t pixel_format,
     mp_camera_framesize_t frame_size,
     uint8_t jpeg_quality,

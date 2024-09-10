@@ -26,53 +26,67 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+
 #include "py/mperrno.h"
 #include "py/mphal.h"
 #include "py/runtime.h"
+
 #include "modcamera.h"
 
-//OPEN: check initi of camera in macro
+#ifndef MICROPY_CAMERA_PIN_PWDN
+#define MICROPY_CAMERA_PIN_PWDN    32
+#endif
 
-#define CREATE_GETTER(property, get_function) \
-    static mp_obj_t camera_get_##property(const mp_obj_t self_in) { \
-        mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in); \
-        return get_function(mp_camera_hal_get_##property(self)); \
-    } \
-    MP_DEFINE_CONST_FUN_OBJ_1(camera_get_##property##_obj, camera_get_##property);
+#ifndef MICROPY_CAMERA_PIN_RESET
+#define MICROPY_CAMERA_PIN_RESET   -1
+#endif
 
-#define CREATE_SETTER(property, set_conversion) \
-    static mp_obj_t camera_set_##property(const mp_obj_t self_in, const mp_obj_t arg) { \
-        mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in); \
-        mp_camera_hal_set_##property(self, set_conversion(arg)); \
-        return mp_const_none; \
-    } \
-    MP_DEFINE_CONST_FUN_OBJ_2(camera_set_##property##_obj, camera_set_##property);
+#ifndef MICROPY_CAMERA_PIN_XCLK
+#define MICROPY_CAMERA_PIN_XCLK     0
+#endif
 
-#define CREATE_GETSET_FUNCTIONS(property, get_function, set_conversion) \
-    CREATE_GETTER(property, get_function) \
-    CREATE_SETTER(property, set_conversion)
+#ifndef MICROPY_CAMERA_PIN_SIOD
+#define MICROPY_CAMERA_PIN_SIOD    26
+#endif
 
-#define ADD_PROPERTY_TO_LOCALS(property) \
-    { MP_ROM_QSTR(MP_QSTR_get_##property), MP_ROM_PTR(&camera_get_##property##_obj) }, \
-    { MP_ROM_QSTR(MP_QSTR_set_##property), MP_ROM_PTR(&camera_set_##property##_obj) }
+#ifndef MICROPY_CAMERA_PIN_SIOC
+#define MICROPY_CAMERA_PIN_SIOC    27
+#endif
+
+#ifndef MICROPY_CAMERA_PINS_DATA
+#define MICROPY_CAMERA_PINS_DATA   {5,18,19,21,36,39,34,35}
+#endif
+
+#ifndef MICROPY_CAMERA_PIN_VSYNC
+#define MICROPY_CAMERA_PIN_VSYNC   25
+#endif
+
+#ifndef MICROPY_CAMERA_PIN_HREF
+#define MICROPY_CAMERA_PIN_HREF    23
+#endif
+
+#ifndef MICROPY_CAMERA_PIN_PCLK
+#define MICROPY_CAMERA_PIN_PCLK    22
+#endif
 
 typedef struct mp_camera_obj_t mp_camera_obj;
 const mp_obj_type_t camera_type;
 
 //Constructor
+// TODO: handle typedef-values
 static mp_obj_t camera_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
     enum { ARG_data_pins, ARG_pixel_clock_pin, ARG_vsync_pin, ARG_href_pin, ARG_sda_pin, ARG_scl_pin, ARG_xclock_pin, ARG_xclock_frequency, ARG_powerdown_pin, ARG_reset_pin, ARG_pixel_format, ARG_frame_size, ARG_jpeg_quality, ARG_framebuffer_count, ARG_grab_mode, NUM_ARGS };
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_data_pins, MP_ARG_OBJ | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
-        { MP_QSTR_pixel_clock_pin, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
-        { MP_QSTR_vsync_pin, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
-        { MP_QSTR_href_pin, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
-        { MP_QSTR_sda_pin, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
-        { MP_QSTR_scl_pin, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
-        { MP_QSTR_xclock_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_NONE } },
+        { MP_QSTR_data_pins, MP_ARG_OBJ | MP_ARG_KW_ONLY | { .u_obj = MP_ROM_NONE } },
+        { MP_QSTR_pixel_clock_pin, MP_ARG_INT | MP_ARG_KW_ONLY | { .u_int = MICROPY_CAMERA_PIN_PCLK } },
+        { MP_QSTR_vsync_pin, MP_ARG_INT | MP_ARG_KW_ONLY | { .uint = MICROPY_CAMERA_PIN_VSYNC } },
+        { MP_QSTR_href_pin, MP_ARG_INT | MP_ARG_KW_ONLY | { .uint = MICROPY_CAMERA_PIN_HREF } },
+        { MP_QSTR_sda_pin, MP_ARG_INT | MP_ARG_KW_ONLY | { .uint = MICROPY_CAMERA_PIN_SIOD } },
+        { MP_QSTR_scl_pin, MP_ARG_INT | MP_ARG_KW_ONLY | { .uint = MICROPY_CAMERA_PIN_SIOC } },
+        { MP_QSTR_xclock_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_PIN_XCLK } },
         { MP_QSTR_xclock_frequency, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = 20000000L } },
-        { MP_QSTR_powerdown_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_NONE } },
-        { MP_QSTR_reset_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_NONE } },
+        { MP_QSTR_powerdown_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_PIN_PWDN } },
+        { MP_QSTR_reset_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_PIN_RESET } },
         { MP_QSTR_pixel_format, MP_ARG_OBJ | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_PTR((void *)&pixel_format_RGB565_obj) } },
         { MP_QSTR_frame_size, MP_ARG_OBJ | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_PTR((void *)&frame_size_QQVGA_obj) } },
         { MP_QSTR_jpeg_quality, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = 15 } },
@@ -83,12 +97,39 @@ static mp_obj_t camera_make_new(const mp_obj_type_t *type, size_t n_args, size_t
     MP_STATIC_ASSERT(MP_ARRAY_SIZE(allowed_args) == NUM_ARGS);
     mp_arg_parse_all_kw_array(n_args, n_kw, all_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
     
-    //TODO: declare variables and validate inputs
+    //TODO: validate inputs
     mp_obj_t data_pins_obj = args[ARG_data_pins].u_obj;
-    if (!mp_obj_is_type(data_pins_obj, &mp_type_list) && !mp_obj_is_type(data_pins_obj, &mp_type_bytearray)) {
-        mp_raise_TypeError(MP_ERROR_TEXT("data_pins must be a list or bytearray"));
+    if (data_pins_obj == MP_ROM_NONE) {
+        uint8_t data_pins = MICROPY_CAMERA_PINS_DATA;
+    } else {
+        if (!mp_obj_is_type(data_pins_obj, &mp_type_list) && !mp_obj_is_type(data_pins_obj, &mp_type_bytearray)) {
+            mp_raise_TypeError(MP_ERROR_TEXT("data_pins must be a list or bytearray"));
+        }
+        mp_uint_t data_pins_len = mp_obj_get_int(mp_obj_len_maybe(data_pins_obj));
+        if (data_pins_len != 8) {
+            mp_raise_ValueError(MP_ERROR_TEXT("data_pins must have 8 elements"));
+        }
+        uint8_t data_pins[8];
+        for (mp_uint_t i = 0; i < 8; i++) {
+            mp_obj_t item = mp_obj_subscr(data_pins_obj, MP_OBJ_NEW_SMALL_INT(i), MP_OBJ_SENTINEL);
+            data_pins[i] = mp_obj_get_int(item);
+        }
     }
-
+    uint8_t pixel_clock_pin = args[ARG_pixel_clock_pin].u_int;
+    uint8_t vsync_pin = args[ARG_vsync_pin].u_int;
+    uint8_t href_pin = args[ARG_href_pin].u_int;
+    uint8_t sda_pin = args[ARG_sda_pin].u_int;
+    uint8_t scl_pin = args[ARG_scl_pin].u_int;
+    uint8_t xclock_pin = args[ARG_xclock_pin].u_int;
+    uint32_t xclock_frequency = args[ARG_xclock_frequency].u_int;
+    uint8_t powerdown_pin = args[ARG_powerdown_pin].u_int;
+    uint8_t reset_pin = args[ARG_reset_pin].u_int;
+    mp_camera_pixformat_t pixel_format = mp_obj_get_int(args[ARG_pixel_format].u_obj);
+    mp_camera_framesize_t frame_size = mp_obj_get_int(args[ARG_frame_size].u_obj);
+    uint8_t jpeg_quality = args[ARG_jpeg_quality].u_int;
+    uint8_t framebuffer_count = args[ARG_framebuffer_count].u_int;
+    mp_camera_grab_mode_t grab_mode = mp_obj_get_int(args[ARG_grab_mode].u_obj);
+    
     mp_camera_obj_t *self = mp_obj_malloc_with_finaliser(mp_camera_obj_t, &camera_type);
     self->base.type = &camera_type;
 
@@ -196,6 +237,29 @@ static mp_obj_t mp_camera_obj___exit__(size_t n_args, const mp_obj_t *args) {
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_camera___exit___obj, 4, 4, mp_camera_obj___exit__);
 
 // Camera propertiy functions
+#define CREATE_GETTER(property, get_function) \
+    static mp_obj_t camera_get_##property(const mp_obj_t self_in) { \
+        mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in); \
+        return get_function(mp_camera_hal_get_##property(self)); \
+    } \
+    MP_DEFINE_CONST_FUN_OBJ_1(camera_get_##property##_obj, camera_get_##property);
+
+#define CREATE_SETTER(property, set_conversion) \
+    static mp_obj_t camera_set_##property(const mp_obj_t self_in, const mp_obj_t arg) { \
+        mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in); \
+        mp_camera_hal_set_##property(self, set_conversion(arg)); \
+        return mp_const_none; \
+    } \
+    MP_DEFINE_CONST_FUN_OBJ_2(camera_set_##property##_obj, camera_set_##property);
+
+#define CREATE_GETSET_FUNCTIONS(property, get_function, set_conversion) \
+    CREATE_GETTER(property, get_function) \
+    CREATE_SETTER(property, set_conversion)
+
+#define ADD_PROPERTY_TO_LOCALS(property) \
+    { MP_ROM_QSTR(MP_QSTR_get_##property), MP_ROM_PTR(&camera_get_##property##_obj) }, \
+    { MP_ROM_QSTR(MP_QSTR_set_##property), MP_ROM_PTR(&camera_set_##property##_obj) }
+
 CREATE_GETSET_FUNCTIONS(contrast, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
 CREATE_GETSET_FUNCTIONS(brightness, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
 CREATE_GETSET_FUNCTIONS(saturation, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
