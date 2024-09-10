@@ -194,7 +194,7 @@ static mp_obj_t camera_capture(size_t n_args, const mp_obj_t *args){
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(camera_capture_obj, 1, 2, camera_capture);
 
-static mp_obj_t camera_reconfigure(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args){
+static mp_obj_t camera_reconfigure(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args){
     //OPEN: Validate inputs
     mp_camera_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
     enum { ARG_frame_size, ARG_pixel_format, ARG_grab_mode, ARG_framebuffer_count };
