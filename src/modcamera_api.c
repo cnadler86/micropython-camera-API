@@ -104,6 +104,9 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
     MP_STATIC_ASSERT(MP_ARRAY_SIZE(allowed_args) == NUM_ARGS);
     mp_arg_parse_all_kw_array(n_args, n_kw, all_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
     
+    // Debugging-Ausgaben
+    printf("mp_camera_make_new: Parsing arguments\n");
+
     //TODO: validate inputs
     uint8_t data_pins[8];
     mp_obj_t data_pins_obj = args[ARG_data_pins].u_obj;
@@ -144,13 +147,31 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
     uint8_t framebuffer_count = args[ARG_framebuffer_count].u_int;
     mp_camera_grab_mode_t grab_mode = mp_obj_get_int(args[ARG_grab_mode].u_obj);
     
+    // Debugging-Ausgaben
+    printf("mp_camera_make_new: Creating camera object\n");
+
     mp_camera_obj_t *self = mp_obj_malloc_with_finaliser(mp_camera_obj_t, &camera_type);
     self->base.type = &camera_type;
 
+    // Debugging-Ausgaben
+    printf("mp_camera_make_new: Constructing camera HAL\n");
+
     mp_camera_hal_construct(self, data_pins, pixel_clock_pin, vsync_pin, href_pin, sda_pin, scl_pin, xclock_pin, xclock_frequency, 
         powerdown_pin, reset_pin, pixel_format, frame_size, jpeg_quality, framebuffer_count, grab_mode);
+
+    // Debugging-Ausgaben
+    printf("mp_camera_make_new: Initializing camera HAL\n");
+
     mp_camera_hal_init(self);
+
+    // Debugging-Ausgaben
+    printf("mp_camera_make_new: Capturing initial frame\n");
+
     (void)mp_camera_hal_capture(self, 100); //used in order to reserve a memory block for framebuffer while construction
+
+    // Debugging-Ausgaben
+    printf("mp_camera_make_new: Camera object created successfully\n");
+
     return MP_OBJ_FROM_PTR(self);
 }
 
@@ -357,7 +378,7 @@ MP_DEFINE_CONST_OBJ_TYPE(
     camera_type,
     MP_QSTR_Camera,
     MP_TYPE_FLAG_NONE,
-    make_new, mp_camera_make_new_stub,
+    make_new, mp_camera_make_new,
     print, mp_camera_hal_print,
     locals_dict, &camera_camera_locals_dict
 );

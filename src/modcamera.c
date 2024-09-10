@@ -124,17 +124,17 @@ void mp_camera_hal_init(mp_camera_obj_t *self) {
         return;
     }
     camera_config_t temp_config = self->camera_config;
-    temp_config.frame_size = FRAMESIZE_QVGA;       //use values supported by all cameras
+    temp_config.frame_size = FRAMESIZE_QVGA;        //use values supported by all cameras
     temp_config.pixel_format = PIXFORMAT_RGB565;    //use values supported by all cameras
-    raise_micropython_error_from_esp_err(esp_camera_init(&temp_config));
-    raise_micropython_error_from_esp_err(esp_camera_deinit());
-    esp_err_t err = esp_camera_init(&self->camera_config);
+    esp_err_t err = esp_camera_init(&temp_config);
     if (err != ESP_OK) {
         self->initialized = false;
         raise_micropython_error_from_esp_err(err);
     } else {
         self->initialized = true;
     }
+    mp_camera_hal_reconfigure(self, self->camera_config.frame_size, self->camera_config.pixel_format, 
+        self->camera_config.grab_mode, self->camera_config.fb_count);
 }
 
 void mp_camera_hal_deinit(mp_camera_obj_t *self) {
