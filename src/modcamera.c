@@ -29,6 +29,9 @@
 
 #include "modcamera.h"
 #include "esp_err.h"
+#include "esp_log.h"
+
+#define TAG "ESP32_MPY_CAMERA"
 
 #if !CONFIG_SPIRAM //TODO: Better test if enought RAM is available on runtime
 #error Camera only works on boards configured with spiram
@@ -123,6 +126,7 @@ void mp_camera_hal_init(mp_camera_obj_t *self) {
     if (self->initialized) {
         return;
     }
+    ESP_LOGI(TAG, "Initializing camera");
     camera_config_t temp_config = self->camera_config;
     temp_config.frame_size = FRAMESIZE_QVGA;        //use values supported by all cameras
     temp_config.pixel_format = PIXFORMAT_RGB565;    //use values supported by all cameras
@@ -135,6 +139,7 @@ void mp_camera_hal_init(mp_camera_obj_t *self) {
     }
     mp_camera_hal_reconfigure(self, self->camera_config.frame_size, self->camera_config.pixel_format, 
         self->camera_config.grab_mode, self->camera_config.fb_count);
+    ESP_LOGI(TAG, "Camera initialized successfully");
 }
 
 void mp_camera_hal_deinit(mp_camera_obj_t *self) {
@@ -151,6 +156,7 @@ void mp_camera_hal_deinit(mp_camera_obj_t *self) {
 
 void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t frame_size, mp_camera_pixformat_t pixel_format, mp_camera_grab_mode_t grab_mode, mp_int_t framebuffer_count) {
     if (self->initialized) {
+        ESP_LOGI(TAG, "Reconfiguring camera");
         sensor_t *sensor = esp_camera_sensor_get();
         camera_sensor_info_t *sensor_info = esp_camera_sensor_get_info(&sensor->id);
 
@@ -193,6 +199,8 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
         if (err != ESP_OK) {
             self->initialized = false;
             raise_micropython_error_from_esp_err(err);
+        } else {
+            ESP_LOGI(TAG, "Camera reconfigured successfully");
         }
     }
 }
@@ -206,12 +214,15 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms) {
         esp_camera_fb_return(self->capture_buffer);
         self->capture_buffer = NULL;
     }
+    ESP_LOGI(TAG, "Capturing image");
     self->capture_buffer = esp_camera_fb_get();
 
     if (self->camera_config.pixel_format == PIXFORMAT_JPEG) {
+        ESP_LOGI(TAG, "Captured image in JPEG format");
         return mp_obj_new_memoryview('b', self->capture_buffer->len, self->capture_buffer->buf);
         //ChatGPT sagt: return mp_obj_new_memoryview(MP_OBJ_FROM_PTR(self->capture_buffer->buf));
     } else {
+        ESP_LOGI(TAG, "Captured image in raw format");
         return mp_obj_new_memoryview('b', self->capture_buffer->len, self->capture_buffer->buf);
         // Stub at the moment in order to return raw data, but it sould be implemented to return a Bitmap, see following circuitpython example:
         //

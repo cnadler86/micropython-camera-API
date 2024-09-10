@@ -272,6 +272,39 @@ static mp_obj_t mp_camera_obj___exit__(size_t n_args, const mp_obj_t *args) {
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_camera___exit___obj, 4, 4, mp_camera_obj___exit__);
 
 // Camera propertiy functions
+static mo_obj_t camera_get_frame_size(const mp_obj_t self_in) {
+    mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    return mp_obj_new_int(mp_camera_hal_get_frame_size(self));
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(camera_get_frame_size_obj, camera_get_frame_size);
+
+static mp_obj_t camera_get_pixel_format(const mp_obj_t self_in) {
+    mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    return mp_obj_new_int(mp_camera_hal_get_pixel_format(self));
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(camera_get_pixel_format_obj, camera_get_pixel_format);
+
+static mp_obj_t camera_get_grab_mode(mp_camera_obj_t *self) {
+    return mp_obj_new_int(mp_camera_hal_get_grab_mode(self));
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(camera_get_grab_mode_obj, camera_get_grab_mode);
+
+static mp_obj_t camera_get_framebuffer_count(mp_camera_obj_t *self) {
+    return mp_obj_new_int(mp_camera_hal_get_framebuffer_count(self));
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(camera_get_framebuffer_count_obj, camera_get_framebuffer_count);
+
+static mp_obj_t camera_get_pixel_width(mp_camera_obj_t *self) {
+    return mp_obj_new_int(mp_camera_hal_get_width(self));
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(camera_get_pixel_width_obj, camera_get_pixel_width);
+
+static mp_obj_t camera_get_pixel_height(mp_camera_obj_t *self) {
+    return mp_obj_new_int(mp_camera_hal_get_height(self));
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(camera_get_pixel_height_obj, camera_get_pixel_height);
+
+// Camera sensor propertiy functions
 #define CREATE_GETTER(property, get_function) \
     static mp_obj_t camera_get_##property(const mp_obj_t self_in) { \
         mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in); \
@@ -330,6 +363,12 @@ static const mp_rom_map_elem_t camera_camera_locals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&mp_camera_deinit_obj) },
     { MP_ROM_QSTR(MP_QSTR___enter__), MP_ROM_PTR(&mp_identity_obj) },
     { MP_ROM_QSTR(MP_QSTR___exit__), MP_ROM_PTR(&mp_camera___exit___obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_framesize), MP_ROM_PTR(&camera_get_frame_size_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_pixformat), MP_ROM_PTR(&camera_get_pixel_format_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_grab_mode), MP_ROM_PTR(&camera_get_grab_mode_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_framebuffer_count), MP_ROM_PTR(&camera_get_framebuffer_count_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_pixel_width), MP_ROM_PTR(&camera_get_pixel_width_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_pixel_height), MP_ROM_PTR(&camera_get_pixel_height_obj) },
     ADD_PROPERTY_TO_LOCALS(contrast),
     ADD_PROPERTY_TO_LOCALS(brightness),
     ADD_PROPERTY_TO_LOCALS(saturation),
