@@ -395,10 +395,7 @@ static const mp_rom_map_elem_t camera_camera_locals_table[] = {
     ADD_PROPERTY_TO_LOCALS(raw_gma),
     ADD_PROPERTY_TO_LOCALS(lenc),
 };
-static const mp_rom_map_elem_t camera_module_globals_table[] = {
-    { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_camera) },
-    { MP_ROM_QSTR(MP_QSTR_Camera),    MP_ROM_PTR(&camera_type) },
-};
+static MP_DEFINE_CONST_DICT(camera_camera_locals_dict, camera_camera_locals_table);
 
 //Helper methods
 static void mp_camera_hal_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
@@ -411,8 +408,28 @@ static void mp_camera_hal_print(const mp_print_t *print, mp_obj_t self_in, mp_pr
 }
 
 //API module definition
+static const mp_obj_type_t frame_size_type = {
+    { &mp_type_type },
+    .name = MP_QSTR_FrameSize,
+    .locals_dict = (mp_obj_dict_t*)&frame_size_dict,
+};
+static MP_DEFINE_CONST_DICT(frame_size_dict, mp_camera_hal_get_frame_size_table());
+
+static const mp_obj_type_t pixel_format_type = {
+    { &mp_type_type },
+    .name = MP_QSTR_PixelFormat,
+    .locals_dict = (mp_obj_dict_t*)&pixel_format_dict,
+};
+static MP_DEFINE_CONST_DICT(pixel_format_dict, mp_camera_hal_get_pixel_format_table());
+
+static const mp_rom_map_elem_t camera_module_globals_table[] = {
+    { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_camera) },
+    { MP_ROM_QSTR(MP_QSTR_Camera),    MP_ROM_PTR(&camera_type) },
+    { MP_ROM_QSTR(MP_QSTR_PixelFormat), MP_ROM_PTR(&pixel_format_type) },
+    { MP_ROM_QSTR(MP_QSTR_FrameSize), MP_ROM_PTR(&frame_size_type) },
+};
 static MP_DEFINE_CONST_DICT(camera_module_globals, camera_module_globals_table);
-static MP_DEFINE_CONST_DICT(camera_camera_locals_dict, camera_camera_locals_table);
+
 MP_DEFINE_CONST_OBJ_TYPE(
     camera_type,
     MP_QSTR_Camera,
@@ -425,4 +442,4 @@ const mp_obj_module_t camera_module = {
     .base = { &mp_type_module },
     .globals = (mp_obj_dict_t *)&camera_module_globals,
 };
-MP_REGISTER_MODULE(MP_QSTR_camera, camera_module);
+MP_REGISTER_MODULE(MP_QSTR_camera, camera_module, MP_CAMERA_MODULE_ENABLED);
