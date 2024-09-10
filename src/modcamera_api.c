@@ -357,7 +357,7 @@ MP_DEFINE_CONST_OBJ_TYPE(
     camera_type,
     MP_QSTR_Camera,
     MP_TYPE_FLAG_NONE,
-    make_new, mp_camera_make_new,
+    make_new, mp_camera_make_new_stub,
     print, mp_camera_hal_print,
     locals_dict, &camera_camera_locals_dict
 );

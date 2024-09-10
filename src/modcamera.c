@@ -154,18 +154,20 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
             mp_raise_NotImplementedError(MP_ERROR_TEXT("Sensor does not support JPEG"));
         }
 
-        if (self->camera_config.frame_size > sensor_info->max_size) {
+        if (frame_size > sensor_info->max_size) {
             mp_warning(NULL, "Frame size will be scaled down to maximal frame size supported by the camera sensor");
             self->camera_config.frame_size = sensor_info->max_size;
+        } else {
+            self->camera_config.frame_size = frame_size;
         }
 
-        if ( pixel_format > PIXFORMAT_RGB555) { //Maximal enum value
+        if ( pixel_format > PIXFORMAT_RGB555) { //Maximal enum value, but validation should be better sinde wrong pixelformat leads to reboot.
             mp_raise_ValueError(MP_ERROR_TEXT("Invalid pixel_format"));
         } else {
             self->camera_config.pixel_format = pixel_format;
         }
         
-        if (grab_mode != CAMERA_GRAB_WHEN_EMPTY || grab_mode != CAMERA_GRAB_LATEST) {
+        if (grab_mode != CAMERA_GRAB_WHEN_EMPTY && grab_mode != CAMERA_GRAB_LATEST) {
             mp_raise_ValueError(MP_ERROR_TEXT("Invalid grab_mode"));
         } else {
             self->camera_config.grab_mode = grab_mode;
