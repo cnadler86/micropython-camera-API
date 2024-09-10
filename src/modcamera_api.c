@@ -64,27 +64,30 @@ static mp_obj_t camera_make_new(const mp_obj_type_t *type, size_t n_args, size_t
     enum { ARG_data_pins, ARG_pixel_clock_pin, ARG_vsync_pin, ARG_href_pin, ARG_sda_pin, ARG_scl_pin, ARG_xclock_pin, ARG_xclock_frequency, ARG_powerdown_pin, ARG_reset_pin, ARG_pixel_format, ARG_frame_size, ARG_jpeg_quality, ARG_framebuffer_count, ARG_grab_mode, NUM_ARGS };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_data_pins, MP_ARG_OBJ | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
-        { MP_QSTR_pixel_clock_pin, MP_ARG_OBJ | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
-        { MP_QSTR_vsync_pin, MP_ARG_OBJ | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
-        { MP_QSTR_href_pin, MP_ARG_OBJ | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
-        { MP_QSTR_sda_pin, MP_ARG_OBJ | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
-        { MP_QSTR_scl_pin, MP_ARG_OBJ | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
-        { MP_QSTR_xclock_pin, MP_ARG_OBJ | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_NONE } },
+        { MP_QSTR_pixel_clock_pin, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
+        { MP_QSTR_vsync_pin, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
+        { MP_QSTR_href_pin, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
+        { MP_QSTR_sda_pin, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
+        { MP_QSTR_scl_pin, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
+        { MP_QSTR_xclock_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_NONE } },
         { MP_QSTR_xclock_frequency, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = 20000000L } },
-        { MP_QSTR_powerdown_pin, MP_ARG_OBJ | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_NONE } },
-        { MP_QSTR_reset_pin, MP_ARG_OBJ | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_NONE } },
+        { MP_QSTR_powerdown_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_NONE } },
+        { MP_QSTR_reset_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_NONE } },
         { MP_QSTR_pixel_format, MP_ARG_OBJ | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_PTR((void *)&pixel_format_RGB565_obj) } },
         { MP_QSTR_frame_size, MP_ARG_OBJ | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_PTR((void *)&frame_size_QQVGA_obj) } },
         { MP_QSTR_jpeg_quality, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = 15 } },
         { MP_QSTR_framebuffer_count, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = 1 } },
-        { MP_QSTR_grab_mode, MP_ARG_OBJ | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_PTR((void *)&grab_mode_WHEN_EMPTY_obj) } },
+        { MP_QSTR_grab_mode, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_PTR((void *)&grab_mode_WHEN_EMPTY_obj) } },
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     MP_STATIC_ASSERT(MP_ARRAY_SIZE(allowed_args) == NUM_ARGS);
     mp_arg_parse_all_kw_array(n_args, n_kw, all_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
     
     //TODO: declare variables and validate inputs
-
+    mp_obj_t data_pins_obj = args[ARG_data_pins].u_obj;
+    if (!mp_obj_is_type(data_pins_obj, &mp_type_list) && !mp_obj_is_type(data_pins_obj, &mp_type_bytearray)) {
+        mp_raise_TypeError(MP_ERROR_TEXT("data_pins must be a list or bytearray"));
+    }
 
     mp_camera_obj_t *self = mp_obj_malloc_with_finaliser(mp_camera_obj_t, &camera_type);
     self->base.type = &camera_type;
@@ -150,7 +153,6 @@ static mp_obj_t camera_reconfigure(mp_uint_t n_args, const mp_obj_t *pos_args, m
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
-    //TODO: validate and typecast values from api to hal types
     mp_camera_framesize_t frame_size =
         args[ARG_frame_size].u_obj != MP_ROM_NONE
         ?  mp_obj_get_int(args[ARG_frame_size].u_obj)

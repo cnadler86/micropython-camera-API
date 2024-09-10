@@ -158,10 +158,26 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
             mp_warning(NULL, "Frame size will be scaled down to maximal frame size supported by the camera sensor");
             self->camera_config.frame_size = sensor_info->max_size;
         }
-        self->camera_config.pixel_format = pixel_format;
-        self->camera_config.grab_mode = grab_mode;
-        self->camera_config.fb_count = framebuffer_count;
 
+        if ( pixel_format > PIXFORMAT_RGB555) { //Maximal enum value
+            mp_raise_ValueError(MP_ERROR_TEXT("Invalid pixel_format"));
+        } esle {
+            self->camera_config.pixel_format = pixel_format;
+        }
+        
+        if (grab_mode != CAMERA_GRAB_WHEN_EMPTY || grabmode != CAMERA_GRAB_LATEST) {
+            mp_raise_ValueError(MP_ERROR_TEXT("Invalid grab_mode"));
+        } else {
+            self->camera_config.grab_mode = grab_mode;
+        }
+        
+        if (framebuffer_count > 2) {
+            self->camera_config.fb_count = 2;
+            mp_warning(NULL, "Frame buffer size limited to 2");
+        } else {
+            self->camera_config.fb_count = framebuffer_count;
+        }
+        
         raise_micropython_error_from_esp_err(esp_camera_deinit());
 
         esp_err_t err = esp_camera_init(&self->camera_config);
@@ -198,6 +214,40 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms) {
         // return bitmap;
     }
 }
+
+mp_rom_map_elem_t mp_camera_hal_get_global_constant_table(void) {
+    const mp_rom_map_elem_t camera_module_globals_table[] = {
+        { MP_ROM_QSTR(MP_QSTR_JPEG),            MP_ROM_INT(PIXFORMAT_JPEG) },
+        { MP_ROM_QSTR(MP_QSTR_YUV422),          MP_ROM_INT(PIXFORMAT_YUV422) },
+        { MP_ROM_QSTR(MP_QSTR_GRAYSCALE),       MP_ROM_INT(PIXFORMAT_GRAYSCALE) },
+        { MP_ROM_QSTR(MP_QSTR_RGB565),          MP_ROM_INT(PIXFORMAT_RGB565) },
+        
+        { MP_ROM_QSTR(MP_QSTR_FRAME_96X96),     MP_ROM_INT(FRAMESIZE_96X96) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_QQVGA),     MP_ROM_INT(FRAMESIZE_QQVGA) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_QCIF),      MP_ROM_INT(FRAMESIZE_QCIF) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_HQVGA),     MP_ROM_INT(FRAMESIZE_HQVGA) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_240X240),   MP_ROM_INT(FRAMESIZE_240X240) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_QVGA),      MP_ROM_INT(FRAMESIZE_QVGA) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_CIF),       MP_ROM_INT(FRAMESIZE_CIF) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_HVGA),      MP_ROM_INT(FRAMESIZE_HVGA) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_VGA),       MP_ROM_INT(FRAMESIZE_VGA) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_SVGA),      MP_ROM_INT(FRAMESIZE_SVGA) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_XGA),       MP_ROM_INT(FRAMESIZE_XGA) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_HD),        MP_ROM_INT(FRAMESIZE_HD) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_SXGA),      MP_ROM_INT(FRAMESIZE_SXGA) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_UXGA),      MP_ROM_INT(FRAMESIZE_UXGA) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_FHD),       MP_ROM_INT(FRAMESIZE_FHD) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_P_HD),      MP_ROM_INT(FRAMESIZE_P_HD) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_P_3MP),     MP_ROM_INT(FRAMESIZE_P_3MP) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_QXGA),      MP_ROM_INT(FRAMESIZE_QXGA) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_QHD),       MP_ROM_INT(FRAMESIZE_QHD) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_WQXGA),     MP_ROM_INT(FRAMESIZE_WQXGA) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_P_FHD),     MP_ROM_INT(FRAMESIZE_P_FHD) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_QSXGA),     MP_ROM_INT(FRAMESIZE_QSXGA) },
+        { MP_ROM_QSTR(MP_QSTR_FRAME_QSXGA),     MP_ROM_INT(FRAMESIZE_QSXGA) },
+    }
+}
+    
 
 //OPEN: Makros with convertion function, since the API will use standarized values.
 // Helper functions to get and set camera and sensor information
