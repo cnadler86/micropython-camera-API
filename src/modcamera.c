@@ -139,6 +139,10 @@ void mp_camera_hal_init(mp_camera_obj_t *self) {
 
 void mp_camera_hal_deinit(mp_camera_obj_t *self) {
     if (self->initialized) {
+        if (self->capture_buffer) {
+            esp_camera_fb_return(self->capture_buffer);
+            self->capture_buffer = NULL;
+        }
         esp_err_t err = esp_camera_deinit();
         raise_micropython_error_from_esp_err(err);
         self->initialized = false;
@@ -181,6 +185,9 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
         }
         
         raise_micropython_error_from_esp_err(esp_camera_deinit());
+
+        // sensor->set_pixformat(sensor, self->camera_config.pixel_format);    //seems to be needed because of some bug?
+        // sensor->set_framesize(sensor, self->camera_config.frame_size);      //seems to be needed because of some bug?
 
         esp_err_t err = esp_camera_init(&self->camera_config);
         if (err != ESP_OK) {
