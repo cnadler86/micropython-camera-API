@@ -67,7 +67,8 @@ void raise_micropython_error_from_esp_err(esp_err_t err) {
             break;
 
         default:
-            mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("ESP_ERR: Unknown error 0x%04x"), err);
+            // mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("ESP_ERR: Unknown error 0x%04x"), err);
+            mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("ESP_ERR: Unknown error"));
             break;
     }
 }
@@ -216,60 +217,61 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms) {
     }
     ESP_LOGI(TAG, "Capturing image");
     self->capture_buffer = esp_camera_fb_get();
-
-    if (self->camera_config.pixel_format == PIXFORMAT_JPEG) {
-        ESP_LOGI(TAG, "Captured image in JPEG format");
-        return mp_obj_new_memoryview('b', self->capture_buffer->len, self->capture_buffer->buf);
-        //ChatGPT sagt: return mp_obj_new_memoryview(MP_OBJ_FROM_PTR(self->capture_buffer->buf));
+    if (self->capture_buffer) {
+        if (self->camera_config.pixel_format == PIXFORMAT_JPEG) {
+            ESP_LOGI(TAG, "Captured image in JPEG format");
+            return mp_obj_new_memoryview('b', self->capture_buffer->len, self->capture_buffer->buf);
+            //ChatGPT sagt: return mp_obj_new_memoryview(MP_OBJ_FROM_PTR(self->capture_buffer->buf));
+        } else {
+            ESP_LOGI(TAG, "Captured image in raw format");
+            return mp_obj_new_memoryview('b', self->capture_buffer->len, self->capture_buffer->buf);
+            // Stub at the moment in order to return raw data, but it sould be implemented to return a Bitmap, see following circuitpython example:
+            //
+            // int width = common_hal_espcamera_camera_get_width(self);
+            // int height = common_hal_espcamera_camera_get_height(self);
+            // displayio_bitmap_t *bitmap = m_new_obj(displayio_bitmap_t);
+            // bitmap->base.type = &displayio_bitmap_type;
+            // common_hal_displayio_bitmap_construct_from_buffer(bitmap, width, height, (format == PIXFORMAT_RGB565) ? 16 : 8, (uint32_t *)(void *)result->buf, true);
+            // return bitmap;
+        }
     } else {
-        ESP_LOGI(TAG, "Captured image in raw format");
-        return mp_obj_new_memoryview('b', self->capture_buffer->len, self->capture_buffer->buf);
-        // Stub at the moment in order to return raw data, but it sould be implemented to return a Bitmap, see following circuitpython example:
-        //
-        // int width = common_hal_espcamera_camera_get_width(self);
-        // int height = common_hal_espcamera_camera_get_height(self);
-        // displayio_bitmap_t *bitmap = m_new_obj(displayio_bitmap_t);
-        // bitmap->base.type = &displayio_bitmap_type;
-        // common_hal_displayio_bitmap_construct_from_buffer(bitmap, width, height, (format == PIXFORMAT_RGB565) ? 16 : 8, (uint32_t *)(void *)result->buf, true);
-        // return bitmap;
+        esp_camera_fb_return(self->capture_buffer);
+        self->capture_buffer = NULL;
+        return mp_const_none;
     }
 }
 
-mp_rom_map_elem_t mp_camera_hal_get_pixel_format_table(void) {
-    return mp_rom_map_elem_t pixel_format_table[] = {
-        { MP_ROM_QSTR(MP_QSTR_JPEG),            MP_ROM_INT(PIXFORMAT_JPEG) },
-        { MP_ROM_QSTR(MP_QSTR_YUV422),          MP_ROM_INT(PIXFORMAT_YUV422) },
-        { MP_ROM_QSTR(MP_QSTR_GRAYSCALE),       MP_ROM_INT(PIXFORMAT_GRAYSCALE) },
-        { MP_ROM_QSTR(MP_QSTR_RGB565),          MP_ROM_INT(PIXFORMAT_RGB565) },
-    }
-}
+const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_JPEG),            MP_ROM_INT(PIXFORMAT_JPEG) },
+    { MP_ROM_QSTR(MP_QSTR_YUV422),          MP_ROM_INT(PIXFORMAT_YUV422) },
+    { MP_ROM_QSTR(MP_QSTR_GRAYSCALE),       MP_ROM_INT(PIXFORMAT_GRAYSCALE) },
+    { MP_ROM_QSTR(MP_QSTR_RGB565),          MP_ROM_INT(PIXFORMAT_RGB565) },
+};
 
-mp_rom_map_elem_t mp_camera_hal_get_frame_size_table(void) {
-    return mp_rom_map_elem_t frame_size_table[] = {
-        { MP_ROM_QSTR(MP_QSTR_R96X96),    MP_ROM_INT(FRAMESIZE_96X96) },
-        { MP_ROM_QSTR(MP_QSTR_QQVGA),     MP_ROM_INT(FRAMESIZE_QQVGA) },
-        { MP_ROM_QSTR(MP_QSTR_QCIF),      MP_ROM_INT(FRAMESIZE_QCIF) },
-        { MP_ROM_QSTR(MP_QSTR_HQVGA),     MP_ROM_INT(FRAMESIZE_HQVGA) },
-        { MP_ROM_QSTR(MP_QSTR_R240X240),  MP_ROM_INT(FRAMESIZE_240X240) },
-        { MP_ROM_QSTR(MP_QSTR_QVGA),      MP_ROM_INT(FRAMESIZE_QVGA) },
-        { MP_ROM_QSTR(MP_QSTR_CIF),       MP_ROM_INT(FRAMESIZE_CIF) },
-        { MP_ROM_QSTR(MP_QSTR_HVGA),      MP_ROM_INT(FRAMESIZE_HVGA) },
-        { MP_ROM_QSTR(MP_QSTR_VGA),       MP_ROM_INT(FRAMESIZE_VGA) },
-        { MP_ROM_QSTR(MP_QSTR_SVGA),      MP_ROM_INT(FRAMESIZE_SVGA) },
-        { MP_ROM_QSTR(MP_QSTR_XGA),       MP_ROM_INT(FRAMESIZE_XGA) },
-        { MP_ROM_QSTR(MP_QSTR_HD),        MP_ROM_INT(FRAMESIZE_HD) },
-        { MP_ROM_QSTR(MP_QSTR_SXGA),      MP_ROM_INT(FRAMESIZE_SXGA) },
-        { MP_ROM_QSTR(MP_QSTR_UXGA),      MP_ROM_INT(FRAMESIZE_UXGA) },
-        { MP_ROM_QSTR(MP_QSTR_FHD),       MP_ROM_INT(FRAMESIZE_FHD) },
-        { MP_ROM_QSTR(MP_QSTR_P_HD),      MP_ROM_INT(FRAMESIZE_P_HD) },
-        { MP_ROM_QSTR(MP_QSTR_P_3MP),     MP_ROM_INT(FRAMESIZE_P_3MP) },
-        { MP_ROM_QSTR(MP_QSTR_QXGA),      MP_ROM_INT(FRAMESIZE_QXGA) },
-        { MP_ROM_QSTR(MP_QSTR_QHD),       MP_ROM_INT(FRAMESIZE_QHD) },
-        { MP_ROM_QSTR(MP_QSTR_WQXGA),     MP_ROM_INT(FRAMESIZE_WQXGA) },
-        { MP_ROM_QSTR(MP_QSTR_P_FHD),     MP_ROM_INT(FRAMESIZE_P_FHD) },
-        { MP_ROM_QSTR(MP_QSTR_QSXGA),     MP_ROM_INT(FRAMESIZE_QSXGA) },
-    }
-}
+const mp_rom_map_elem_t mp_camera_hal_frame_size_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_R96X96),    MP_ROM_INT(FRAMESIZE_96X96) },
+    { MP_ROM_QSTR(MP_QSTR_QQVGA),     MP_ROM_INT(FRAMESIZE_QQVGA) },
+    { MP_ROM_QSTR(MP_QSTR_QCIF),      MP_ROM_INT(FRAMESIZE_QCIF) },
+    { MP_ROM_QSTR(MP_QSTR_HQVGA),     MP_ROM_INT(FRAMESIZE_HQVGA) },
+    { MP_ROM_QSTR(MP_QSTR_R240X240),  MP_ROM_INT(FRAMESIZE_240X240) },
+    { MP_ROM_QSTR(MP_QSTR_QVGA),      MP_ROM_INT(FRAMESIZE_QVGA) },
+    { MP_ROM_QSTR(MP_QSTR_CIF),       MP_ROM_INT(FRAMESIZE_CIF) },
+    { MP_ROM_QSTR(MP_QSTR_HVGA),      MP_ROM_INT(FRAMESIZE_HVGA) },
+    { MP_ROM_QSTR(MP_QSTR_VGA),       MP_ROM_INT(FRAMESIZE_VGA) },
+    { MP_ROM_QSTR(MP_QSTR_SVGA),      MP_ROM_INT(FRAMESIZE_SVGA) },
+    { MP_ROM_QSTR(MP_QSTR_XGA),       MP_ROM_INT(FRAMESIZE_XGA) },
+    { MP_ROM_QSTR(MP_QSTR_HD),        MP_ROM_INT(FRAMESIZE_HD) },
+    { MP_ROM_QSTR(MP_QSTR_SXGA),      MP_ROM_INT(FRAMESIZE_SXGA) },
+    { MP_ROM_QSTR(MP_QSTR_UXGA),      MP_ROM_INT(FRAMESIZE_UXGA) },
+    { MP_ROM_QSTR(MP_QSTR_FHD),       MP_ROM_INT(FRAMESIZE_FHD) },
+    { MP_ROM_QSTR(MP_QSTR_P_HD),      MP_ROM_INT(FRAMESIZE_P_HD) },
+    { MP_ROM_QSTR(MP_QSTR_P_3MP),     MP_ROM_INT(FRAMESIZE_P_3MP) },
+    { MP_ROM_QSTR(MP_QSTR_QXGA),      MP_ROM_INT(FRAMESIZE_QXGA) },
+    { MP_ROM_QSTR(MP_QSTR_QHD),       MP_ROM_INT(FRAMESIZE_QHD) },
+    { MP_ROM_QSTR(MP_QSTR_WQXGA),     MP_ROM_INT(FRAMESIZE_WQXGA) },
+    { MP_ROM_QSTR(MP_QSTR_P_FHD),     MP_ROM_INT(FRAMESIZE_P_FHD) },
+    { MP_ROM_QSTR(MP_QSTR_QSXGA),     MP_ROM_INT(FRAMESIZE_QSXGA) },
+};
 
 //OPEN: Makros with convertion function, since the API will use standarized values.
 // Helper functions to get and set camera and sensor information

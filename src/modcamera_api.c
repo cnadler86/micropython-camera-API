@@ -105,7 +105,7 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
     mp_arg_parse_all_kw_array(n_args, n_kw, all_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
     
     // Debugging-Ausgaben
-    printf("mp_camera_make_new: Parsing arguments\n");
+    mp_printf(&mp_plat_print, "mp_camera_make_new: Parsing arguments\n");
 
     //TODO: validate inputs
     uint8_t data_pins[8];
@@ -148,29 +148,29 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
     mp_camera_grab_mode_t grab_mode = mp_obj_get_int(args[ARG_grab_mode].u_obj);
     
     // Debugging-Ausgaben
-    printf("mp_camera_make_new: Creating camera object\n");
+    mp_printf(&mp_plat_print, "mp_camera_make_new: Creating camera object\n");
 
     mp_camera_obj_t *self = mp_obj_malloc_with_finaliser(mp_camera_obj_t, &camera_type);
     self->base.type = &camera_type;
 
     // Debugging-Ausgaben
-    printf("mp_camera_make_new: Constructing camera HAL\n");
+    mp_printf(&mp_plat_print, "mp_camera_make_new: Constructing camera HAL\n");
 
     mp_camera_hal_construct(self, data_pins, pixel_clock_pin, vsync_pin, href_pin, sda_pin, scl_pin, xclock_pin, xclock_frequency, 
         powerdown_pin, reset_pin, pixel_format, frame_size, jpeg_quality, framebuffer_count, grab_mode);
 
     // Debugging-Ausgaben
-    printf("mp_camera_make_new: Initializing camera HAL\n");
+    mp_printf(&mp_plat_print, "mp_camera_make_new: Initializing camera HAL\n");
 
     mp_camera_hal_init(self);
 
     // Debugging-Ausgaben
-    printf("mp_camera_make_new: Capturing initial frame\n");
+    mp_printf(&mp_plat_print, "mp_camera_make_new: Capturing initial frame\n");
 
     (void)mp_camera_hal_capture(self, 100); //used in order to reserve a memory block for framebuffer while construction
 
     // Debugging-Ausgaben
-    printf("mp_camera_make_new: Camera object created successfully\n");
+    mp_printf(&mp_plat_print, "mp_camera_make_new: Camera object created successfully\n");
 
     return MP_OBJ_FROM_PTR(self);
 }
@@ -272,7 +272,7 @@ static mp_obj_t mp_camera_obj___exit__(size_t n_args, const mp_obj_t *args) {
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_camera___exit___obj, 4, 4, mp_camera_obj___exit__);
 
 // Camera propertiy functions
-static mo_obj_t camera_get_frame_size(const mp_obj_t self_in) {
+static mp_obj_t camera_get_frame_size(const mp_obj_t self_in) {
     mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in);
     return mp_obj_new_int(mp_camera_hal_get_frame_size(self));
 }
@@ -408,25 +408,26 @@ static void mp_camera_hal_print(const mp_print_t *print, mp_obj_t self_in, mp_pr
 }
 
 //API module definition
-static const mp_obj_type_t frame_size_type = {
-    { &mp_type_type },
-    .name = MP_QSTR_FrameSize,
-    .locals_dict = (mp_obj_dict_t*)&frame_size_dict,
-};
-static MP_DEFINE_CONST_DICT(frame_size_dict, mp_camera_hal_get_frame_size_table());
+//
+#define MP_CREATE_CONST_TYPE(type, typename, ...) \
+    MP_DEFINE_CONST_OBJ_TYPE(typename##_type, \
+    MP_QSTR_##type, \
+    MP_TYPE_FLAG_NONE, \
+    locals_dict, &typename##_locals_dict, \
+    ##__VA_ARGS__ \
+    )
 
-static const mp_obj_type_t pixel_format_type = {
-    { &mp_type_type },
-    .name = MP_QSTR_PixelFormat,
-    .locals_dict = (mp_obj_dict_t*)&pixel_format_dict,
-};
-static MP_DEFINE_CONST_DICT(pixel_format_dict, mp_camera_hal_get_pixel_format_table());
+static MP_DEFINE_CONST_DICT(mp_camera_frame_size_locals_dict,mp_camera_hal_frame_size_table);
+MP_CREATE_CONST_TYPE(FrameSize, mp_camera_frame_size);
+
+static MP_DEFINE_CONST_DICT(mp_camera_pixel_format_locals_dict,mp_camera_hal_pixel_format_table);
+MP_CREATE_CONST_TYPE(PixelFormat, mp_camera_pixel_format);
 
 static const mp_rom_map_elem_t camera_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_camera) },
     { MP_ROM_QSTR(MP_QSTR_Camera),    MP_ROM_PTR(&camera_type) },
-    { MP_ROM_QSTR(MP_QSTR_PixelFormat), MP_ROM_PTR(&pixel_format_type) },
-    { MP_ROM_QSTR(MP_QSTR_FrameSize), MP_ROM_PTR(&frame_size_type) },
+    { MP_ROM_QSTR(MP_QSTR_PixelFormat), MP_ROM_PTR(&mp_camera_pixel_format_type) },
+    { MP_ROM_QSTR(MP_QSTR_FrameSize), MP_ROM_PTR(&mp_camera_frame_size_type) },
 };
 static MP_DEFINE_CONST_DICT(camera_module_globals, camera_module_globals_table);
 
@@ -434,12 +435,13 @@ MP_DEFINE_CONST_OBJ_TYPE(
     camera_type,
     MP_QSTR_Camera,
     MP_TYPE_FLAG_NONE,
-    make_new, mp_camera_make_new,
+    make_new, mp_camera_make_new_stub,
     print, mp_camera_hal_print,
     locals_dict, &camera_camera_locals_dict
 );
+
 const mp_obj_module_t camera_module = {
     .base = { &mp_type_module },
     .globals = (mp_obj_dict_t *)&camera_module_globals,
 };
-MP_REGISTER_MODULE(MP_QSTR_camera, camera_module, MP_CAMERA_MODULE_ENABLED);
+MP_REGISTER_MODULE(MP_QSTR_camera, camera_module);
