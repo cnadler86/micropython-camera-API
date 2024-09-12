@@ -239,6 +239,24 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms) {
     }
 }
 
+//Alternative capture method
+mp_obj_t mp_camera_hal_capture2(mp_camera_obj_t *self, int timeout_ms){
+    if (!self->initialized) {
+        mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture image: Camera not initialized"));
+    }
+    if (self->capture_buffer) {
+        esp_camera_fb_return(self->capture_buffer);
+        self->capture_buffer = NULL;
+    }
+    camera_fb_t * fb = esp_camera_fb_get();
+    if (!fb) {
+        return mp_const_false;
+    }
+    mp_obj_t image = mp_obj_new_bytes(fb->buf, fb->len);
+    esp_camera_fb_return(fb);
+    return image;
+}
+
 const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[] = {
     { MP_ROM_QSTR(MP_QSTR_JPEG),            MP_ROM_INT(PIXFORMAT_JPEG) },
     { MP_ROM_QSTR(MP_QSTR_YUV422),          MP_ROM_INT(PIXFORMAT_YUV422) },

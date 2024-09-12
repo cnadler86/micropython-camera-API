@@ -149,13 +149,18 @@ extern void mp_camera_hal_deinit(mp_camera_obj_t *self);
 extern void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t frame_size, mp_camera_pixformat_t pixel_format, mp_camera_grab_mode_t grab_mode, mp_int_t framebuffer_count);
 
 /**
- * @brief Captures an image as mp_obj_t using the camera.
+ * @brief Captures an image as mp_obj_t.
  * 
  * @param self Pointer to the camera object.
  * @param timeout_ms Timeout in milliseconds.
  * @return Captured image as micropython object.
  */
 extern mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms);
+
+/**
+ * @brief Alternative method to capture an image as mp_obj_t.
+ */
+extern mp_obj_t mp_camera_hal_capture2(mp_camera_obj_t *self, int timeout_ms);
 
 /**
  * @brief Table mapping pixel formats to their corresponding values.
