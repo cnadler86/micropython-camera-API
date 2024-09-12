@@ -380,11 +380,11 @@ mp_camera_framesize_t mp_camera_hal_get_frame_size(mp_camera_obj_t *self) {
     return self->camera_config.frame_size;
 }
 
-const camera_grab_mode_t mp_camera_hal_get_grab_mode(mp_camera_obj_t *self) {
+camera_grab_mode_t mp_camera_hal_get_grab_mode(mp_camera_obj_t *self) {
     return self->camera_config.grab_mode;
 }
 
-const int mp_camera_hal_get_framebuffer_count(mp_camera_obj_t *self) {
+int mp_camera_hal_get_framebuffer_count(mp_camera_obj_t *self) {
     return self->camera_config.fb_count;
 }
 
@@ -394,31 +394,31 @@ const char *mp_camera_hal_get_sensor_name(mp_camera_obj_t *self) {
     return sensor_info->name;
 }
 
-const bool mp_camera_hal_get_supports_jpeg(mp_camera_obj_t *self) {
+bool mp_camera_hal_get_supports_jpeg(mp_camera_obj_t *self) {
     sensor_t *sensor = esp_camera_sensor_get();
     camera_sensor_info_t *sensor_info = esp_camera_sensor_get_info(&sensor->id);
     return sensor_info->support_jpeg;
 }
 
-const mp_camera_framesize_t mp_camera_hal_get_max_frame_size(mp_camera_obj_t *self) {
+mp_camera_framesize_t mp_camera_hal_get_max_frame_size(mp_camera_obj_t *self) {
     sensor_t *sensor = esp_camera_sensor_get();
     camera_sensor_info_t *sensor_info = esp_camera_sensor_get_info(&sensor->id);
     return sensor_info->max_size;
 }
 
-const int mp_camera_hal_get_address(mp_camera_obj_t *self) {
+int mp_camera_hal_get_address(mp_camera_obj_t *self) {
     sensor_t *sensor = esp_camera_sensor_get();
     camera_sensor_info_t *sensor_info = esp_camera_sensor_get_info(&sensor->id);
     return sensor_info->sccb_addr;
 }
 
-const int mp_camera_hal_get_width(mp_camera_obj_t *self) {
+int mp_camera_hal_get_width(mp_camera_obj_t *self) {
     sensor_t *sensor = esp_camera_sensor_get();
     framesize_t framesize = sensor->status.framesize;
     return resolution[framesize].width;
 }
 
-const int mp_camera_hal_get_height(mp_camera_obj_t *self) {
+int mp_camera_hal_get_height(mp_camera_obj_t *self) {
     sensor_t *sensor = esp_camera_sensor_get();
     framesize_t framesize = sensor->status.framesize;
     return resolution[framesize].height;
