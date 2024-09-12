@@ -227,7 +227,7 @@ extern int mp_camera_hal_get_address(mp_camera_obj_t *self);
 extern const char *mp_camera_hal_get_sensor_name(mp_camera_obj_t *self);
 extern bool mp_camera_hal_get_supports_jpeg(mp_camera_obj_t *self);
 extern mp_camera_framesize_t mp_camera_hal_get_max_frame_size(mp_camera_obj_t *self);
-extern int mp_camera_hal_get_width(mp_camera_obj_t *self);
-extern int mp_camera_hal_get_height(mp_camera_obj_t *self);
+extern int mp_camera_hal_get_pixel_width(mp_camera_obj_t *self);
+extern int mp_camera_hal_get_pixel_height(mp_camera_obj_t *self);
 
 #endif // MICROPY_INCLUDED_MODCAMERA_H

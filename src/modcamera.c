@@ -412,13 +412,13 @@ int mp_camera_hal_get_address(mp_camera_obj_t *self) {
     return sensor_info->sccb_addr;
 }
 
-int mp_camera_hal_get_width(mp_camera_obj_t *self) {
+int mp_camera_hal_get_pixel_width(mp_camera_obj_t *self) {
     sensor_t *sensor = esp_camera_sensor_get();
     framesize_t framesize = sensor->status.framesize;
     return resolution[framesize].width;
 }
 
-int mp_camera_hal_get_height(mp_camera_obj_t *self) {
+int mp_camera_hal_get_pixel_height(mp_camera_obj_t *self) {
     sensor_t *sensor = esp_camera_sensor_get();
     framesize_t framesize = sensor->status.framesize;
     return resolution[framesize].height;
