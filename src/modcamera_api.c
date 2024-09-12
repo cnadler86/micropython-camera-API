@@ -1,6 +1,4 @@
 /*
- * This file is part of the MicroPython project, http://micropython.org/
- *
  * The MIT License (MIT)
  *
  * Copyright (c) 2024 Christopher Nadler
@@ -23,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -85,7 +84,7 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
     enum { ARG_data_pins, ARG_pixel_clock_pin, ARG_vsync_pin, ARG_href_pin, ARG_sda_pin, ARG_scl_pin, ARG_xclock_pin, ARG_xclock_frequency, ARG_powerdown_pin, ARG_reset_pin, ARG_pixel_format, ARG_frame_size, ARG_jpeg_quality, ARG_framebuffer_count, ARG_grab_mode, NUM_ARGS };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_data_pins, MP_ARG_OBJ | MP_ARG_KW_ONLY , { .u_obj = MP_ROM_NONE } },
-        { MP_QSTR_pixel_clock_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_PCLK } },
+        { MP_QSTR_pclock_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_PCLK } },
         { MP_QSTR_vsync_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_VSYNC } },
         { MP_QSTR_href_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_HREF } },
         { MP_QSTR_sda_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_SIOD } },
@@ -324,7 +323,8 @@ static MP_DEFINE_CONST_FUN_OBJ_1(camera_get_pixel_height_obj, camera_get_pixel_h
     CREATE_GETTER(property, get_function) \
     CREATE_SETTER(property, set_conversion)
 
-#define ADD_PROPERTY_TO_LOCALS(property) \
+// Create table property entry
+#define ADD_PROPERTY_TO_TABLE(property) \
     { MP_ROM_QSTR(MP_QSTR_get_##property), MP_ROM_PTR(&camera_get_##property##_obj) }, \
     { MP_ROM_QSTR(MP_QSTR_set_##property), MP_ROM_PTR(&camera_set_##property##_obj) }
 
@@ -333,7 +333,7 @@ CREATE_GETSET_FUNCTIONS(brightness, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
 CREATE_GETSET_FUNCTIONS(saturation, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
 CREATE_GETSET_FUNCTIONS(sharpness, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
 CREATE_GETSET_FUNCTIONS(denoise, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
-// CREATE_GETSET_FUNCTIONS(gainceiling, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int); //TODO
+CREATE_GETSET_FUNCTIONS(gainceiling, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
 CREATE_GETSET_FUNCTIONS(quality, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
 CREATE_GETSET_FUNCTIONS(colorbar, mp_obj_new_bool, mp_obj_is_true);
 CREATE_GETSET_FUNCTIONS(whitebal, mp_obj_new_bool, mp_obj_is_true);
@@ -369,31 +369,31 @@ static const mp_rom_map_elem_t camera_camera_locals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_get_framebuffer_count), MP_ROM_PTR(&camera_get_framebuffer_count_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_pixel_width), MP_ROM_PTR(&camera_get_pixel_width_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_pixel_height), MP_ROM_PTR(&camera_get_pixel_height_obj) },
-    ADD_PROPERTY_TO_LOCALS(contrast),
-    ADD_PROPERTY_TO_LOCALS(brightness),
-    ADD_PROPERTY_TO_LOCALS(saturation),
-    ADD_PROPERTY_TO_LOCALS(sharpness),
-    ADD_PROPERTY_TO_LOCALS(denoise),
-    // ADD_PROPERTY_TO_LOCALS(gainceiling),
-    ADD_PROPERTY_TO_LOCALS(quality),
-    ADD_PROPERTY_TO_LOCALS(colorbar),
-    ADD_PROPERTY_TO_LOCALS(whitebal),
-    ADD_PROPERTY_TO_LOCALS(gain_ctrl),
-    ADD_PROPERTY_TO_LOCALS(exposure_ctrl),
-    ADD_PROPERTY_TO_LOCALS(hmirror),
-    ADD_PROPERTY_TO_LOCALS(vflip),
-    ADD_PROPERTY_TO_LOCALS(aec2),
-    ADD_PROPERTY_TO_LOCALS(awb_gain),
-    ADD_PROPERTY_TO_LOCALS(agc_gain),
-    ADD_PROPERTY_TO_LOCALS(aec_value),
-    ADD_PROPERTY_TO_LOCALS(special_effect),
-    ADD_PROPERTY_TO_LOCALS(wb_mode),
-    ADD_PROPERTY_TO_LOCALS(ae_level),
-    ADD_PROPERTY_TO_LOCALS(dcw),
-    ADD_PROPERTY_TO_LOCALS(bpc),
-    ADD_PROPERTY_TO_LOCALS(wpc),
-    ADD_PROPERTY_TO_LOCALS(raw_gma),
-    ADD_PROPERTY_TO_LOCALS(lenc),
+    ADD_PROPERTY_TO_TABLE(contrast),
+    ADD_PROPERTY_TO_TABLE(brightness),
+    ADD_PROPERTY_TO_TABLE(saturation),
+    ADD_PROPERTY_TO_TABLE(sharpness),
+    ADD_PROPERTY_TO_TABLE(denoise),
+    ADD_PROPERTY_TO_TABLE(gainceiling),
+    ADD_PROPERTY_TO_TABLE(quality),
+    ADD_PROPERTY_TO_TABLE(colorbar),
+    ADD_PROPERTY_TO_TABLE(whitebal),
+    ADD_PROPERTY_TO_TABLE(gain_ctrl),
+    ADD_PROPERTY_TO_TABLE(exposure_ctrl),
+    ADD_PROPERTY_TO_TABLE(hmirror),
+    ADD_PROPERTY_TO_TABLE(vflip),
+    ADD_PROPERTY_TO_TABLE(aec2),
+    ADD_PROPERTY_TO_TABLE(awb_gain),
+    ADD_PROPERTY_TO_TABLE(agc_gain),
+    ADD_PROPERTY_TO_TABLE(aec_value),
+    ADD_PROPERTY_TO_TABLE(special_effect),
+    ADD_PROPERTY_TO_TABLE(wb_mode),
+    ADD_PROPERTY_TO_TABLE(ae_level),
+    ADD_PROPERTY_TO_TABLE(dcw),
+    ADD_PROPERTY_TO_TABLE(bpc),
+    ADD_PROPERTY_TO_TABLE(wpc),
+    ADD_PROPERTY_TO_TABLE(raw_gma),
+    ADD_PROPERTY_TO_TABLE(lenc),
 };
 static MP_DEFINE_CONST_DICT(camera_camera_locals_dict, camera_camera_locals_table);
 
@@ -408,7 +408,7 @@ static void mp_camera_hal_print(const mp_print_t *print, mp_obj_t self_in, mp_pr
 }
 
 //API module definition
-//
+
 #define MP_CREATE_CONST_TYPE(type, typename, ...) \
     MP_DEFINE_CONST_OBJ_TYPE(typename##_type, \
     MP_QSTR_##type, \
@@ -423,11 +423,19 @@ MP_CREATE_CONST_TYPE(FrameSize, mp_camera_frame_size);
 static MP_DEFINE_CONST_DICT(mp_camera_pixel_format_locals_dict,mp_camera_hal_pixel_format_table);
 MP_CREATE_CONST_TYPE(PixelFormat, mp_camera_pixel_format);
 
+static MP_DEFINE_CONST_DICT(mp_camera_gainceiling_locals_dict,mp_camera_hal_gainceiling_table);
+MP_CREATE_CONST_TYPE(GainCeiling, mp_camera_gainceiling);
+
+static MP_DEFINE_CONST_DICT(mp_camera_grab_mode_locals_dict,mp_camera_hal_grab_mode_table);
+MP_CREATE_CONST_TYPE(GrabMode, mp_camera_grab_mode);
+
 static const mp_rom_map_elem_t camera_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_camera) },
     { MP_ROM_QSTR(MP_QSTR_Camera),    MP_ROM_PTR(&camera_type) },
     { MP_ROM_QSTR(MP_QSTR_PixelFormat), MP_ROM_PTR(&mp_camera_pixel_format_type) },
     { MP_ROM_QSTR(MP_QSTR_FrameSize), MP_ROM_PTR(&mp_camera_frame_size_type) },
+    { MP_ROM_QSTR(MP_QSTR_GainCeiling), MP_ROM_PTR(&mp_camera_gainceiling_type) },
+    { MP_ROM_QSTR(MP_QSTR_GrabMode), MP_ROM_PTR(&mp_camera_grab_mode_type) },
 };
 static MP_DEFINE_CONST_DICT(camera_module_globals, camera_module_globals_table);
 

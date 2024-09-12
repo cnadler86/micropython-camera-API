@@ -1,6 +1,4 @@
 /*
- * This file is part of the MicroPython project, http://micropython.org/
- *
  * The MIT License (MIT)
  *
  * Code based on circuitpython camera API by Jeff Epler
@@ -26,6 +24,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+ 
 #ifndef MICROPY_INCLUDED_MODCAMERA_H
 #define MICROPY_INCLUDED_MODCAMERA_H
 
@@ -41,16 +40,15 @@
 #include "esp_camera.h" //maybe driver/esp_camera.h, but don't know yet where will the driver be located in esp-idf
 #include "sensor.h"
 
-#define X(enum_value) MP_REGISTER_ENUM_CONST(enum_value),
-#define ADD_ENUM_CONSTS_TO_LIST(module_name, enum_list) \
-    enum_list \
-    const mp_rom_map_elem_t module_name##_globals_table[] = { \
-        enum_list \
-    };
-//Hier kommt dann ein kompiler switch, um den entsprechenden header zu importieren
-//ESP32-Camera specifics-> will go in separate header file
+// ESP32-Camera specifics-> could go in separate header file, if this project starts implementing more ports.
+// In this case Compiler-Switch shall be used.
 #ifndef CONFIG_OV2640_SUPPORT
 #define CONFIG_OV2640_SUPPORT 1
+#endif
+
+//NOt implemented yet
+#ifndef CONFIG_OV5640_SUPPORT
+#define CONFIG_OV5640_SUPPORT 0
 #endif
 
 typedef camera_config_t mp_camera_config_t;
@@ -83,8 +81,30 @@ extern const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[4];
 #define MICROPY_CAMERA_DEFAULT_GRAB_MODE CAMERA_GRAB_WHEN_EMPTY
 #endif
 
+//END ESP32-Camera specifics
+
 // TODO:    Define how to integrate external time source in constructor (e.g. in ESP is LED-Timer).
-//          Now the plattform defines a default pwm-time source and also frame buffer location in its constructor
+/**
+ * @brief Constructs the camera hardware abstraction layer.
+ * @details The Port-plattform shall define a default pwm-time source and also frame buffer location (no input)
+ * 
+ * @param self Pointer to the camera object.
+ * @param data_pins Array of data pins.
+ * @param external_clock_pin External clock pin.
+ * @param pixel_clock_pin Pixel clock pin.
+ * @param vsync_pin VSYNC pin.
+ * @param href_pin HREF pin.
+ * @param powerdown_pin Power down pin.
+ * @param reset_pin Reset pin.
+ * @param sccb_sda_pin SCCB SDA pin.
+ * @param sccb_scl_pin SCCB SCL pin.
+ * @param xclk_freq_hz External clock frequency in Hz.
+ * @param pixel_format Pixel format.
+ * @param frame_size Frame size.
+ * @param jpeg_quality JPEG quality.
+ * @param framebuffer_count Number of framebuffers.
+ * @param grab_mode Grab mode.
+ */
 extern void mp_camera_hal_construct(
     mp_camera_obj_t *self,
     uint8_t data_pins[8],
@@ -103,12 +123,57 @@ extern void mp_camera_hal_construct(
     uint8_t framebuffer_count,
     mp_camera_grab_mode_t grab_mode);
 
+/**
+ * @brief Initializes the camera hardware abstraction layer. Will be called during API constructor
+ * 
+ * @param self Pointer to the camera object.
+ */
 extern void mp_camera_hal_init(mp_camera_obj_t *self); //since we are not passing handles at construction, init() is used to create those handles
+
+/**
+ * @brief Deinitializes the camera hardware abstraction layer.
+ * 
+ * @param self Pointer to the camera object.
+ */
 extern void mp_camera_hal_deinit(mp_camera_obj_t *self);
+
+/**
+ * @brief Reconfigures the camera hardware abstraction layer.
+ * 
+ * @param self Pointer to the camera object.
+ * @param frame_size Frame size.
+ * @param pixel_format Pixel format.
+ * @param grab_mode Grab mode.
+ * @param framebuffer_count Number of framebuffers.
+ */
 extern void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t frame_size, mp_camera_pixformat_t pixel_format, mp_camera_grab_mode_t grab_mode, mp_int_t framebuffer_count);
+
+/**
+ * @brief Captures an image as mp_obj_t using the camera.
+ * 
+ * @param self Pointer to the camera object.
+ * @param timeout_ms Timeout in milliseconds.
+ * @return Captured image as micropython object.
+ */
 extern mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms);
 
-// From here on are helper functions to get and set sensor properties and might not be imlemented yet
+/**
+ * @brief Table mapping pixel formats to their corresponding values.
+ * @details Needs to be defined in the port-specific implementation.
+ */
+extern const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[4];
+
+/**
+ * @brief Table mapping frame sizes to their corresponding values.
+ * @details Needs to be defined in the port-specific implementation.
+ */
+extern const mp_rom_map_elem_t mp_camera_hal_frame_size_table[22];
+
+extern const mp_rom_map_elem_t mp_camera_hal_gainceiling_table[7];
+extern const mp_rom_map_elem_t mp_camera_hal_grab_mode_table[2];
+
+// From here on are helper functions to get and set sensor properties
+// The functions are used to get and set sensor properties in the camera object
 #define DECLARE_SENSOR_GETSET(type, name, field_name, setter_function_name) \
     DECLARE_SENSOR_GET(type, name, field_name, setter_function_name) \
     DECLARE_SENSOR_SET(type, name, setter_function_name)
@@ -153,7 +218,7 @@ DECLARE_SENSOR_STATUS_GETSET(bool, wpc, wpc, set_wpc);
 DECLARE_SENSOR_STATUS_GETSET(bool, raw_gma, raw_gma, set_raw_gma);
 DECLARE_SENSOR_STATUS_GETSET(bool, lenc, lenc, set_lenc);
 
-// From settings
+// From camera settings
 extern camera_grab_mode_t mp_camera_hal_get_grab_mode(mp_camera_obj_t *self);
 extern int mp_camera_hal_get_framebuffer_count(mp_camera_obj_t *self);
 

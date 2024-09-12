@@ -1,6 +1,4 @@
 /*
- * This file is part of the MicroPython project, http://micropython.org/
- *
  * The MIT License (MIT)
  *
  * Code based on circuitpython camera API by Jeff Epler
@@ -271,6 +269,21 @@ const mp_rom_map_elem_t mp_camera_hal_frame_size_table[] = {
     { MP_ROM_QSTR(MP_QSTR_WQXGA),     MP_ROM_INT(FRAMESIZE_WQXGA) },
     { MP_ROM_QSTR(MP_QSTR_P_FHD),     MP_ROM_INT(FRAMESIZE_P_FHD) },
     { MP_ROM_QSTR(MP_QSTR_QSXGA),     MP_ROM_INT(FRAMESIZE_QSXGA) },
+};
+
+const mp_rom_map_elem_t mp_camera_hal_grab_mode_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_WHEN_EMPTY), MP_ROM_INT(CAMERA_GRAB_WHEN_EMPTY) },
+    { MP_ROM_QSTR(MP_QSTR_LATEST),     MP_ROM_INT(CAMERA_GRAB_LATEST) },
+};
+
+const mp_rom_map_elem_t mp_camera_hal_gainceiling_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_2X),      MP_ROM_INT(GAINCEILING_2X) },
+    { MP_ROM_QSTR(MP_QSTR_4X),      MP_ROM_INT(GAINCEILING_4X) },
+    { MP_ROM_QSTR(MP_QSTR_8X),      MP_ROM_INT(GAINCEILING_8X) },
+    { MP_ROM_QSTR(MP_QSTR_16X),     MP_ROM_INT(GAINCEILING_16X) },
+    { MP_ROM_QSTR(MP_QSTR_32X),     MP_ROM_INT(GAINCEILING_32X) },
+    { MP_ROM_QSTR(MP_QSTR_64X),     MP_ROM_INT(GAINCEILING_64X) },
+    { MP_ROM_QSTR(MP_QSTR_128X),    MP_ROM_INT(GAINCEILING_128X) },
 };
 
 //OPEN: Makros with convertion function, since the API will use standarized values.
