@@ -356,7 +356,7 @@ static const mp_rom_map_elem_t camera_camera_locals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___enter__), MP_ROM_PTR(&mp_identity_obj) },
     { MP_ROM_QSTR(MP_QSTR___exit__), MP_ROM_PTR(&mp_camera___exit___obj) },
     { MP_ROM_QSTR(MP_QSTR_get_framesize), MP_ROM_PTR(&camera_get_frame_size_obj) },
-    { MP_ROM_QSTR(MP_QSTR_get_pixformat), MP_ROM_PTR(&camera_get_pixel_format_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_pixel_format), MP_ROM_PTR(&camera_get_pixel_format_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_grab_mode), MP_ROM_PTR(&camera_get_grab_mode_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_framebuffer_count), MP_ROM_PTR(&camera_get_framebuffer_count_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_pixel_width), MP_ROM_PTR(&camera_get_pixel_width_obj) },
