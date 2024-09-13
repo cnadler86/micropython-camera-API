@@ -297,6 +297,9 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_camera___exit___obj, 4, 4, mp_came
     static mp_obj_t camera_set_##property(const mp_obj_t self_in, const mp_obj_t arg) { \
         mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in); \
         mp_camera_hal_set_##property(self, set_conversion(arg)); \
+        if (mp_camera_hal_get_##property(self) != set_conversion(arg)) { \
+            mp_warning(NULL,"Failed to set " #property); \
+        }; \
         return mp_const_none; \
     } \
     MP_DEFINE_CONST_FUN_OBJ_2(camera_set_##property##_obj, camera_set_##property);
@@ -397,7 +400,6 @@ static void mp_camera_hal_print(const mp_print_t *print, mp_obj_t self_in, mp_pr
 }
 
 //API module definition
-
 #define MP_CREATE_CONST_TYPE(type, typename, ...) \
     MP_DEFINE_CONST_OBJ_TYPE(typename##_type, \
     MP_QSTR_##type, \
