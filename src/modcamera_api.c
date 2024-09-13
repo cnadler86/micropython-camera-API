@@ -170,12 +170,15 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
     // Debugging-Ausgaben
     mp_printf(&mp_plat_print, "mp_camera_make_new: Capturing initial frame\n");
 
-    (void)mp_camera_hal_capture(self, 100); //used in order to reserve a memory block for framebuffer while construction
-
-    // Debugging-Ausgaben
-    mp_printf(&mp_plat_print, "mp_camera_make_new: Camera object created successfully\n");
-
-    return MP_OBJ_FROM_PTR(self);
+    if (mp_camera_hal_capture(self, 100) == mp_const_none){
+        mp_camera_hal_deinit(self);
+        mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture initial frame. Ensure correct configuration (e.g. FrameSize) of the camera."));
+        return MP_OBJ_FROM_PTR(self);
+    } else {
+        // Debugging-Ausgaben
+        mp_printf(&mp_plat_print, "mp_camera_make_new: Camera object created successfully\n");
+        return MP_OBJ_FROM_PTR(self);
+    }
 }
 
 static mp_obj_t mp_camera_make_new_stub(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
