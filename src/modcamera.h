@@ -107,20 +107,20 @@ extern const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[4];
  */
 extern void mp_camera_hal_construct(
     mp_camera_obj_t *self,
-    uint8_t data_pins[8],
-    uint8_t external_clock_pin,
-    uint8_t pixel_clock_pin,
-    uint8_t vsync_pin,
-    uint8_t href_pin,
-    uint8_t powerdown_pin,
-    uint8_t reset_pin,
-    uint8_t sccb_sda_pin,
-    uint8_t sccb_scl_pin,
-    uint32_t xclk_freq_hz,
+    int8_t data_pins[8],
+    int8_t external_clock_pin,
+    int8_t pixel_clock_pin,
+    int8_t vsync_pin,
+    int8_t href_pin,
+    int8_t powerdown_pin,
+    int8_t reset_pin,
+    int8_t sccb_sda_pin,
+    int8_t sccb_scl_pin,
+    int32_t xclk_freq_hz,
     mp_camera_pixformat_t pixel_format,
     mp_camera_framesize_t frame_size,
-    uint8_t jpeg_quality,
-    uint8_t framebuffer_count,
+    int8_t jpeg_quality,
+    int8_t framebuffer_count,
     mp_camera_grab_mode_t grab_mode);
 
 /**

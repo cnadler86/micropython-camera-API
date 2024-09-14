@@ -79,39 +79,33 @@ typedef struct mp_camera_obj_t mp_camera_obj;
 const mp_obj_type_t camera_type;
 
 //Constructor
-// TODO: handle typedef-values
 static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
     enum { ARG_data_pins, ARG_pixel_clock_pin, ARG_vsync_pin, ARG_href_pin, ARG_sda_pin, ARG_scl_pin, ARG_xclock_pin, ARG_xclock_frequency, ARG_powerdown_pin, ARG_reset_pin, ARG_pixel_format, ARG_frame_size, ARG_jpeg_quality, ARG_framebuffer_count, ARG_grab_mode, NUM_ARGS };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_data_pins, MP_ARG_OBJ | MP_ARG_KW_ONLY , { .u_obj = MP_ROM_NONE } },
-        { MP_QSTR_pclock_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_PCLK } },
+        { MP_QSTR_pclk_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_PCLK } },
         { MP_QSTR_vsync_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_VSYNC } },
         { MP_QSTR_href_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_HREF } },
         { MP_QSTR_sda_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_SIOD } },
         { MP_QSTR_scl_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_SIOC } },
-        { MP_QSTR_xclock_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_PIN_XCLK } },
-        { MP_QSTR_xclock_frequency, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = 20000000L } },
+        { MP_QSTR_xclk_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_PIN_XCLK } },
+        { MP_QSTR_xclk_freq, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = 20000000L } },
         { MP_QSTR_powerdown_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_PIN_PWDN } },
         { MP_QSTR_reset_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_PIN_RESET } },
         { MP_QSTR_pixel_format, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_DEFAULT_PIXEL_FORMAT } },
         { MP_QSTR_frame_size, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_DEFAULT_FRAME_SIZE } },
         { MP_QSTR_jpeg_quality, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = 15 } },
-        { MP_QSTR_framebuffer_count, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = 1 } },
+        { MP_QSTR_fb_count, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = 1 } },
         { MP_QSTR_grab_mode, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_DEFAULT_GRAB_MODE } },
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     MP_STATIC_ASSERT(MP_ARRAY_SIZE(allowed_args) == NUM_ARGS);
-    mp_printf(&mp_plat_print, "mp_camera_make_new: Parsing arguments\n");
     mp_arg_parse_all_kw_array(n_args, n_kw, all_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
     
-    // Debugging-Ausgaben
-    mp_printf(&mp_plat_print, "mp_camera_make_new: Parsing arguments finished.\n");
-
     //TODO: validate inputs
-    uint8_t data_pins[8];
+    int8_t data_pins[8];
     mp_obj_t data_pins_obj = args[ARG_data_pins].u_obj;
     if (data_pins_obj == MP_ROM_NONE) {
-        mp_printf(&mp_plat_print, "Using default pins.\n");
         data_pins[0] = MICROPY_CAMERA_PIN_D0;
         data_pins[1] = MICROPY_CAMERA_PIN_D1;
         data_pins[2] = MICROPY_CAMERA_PIN_D2;
@@ -121,7 +115,6 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
         data_pins[6] = MICROPY_CAMERA_PIN_D6;
         data_pins[7] = MICROPY_CAMERA_PIN_D7;
     } else {
-        mp_printf(&mp_plat_print, "Using passed pins.\n");
         if (!mp_obj_is_type(data_pins_obj, &mp_type_list) && !mp_obj_is_type(data_pins_obj, &mp_type_bytearray)) {
             mp_raise_TypeError(MP_ERROR_TEXT("data_pins must be a list or bytearray"));
         }
@@ -134,82 +127,36 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
             data_pins[i] = mp_obj_get_int(item);
         }
     }
-    mp_printf(&mp_plat_print, "Assigning rest of arguments.\n");
-    uint8_t pixel_clock_pin = args[ARG_pixel_clock_pin].u_int;
-    uint8_t vsync_pin = args[ARG_vsync_pin].u_int;
-    uint8_t href_pin = args[ARG_href_pin].u_int;
-    uint8_t sda_pin = args[ARG_sda_pin].u_int;
-    uint8_t scl_pin = args[ARG_scl_pin].u_int;
-    uint8_t xclock_pin = args[ARG_xclock_pin].u_int;
-    uint32_t xclock_frequency = args[ARG_xclock_frequency].u_int;
-    uint8_t powerdown_pin = args[ARG_powerdown_pin].u_int;
-    uint8_t reset_pin = args[ARG_reset_pin].u_int;
-    mp_camera_pixformat_t pixel_format = mp_obj_get_int(args[ARG_pixel_format].u_obj);
-    mp_camera_framesize_t frame_size = mp_obj_get_int(args[ARG_frame_size].u_obj);
-    uint8_t jpeg_quality = args[ARG_jpeg_quality].u_int;
-    uint8_t framebuffer_count = args[ARG_framebuffer_count].u_int;
-    mp_camera_grab_mode_t grab_mode = mp_obj_get_int(args[ARG_grab_mode].u_obj);
+    int8_t pixel_clock_pin = args[ARG_pixel_clock_pin].u_int;
+    int8_t vsync_pin = args[ARG_vsync_pin].u_int;
+    int8_t href_pin = args[ARG_href_pin].u_int;
+    int8_t sda_pin = args[ARG_sda_pin].u_int;
+    int8_t scl_pin = args[ARG_scl_pin].u_int;
+    int8_t xclock_pin = args[ARG_xclock_pin].u_int;
+    int32_t xclock_frequency = args[ARG_xclock_frequency].u_int;
+    int8_t powerdown_pin = args[ARG_powerdown_pin].u_int;
+    int8_t reset_pin = args[ARG_reset_pin].u_int;
+    mp_camera_pixformat_t pixel_format = args[ARG_pixel_format].u_int;
+    mp_camera_framesize_t frame_size = args[ARG_frame_size].u_int;
+    int8_t jpeg_quality = args[ARG_jpeg_quality].u_int;
+    int8_t framebuffer_count = args[ARG_framebuffer_count].u_int;
+    mp_camera_grab_mode_t grab_mode = args[ARG_grab_mode].u_int;
     
-    // Debugging-Ausgaben
-    mp_printf(&mp_plat_print, "mp_camera_make_new: Creating camera object\n");
-
     mp_camera_obj_t *self = mp_obj_malloc_with_finaliser(mp_camera_obj_t, &camera_type);
     self->base.type = &camera_type;
 
-    // Debugging-Ausgaben
-    mp_printf(&mp_plat_print, "mp_camera_make_new: Constructing camera HAL\n");
-
-    mp_camera_hal_construct(self, data_pins, pixel_clock_pin, vsync_pin, href_pin, sda_pin, scl_pin, xclock_pin, xclock_frequency, 
-        powerdown_pin, reset_pin, pixel_format, frame_size, jpeg_quality, framebuffer_count, grab_mode);
-
-    // Debugging-Ausgaben
-    mp_printf(&mp_plat_print, "mp_camera_make_new: Initializing camera HAL\n");
+    mp_camera_hal_construct(self, data_pins, xclock_pin, pixel_clock_pin, vsync_pin, href_pin, powerdown_pin, reset_pin, 
+        sda_pin, scl_pin, xclock_frequency, pixel_format, frame_size, jpeg_quality, framebuffer_count, grab_mode);
 
     mp_camera_hal_init(self);
-
-    // Debugging-Ausgaben
-    mp_printf(&mp_plat_print, "mp_camera_make_new: Capturing initial frame\n");
 
     if (mp_camera_hal_capture(self, 100) == mp_const_none){
         mp_camera_hal_deinit(self);
         mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture initial frame. Ensure correct configuration (e.g. FrameSize) of the camera."));
         return MP_OBJ_FROM_PTR(self);
     } else {
-        // Debugging-Ausgaben
-        mp_printf(&mp_plat_print, "mp_camera_make_new: Camera object created successfully\n");
         return MP_OBJ_FROM_PTR(self);
     }
-}
-
-static mp_obj_t mp_camera_make_new_stub(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
-    (void)type;
-    (void)n_args;
-    (void)n_kw;
-    (void)all_args;
-    mp_camera_obj_t *self = mp_obj_malloc_with_finaliser(mp_camera_obj_t, &camera_type);
-    self->base.type = &camera_type;
-    framesize_t frame_size = FRAMESIZE_HVGA;
-    pixformat_t pixel_format = PIXFORMAT_JPEG;
-    camera_grab_mode_t grab_mode = CAMERA_GRAB_LATEST;
-    uint8_t data_pins[8] = {15,17,18,16,14,12,11,48};
-    mp_camera_hal_construct(self,data_pins,
-        10,
-        13,
-        38,
-        47,
-        -1,
-        -1,
-        40,
-        39,
-        20000000,
-        pixel_format,
-        frame_size,
-        10,
-        2,
-        grab_mode);
-    mp_camera_hal_init(self);
-    (void)mp_camera_hal_capture(self, 100);
-    return MP_OBJ_FROM_PTR(self);
 }
 
 // Main methods
@@ -434,7 +381,7 @@ MP_DEFINE_CONST_OBJ_TYPE(
     camera_type,
     MP_QSTR_Camera,
     MP_TYPE_FLAG_NONE,
-    make_new, mp_camera_make_new_stub,
+    make_new, mp_camera_make_new,
     print, mp_camera_hal_print,
     locals_dict, &camera_camera_locals_dict
 );
