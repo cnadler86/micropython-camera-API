@@ -127,14 +127,6 @@ static mp_obj_t camera_capture(size_t n_args, const mp_obj_t *args){
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(camera_capture_obj, 1, 2, camera_capture);
 
-//might be deleted in the future, only needed to test performance of different methods
-static mp_obj_t camera_capture2(size_t n_args, const mp_obj_t *args){
-    mp_camera_obj_t *self = MP_OBJ_TO_PTR(args[0]);
-    mp_float_t timeout = n_args < 2 ? MICROPY_FLOAT_CONST(0.25) : mp_obj_get_float(args[1]);
-    return mp_camera_hal_capture2(self, timeout);
-}
-static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(camera_capture2_obj,1,2, camera_capture2);
-
 static mp_obj_t camera_reconfigure(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args){
     //OPEN: Validate inputs
     mp_camera_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
@@ -256,7 +248,6 @@ CREATE_GETSET_FUNCTIONS(lenc, mp_obj_new_bool, mp_obj_is_true);
 static const mp_rom_map_elem_t camera_camera_locals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_reconfigure), MP_ROM_PTR(&camera_reconfigure_obj) },
     { MP_ROM_QSTR(MP_QSTR_capture), MP_ROM_PTR(&camera_capture_obj) },
-    { MP_ROM_QSTR(MP_QSTR_capture2), MP_ROM_PTR(&camera_capture2_obj) },
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&camera_init_obj) },
     { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&mp_camera_deinit_obj) },
     { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&mp_camera_deinit_obj) },

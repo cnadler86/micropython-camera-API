@@ -215,11 +215,6 @@ extern void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize
 extern mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms);
 
 /**
- * @brief Alternative method to capture an image as mp_obj_t.
- */
-extern mp_obj_t mp_camera_hal_capture2(mp_camera_obj_t *self, int timeout_ms);
-
-/**
  * @brief Table mapping pixel formats to their corresponding values.
  * @details Needs to be defined in the port-specific implementation.
  */
@@ -237,63 +232,52 @@ extern const mp_rom_map_elem_t mp_camera_hal_grab_mode_table[2];
 
 // From here on are helper functions to get and set sensor properties
 // The functions are used to get and set sensor properties in the camera object
-// TODO: clean makros, since status_field_name is not used here.
-#define DECLARE_SENSOR_GETSET(type, name, field_name, setter_function_name) \
-    DECLARE_SENSOR_GET(type, name, field_name, setter_function_name) \
-    DECLARE_SENSOR_SET(type, name, setter_function_name)
+#define DECLARE_SENSOR_GET(type, name) \
+    extern type mp_camera_hal_get_##name(mp_camera_obj_t *self);
 
-#define DECLARE_SENSOR_STATUS_GETSET(type, name, status_field_name, setter_function_name) \
-    DECLARE_SENSOR_GETSET(type, name, status.status_field_name, setter_function_name)
+#define DECLARE_SENSOR_SET(type, name) \
+    extern void mp_camera_hal_set_##name(mp_camera_obj_t *self, type value);
 
-#define DECLARE_SENSOR_STATUS_GET(type, name, status_field_name, setter_function_name) \
-    DECLARE_SENSOR_GET(type, name, status.status_field_name, setter_function_name)
+#define DECLARE_SENSOR_GETSET(type, name) \
+    DECLARE_SENSOR_GET(type, name) \
+    DECLARE_SENSOR_SET(type, name)
 
-#define DECLARE_SENSOR_GET(type, name, status_field_name, setter_function_name) \
-    extern type mp_camera_hal_get_##name(mp_camera_obj_t * self);
+DECLARE_SENSOR_GET(mp_camera_pixformat_t, pixel_format)
+DECLARE_SENSOR_GET(mp_camera_framesize_t, frame_size)
+DECLARE_SENSOR_GET(camera_grab_mode_t, grab_mode)
+DECLARE_SENSOR_GET(int, framebuffer_count)
 
-#define DECLARE_SENSOR_SET(type, name, setter_function_name) \
-    extern void mp_camera_hal_set_##name(mp_camera_obj_t * self, type value);
+DECLARE_SENSOR_GETSET(int, contrast)
+DECLARE_SENSOR_GETSET(int, brightness)
+DECLARE_SENSOR_GETSET(int, saturation)
+DECLARE_SENSOR_GETSET(int, sharpness)
+DECLARE_SENSOR_GETSET(int, denoise)
+DECLARE_SENSOR_GETSET(mp_camera_gainceiling_t, gainceiling)
+DECLARE_SENSOR_GETSET(int, quality)
+DECLARE_SENSOR_GETSET(bool, colorbar)
+DECLARE_SENSOR_GETSET(bool, whitebal)
+DECLARE_SENSOR_GETSET(bool, gain_ctrl)
+DECLARE_SENSOR_GETSET(bool, exposure_ctrl)
+DECLARE_SENSOR_GETSET(bool, hmirror)
+DECLARE_SENSOR_GETSET(bool, vflip)
+DECLARE_SENSOR_GETSET(bool, aec2)
+DECLARE_SENSOR_GETSET(bool, awb_gain)
+DECLARE_SENSOR_GETSET(int, agc_gain)
+DECLARE_SENSOR_GETSET(int, aec_value)
+DECLARE_SENSOR_GETSET(int, special_effect)
+DECLARE_SENSOR_GETSET(int, wb_mode)
+DECLARE_SENSOR_GETSET(int, ae_level)
+DECLARE_SENSOR_GETSET(bool, dcw)
+DECLARE_SENSOR_GETSET(bool, bpc)
+DECLARE_SENSOR_GETSET(bool, wpc)
+DECLARE_SENSOR_GETSET(bool, raw_gma)
+DECLARE_SENSOR_GETSET(bool, lenc)
 
-DECLARE_SENSOR_GET(mp_camera_pixformat_t, pixel_format, pixformat, set_pixformat)
-DECLARE_SENSOR_STATUS_GET(mp_camera_framesize_t, frame_size, framesize, set_framesize)
-DECLARE_SENSOR_STATUS_GETSET(int, contrast, contrast, set_contrast);
-DECLARE_SENSOR_STATUS_GETSET(int, brightness, brightness, set_brightness);
-DECLARE_SENSOR_STATUS_GETSET(int, saturation, saturation, set_saturation);
-DECLARE_SENSOR_STATUS_GETSET(int, sharpness, sharpness, set_sharpness);
-DECLARE_SENSOR_STATUS_GETSET(int, denoise, denoise, set_denoise);
-DECLARE_SENSOR_STATUS_GETSET(mp_camera_gainceiling_t, gainceiling, gainceiling, set_gainceiling);
-DECLARE_SENSOR_STATUS_GETSET(int, quality, quality, set_quality);
-DECLARE_SENSOR_STATUS_GETSET(bool, colorbar, colorbar, set_colorbar);
-DECLARE_SENSOR_STATUS_GETSET(bool, whitebal, whitebal, set_whitebal);
-DECLARE_SENSOR_STATUS_GETSET(bool, gain_ctrl, gain_ctrl, set_gain_ctrl);
-DECLARE_SENSOR_STATUS_GETSET(bool, exposure_ctrl, exposure_ctrl, set_exposure_ctrl);
-DECLARE_SENSOR_STATUS_GETSET(bool, hmirror, hmirror, set_hmirror);
-DECLARE_SENSOR_STATUS_GETSET(bool, vflip, vflip, set_vflip);
-DECLARE_SENSOR_STATUS_GETSET(bool, aec2, aec2, set_aec2);
-DECLARE_SENSOR_STATUS_GETSET(bool, awb_gain, awb_gain, set_awb_gain);
-DECLARE_SENSOR_STATUS_GETSET(int, agc_gain, agc_gain, set_agc_gain);
-DECLARE_SENSOR_STATUS_GETSET(int, aec_value, aec_value, set_aec_value);
-DECLARE_SENSOR_STATUS_GETSET(int, special_effect, special_effect, set_special_effect);
-DECLARE_SENSOR_STATUS_GETSET(int, wb_mode, wb_mode, set_wb_mode);
-DECLARE_SENSOR_STATUS_GETSET(int, ae_level, ae_level, set_ae_level);
-DECLARE_SENSOR_STATUS_GETSET(bool, dcw, dcw, set_dcw);
-DECLARE_SENSOR_STATUS_GETSET(bool, bpc, bpc, set_bpc);
-DECLARE_SENSOR_STATUS_GETSET(bool, wpc, wpc, set_wpc);
-DECLARE_SENSOR_STATUS_GETSET(bool, raw_gma, raw_gma, set_raw_gma);
-DECLARE_SENSOR_STATUS_GETSET(bool, lenc, lenc, set_lenc);
-
-// From camera settings
-// TODO: use makro
-extern camera_grab_mode_t mp_camera_hal_get_grab_mode(mp_camera_obj_t *self);
-extern int mp_camera_hal_get_framebuffer_count(mp_camera_obj_t *self);
-
-// From camera_sensor_info_t
-// TODO: use makro
-extern int mp_camera_hal_get_address(mp_camera_obj_t *self);
-extern const char *mp_camera_hal_get_sensor_name(mp_camera_obj_t *self);
-extern bool mp_camera_hal_get_supports_jpeg(mp_camera_obj_t *self);
-extern mp_camera_framesize_t mp_camera_hal_get_max_frame_size(mp_camera_obj_t *self);
-extern int mp_camera_hal_get_pixel_width(mp_camera_obj_t *self);
-extern int mp_camera_hal_get_pixel_height(mp_camera_obj_t *self);
+DECLARE_SENSOR_GET(int, address)
+DECLARE_SENSOR_GET(const char *, sensor_name)
+DECLARE_SENSOR_GET(bool, supports_jpeg)
+DECLARE_SENSOR_GET(mp_camera_framesize_t, max_frame_size)
+DECLARE_SENSOR_GET(int, pixel_width)
+DECLARE_SENSOR_GET(int, pixel_height)
 
 #endif // MICROPY_INCLUDED_MODCAMERA_H
