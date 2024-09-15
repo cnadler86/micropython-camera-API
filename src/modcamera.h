@@ -33,29 +33,97 @@
 #include <string.h>
 
 #include "py/mperrno.h"
-#include "py/mphal.h"   //Maybe we can add here MICROPY_PY_MACHINE_CAMERA (0), otherwise not needed
+#include "py/mphal.h"   //TODO: Maybe we can add here MICROPY_PY_MACHINE_CAMERA (0) ?
 #include "py/runtime.h"
 #include "py/obj.h"
 
-#include "esp_camera.h" //maybe driver/esp_camera.h, but don't know yet where will the driver be located in esp-idf
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+// ESP32-Camera specifics-> could go in separate header file, if this project starts implementing more ports.
+
+#include "esp_camera.h"
 #include "sensor.h"
 
-// ESP32-Camera specifics-> could go in separate header file, if this project starts implementing more ports.
-// In this case Compiler-Switch shall be used.
+#ifndef MICROPY_CAMERA_PIN_PWDN
+#define MICROPY_CAMERA_PIN_PWDN    32
+#endif
+
+#ifndef MICROPY_CAMERA_PIN_RESET
+#define MICROPY_CAMERA_PIN_RESET   -1
+#endif
+
+#ifndef MICROPY_CAMERA_PIN_SIOD
+#define MICROPY_CAMERA_PIN_SIOD    26
+#endif
+
+#ifndef MICROPY_CAMERA_PIN_SIOC
+#define MICROPY_CAMERA_PIN_SIOC    27
+#endif
+
+#ifndef MICROPY_CAMERA_PIN_D0
+#define MICROPY_CAMERA_PIN_D0   5
+#define MICROPY_CAMERA_PIN_D1   18
+#define MICROPY_CAMERA_PIN_D2   19
+#define MICROPY_CAMERA_PIN_D3   21
+#define MICROPY_CAMERA_PIN_D4   36
+#define MICROPY_CAMERA_PIN_D5   39
+#define MICROPY_CAMERA_PIN_D6   34
+#define MICROPY_CAMERA_PIN_D7   35
+#endif
+
+#ifndef MICROPY_CAMERA_PIN_VSYNC
+#define MICROPY_CAMERA_PIN_VSYNC   25
+#endif
+
+#ifndef MICROPY_CAMERA_PIN_HREF
+#define MICROPY_CAMERA_PIN_HREF    23
+#endif
+
+#ifndef MICROPY_CAMERA_PIN_PCLK
+#define MICROPY_CAMERA_PIN_PCLK    22
+#endif
+
+#ifndef MICROPY_CAMERA_PIN_XCLK
+#define MICROPY_CAMERA_PIN_XCLK     0
+#endif
+
+#ifndef MICROPY_CAMERA_XCLK_FREQ
+#define MICROPY_CAMERA_XCLK_FREQ     10
+#endif
+
+#ifndef MICROPY_CAMERA_DEFAULT_FRAME_SIZE
+#define MICROPY_CAMERA_DEFAULT_FRAME_SIZE FRAMESIZE_QQVGA
+#endif
+
+#ifndef MICROPY_CAMERA_DEFAULT_PIXEL_FORMAT
+#define MICROPY_CAMERA_DEFAULT_PIXEL_FORMAT PIXFORMAT_RGB565
+#endif
+
+#ifndef MICROPY_CAMERA_GRAB_MODE
+#define MICROPY_CAMERA_GRAB_MODE CAMERA_GRAB_WHEN_EMPTY
+#endif
+
+#ifndef MICROPY_CAMERA_FB_COUNT
+#define MICROPY_CAMERA_FB_COUNT 1
+#endif
+
+#ifndef MICROPY_CAMERA_JPEG_QUALITY
+#define MICROPY_CAMERA_JPEG_QUALITY 15
+#endif
+
+//Supported Camera sensors
 #ifndef CONFIG_OV2640_SUPPORT
 #define CONFIG_OV2640_SUPPORT 1
 #endif
 
-//NOt implemented yet
 #ifndef CONFIG_OV5640_SUPPORT
-#define CONFIG_OV5640_SUPPORT 0
+#define CONFIG_OV5640_SUPPORT 1
 #endif
 
 typedef camera_config_t mp_camera_config_t;
 typedef pixformat_t  mp_camera_pixformat_t;
 typedef framesize_t  mp_camera_framesize_t;
 typedef camera_fb_location_t mp_camera_fb_location_t;
-typedef camera_grab_mode_t mp_camera_grab_mode_t;
+typedef camera_grab_mode_t mp_camera_grabmode_t;
 typedef gainceiling_t mp_camera_gainceiling_t;
 typedef camera_fb_t mp_camera_fb_t;
 
@@ -66,22 +134,11 @@ typedef struct mp_camera_obj {
     mp_camera_fb_t      *capture_buffer;
 } mp_camera_obj_t;
 
+#endif // CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+
+//TODO: add help
 extern const mp_rom_map_elem_t mp_camera_hal_frame_size_table[22];
 extern const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[4];
-
-#ifndef MICROPY_CAMERA_DEFAULT_FRAME_SIZE
-#define MICROPY_CAMERA_DEFAULT_FRAME_SIZE FRAMESIZE_QVGA
-#endif
-
-#ifndef MICROPY_CAMERA_DEFAULT_PIXEL_FORMAT
-#define MICROPY_CAMERA_DEFAULT_PIXEL_FORMAT PIXFORMAT_RGB565
-#endif
-
-#ifndef MICROPY_CAMERA_DEFAULT_GRAB_MODE
-#define MICROPY_CAMERA_DEFAULT_GRAB_MODE CAMERA_GRAB_WHEN_EMPTY
-#endif
-
-//END ESP32-Camera specifics
 
 // TODO:    Define how to integrate external time source in constructor (e.g. in ESP is LED-Timer).
 /**
@@ -103,7 +160,7 @@ extern const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[4];
  * @param frame_size Frame size.
  * @param jpeg_quality JPEG quality.
  * @param framebuffer_count Number of framebuffers.
- * @param grab_mode Grab mode.
+ * @param grab_mode Grab mode (single-shot/when-empty OR continous/latest)
  */
 extern void mp_camera_hal_construct(
     mp_camera_obj_t *self,
@@ -121,7 +178,7 @@ extern void mp_camera_hal_construct(
     mp_camera_framesize_t frame_size,
     int8_t jpeg_quality,
     int8_t framebuffer_count,
-    mp_camera_grab_mode_t grab_mode);
+    mp_camera_grabmode_t grab_mode);
 
 /**
  * @brief Initializes the camera hardware abstraction layer. Will be called during API constructor
@@ -146,7 +203,7 @@ extern void mp_camera_hal_deinit(mp_camera_obj_t *self);
  * @param grab_mode Grab mode.
  * @param framebuffer_count Number of framebuffers.
  */
-extern void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t frame_size, mp_camera_pixformat_t pixel_format, mp_camera_grab_mode_t grab_mode, mp_int_t framebuffer_count);
+extern void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t frame_size, mp_camera_pixformat_t pixel_format, mp_camera_grabmode_t grab_mode, mp_int_t framebuffer_count);
 
 /**
  * @brief Captures an image as mp_obj_t.
@@ -174,11 +231,13 @@ extern const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[4];
  */
 extern const mp_rom_map_elem_t mp_camera_hal_frame_size_table[22];
 
+//TODO: add help
 extern const mp_rom_map_elem_t mp_camera_hal_gainceiling_table[7];
 extern const mp_rom_map_elem_t mp_camera_hal_grab_mode_table[2];
 
 // From here on are helper functions to get and set sensor properties
 // The functions are used to get and set sensor properties in the camera object
+// TODO: clean makros, since status_field_name is not used here.
 #define DECLARE_SENSOR_GETSET(type, name, field_name, setter_function_name) \
     DECLARE_SENSOR_GET(type, name, field_name, setter_function_name) \
     DECLARE_SENSOR_SET(type, name, setter_function_name)
@@ -224,10 +283,12 @@ DECLARE_SENSOR_STATUS_GETSET(bool, raw_gma, raw_gma, set_raw_gma);
 DECLARE_SENSOR_STATUS_GETSET(bool, lenc, lenc, set_lenc);
 
 // From camera settings
+// TODO: use makro
 extern camera_grab_mode_t mp_camera_hal_get_grab_mode(mp_camera_obj_t *self);
 extern int mp_camera_hal_get_framebuffer_count(mp_camera_obj_t *self);
 
 // From camera_sensor_info_t
+// TODO: use makro
 extern int mp_camera_hal_get_address(mp_camera_obj_t *self);
 extern const char *mp_camera_hal_get_sensor_name(mp_camera_obj_t *self);
 extern bool mp_camera_hal_get_supports_jpeg(mp_camera_obj_t *self);

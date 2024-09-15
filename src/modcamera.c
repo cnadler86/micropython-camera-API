@@ -31,10 +31,11 @@
 
 #define TAG "ESP32_MPY_CAMERA"
 
-#if !CONFIG_SPIRAM //TODO: Better test if enought RAM is available on runtime
+#if !CONFIG_SPIRAM //TODO: Better test if enought RAM is available on runtime?
 #error Camera only works on boards configured with spiram
 #endif
 
+//TODO: improve error message
 void raise_micropython_error_from_esp_err(esp_err_t err) {
     switch (err) {
         case ESP_OK:
@@ -87,7 +88,7 @@ void mp_camera_hal_construct(
     mp_camera_framesize_t frame_size,
     int8_t jpeg_quality,
     int8_t framebuffer_count,
-    mp_camera_grab_mode_t grab_mode) {
+    mp_camera_grabmode_t grab_mode) {
         // configure camera based on arguments
         self->camera_config.pixel_format = pixel_format;
         self->camera_config.frame_size = frame_size;        
@@ -153,7 +154,7 @@ void mp_camera_hal_deinit(mp_camera_obj_t *self) {
     }
 }
 
-void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t frame_size, mp_camera_pixformat_t pixel_format, mp_camera_grab_mode_t grab_mode, mp_int_t framebuffer_count) {
+void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t frame_size, mp_camera_pixformat_t pixel_format, mp_camera_grabmode_t grab_mode, mp_int_t framebuffer_count) {
     if (self->initialized) {
         ESP_LOGI(TAG, "Reconfiguring camera");
         sensor_t *sensor = esp_camera_sensor_get();
@@ -219,11 +220,10 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms) {
         if (self->camera_config.pixel_format == PIXFORMAT_JPEG) {
             ESP_LOGI(TAG, "Captured image in JPEG format");
             return mp_obj_new_memoryview('b', self->capture_buffer->len, self->capture_buffer->buf);
-            //ChatGPT sagt: return mp_obj_new_memoryview(MP_OBJ_FROM_PTR(self->capture_buffer->buf));
         } else {
             ESP_LOGI(TAG, "Captured image in raw format");
             return mp_obj_new_memoryview('b', self->capture_buffer->len, self->capture_buffer->buf);
-            // Stub at the moment in order to return raw data, but it sould be implemented to return a Bitmap, see following circuitpython example:
+            // TODO: Stub at the moment in order to return raw data, but it sould be implemented to return a Bitmap, see following circuitpython example:
             //
             // int width = common_hal_espcamera_camera_get_width(self);
             // int height = common_hal_espcamera_camera_get_height(self);
@@ -239,7 +239,7 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms) {
     }
 }
 
-//Alternative capture method
+//TODO: Alternative capture method --> Test performance
 mp_obj_t mp_camera_hal_capture2(mp_camera_obj_t *self, int timeout_ms){
     if (!self->initialized) {
         mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture image: Camera not initialized"));

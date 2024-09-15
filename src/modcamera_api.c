@@ -32,49 +32,6 @@
 
 #include "modcamera.h"
 
-#ifndef MICROPY_CAMERA_PIN_PWDN
-#define MICROPY_CAMERA_PIN_PWDN    32
-#endif
-
-#ifndef MICROPY_CAMERA_PIN_RESET
-#define MICROPY_CAMERA_PIN_RESET   -1
-#endif
-
-#ifndef MICROPY_CAMERA_PIN_XCLK
-#define MICROPY_CAMERA_PIN_XCLK     0
-#endif
-
-#ifndef MICROPY_CAMERA_PIN_SIOD
-#define MICROPY_CAMERA_PIN_SIOD    26
-#endif
-
-#ifndef MICROPY_CAMERA_PIN_SIOC
-#define MICROPY_CAMERA_PIN_SIOC    27
-#endif
-
-#ifndef MICROPY_CAMERA_PIN_D0
-#define MICROPY_CAMERA_PIN_D0   5
-#define MICROPY_CAMERA_PIN_D1   18
-#define MICROPY_CAMERA_PIN_D2   19
-#define MICROPY_CAMERA_PIN_D3   21
-#define MICROPY_CAMERA_PIN_D4   36
-#define MICROPY_CAMERA_PIN_D5   39
-#define MICROPY_CAMERA_PIN_D6   34
-#define MICROPY_CAMERA_PIN_D7   35
-#endif
-
-#ifndef MICROPY_CAMERA_PIN_VSYNC
-#define MICROPY_CAMERA_PIN_VSYNC   25
-#endif
-
-#ifndef MICROPY_CAMERA_PIN_HREF
-#define MICROPY_CAMERA_PIN_HREF    23
-#endif
-
-#ifndef MICROPY_CAMERA_PIN_PCLK
-#define MICROPY_CAMERA_PIN_PCLK    22
-#endif
-
 typedef struct mp_camera_obj_t mp_camera_obj;
 const mp_obj_type_t camera_type;
 
@@ -89,14 +46,14 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
         { MP_QSTR_sda_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_SIOD } },
         { MP_QSTR_scl_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_SIOC } },
         { MP_QSTR_xclk_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_PIN_XCLK } },
-        { MP_QSTR_xclk_freq, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = 20000000L } },
+        { MP_QSTR_xclk_freq, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_XCLK_FREQ } },
         { MP_QSTR_powerdown_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_PIN_PWDN } },
         { MP_QSTR_reset_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_PIN_RESET } },
         { MP_QSTR_pixel_format, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_DEFAULT_PIXEL_FORMAT } },
         { MP_QSTR_frame_size, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_DEFAULT_FRAME_SIZE } },
-        { MP_QSTR_jpeg_quality, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = 15 } },
-        { MP_QSTR_fb_count, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = 1 } },
-        { MP_QSTR_grab_mode, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_DEFAULT_GRAB_MODE } },
+        { MP_QSTR_jpeg_quality, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_JPEG_QUALITY } },
+        { MP_QSTR_fb_count, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_FB_COUNT } },
+        { MP_QSTR_grab_mode, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_GRAB_MODE } },
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     MP_STATIC_ASSERT(MP_ARRAY_SIZE(allowed_args) == NUM_ARGS);
@@ -134,13 +91,16 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
     int8_t scl_pin = args[ARG_scl_pin].u_int;
     int8_t xclock_pin = args[ARG_xclock_pin].u_int;
     int32_t xclock_frequency = args[ARG_xclock_frequency].u_int;
+    if (xclock_frequency < 1000) {
+        xclock_frequency = xclock_frequency * 1000000;
+    }
     int8_t powerdown_pin = args[ARG_powerdown_pin].u_int;
     int8_t reset_pin = args[ARG_reset_pin].u_int;
     mp_camera_pixformat_t pixel_format = args[ARG_pixel_format].u_int;
     mp_camera_framesize_t frame_size = args[ARG_frame_size].u_int;
     int8_t jpeg_quality = args[ARG_jpeg_quality].u_int;
     int8_t framebuffer_count = args[ARG_framebuffer_count].u_int;
-    mp_camera_grab_mode_t grab_mode = args[ARG_grab_mode].u_int;
+    mp_camera_grabmode_t grab_mode = args[ARG_grab_mode].u_int;
     
     mp_camera_obj_t *self = mp_obj_malloc_with_finaliser(mp_camera_obj_t, &camera_type);
     self->base.type = &camera_type;
@@ -197,7 +157,7 @@ static mp_obj_t camera_reconfigure(size_t n_args, const mp_obj_t *pos_args, mp_m
         args[ARG_pixel_format].u_obj != MP_ROM_NONE
         ?  mp_obj_get_int(args[ARG_pixel_format].u_obj)
         : mp_camera_hal_get_pixel_format(self);
-    mp_camera_grab_mode_t grab_mode =
+    mp_camera_grabmode_t grab_mode =
         args[ARG_grab_mode].u_obj != MP_ROM_NONE
         ?  mp_obj_get_int(args[ARG_grab_mode].u_obj)
         : mp_camera_hal_get_grab_mode(self);
