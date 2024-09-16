@@ -37,7 +37,7 @@ const mp_obj_type_t camera_type;
 
 //Constructor
 static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
-    enum { ARG_data_pins, ARG_pixel_clock_pin, ARG_vsync_pin, ARG_href_pin, ARG_sda_pin, ARG_scl_pin, ARG_xclock_pin, ARG_xclock_frequency, ARG_powerdown_pin, ARG_reset_pin, ARG_pixel_format, ARG_frame_size, ARG_jpeg_quality, ARG_framebuffer_count, ARG_grab_mode, NUM_ARGS };
+    enum { ARG_data_pins, ARG_pixel_clock_pin, ARG_vsync_pin, ARG_href_pin, ARG_sda_pin, ARG_scl_pin, ARG_xclock_pin, ARG_xclock_frequency, ARG_powerdown_pin, ARG_reset_pin, ARG_pixel_format, ARG_frame_size, ARG_jpeg_quality, ARG_fb_count, ARG_grab_mode, NUM_ARGS };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_data_pins, MP_ARG_OBJ | MP_ARG_KW_ONLY , { .u_obj = MP_ROM_NONE } },
         { MP_QSTR_pclk_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_PCLK } },
@@ -99,20 +99,21 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
     mp_camera_pixformat_t pixel_format = args[ARG_pixel_format].u_int;
     mp_camera_framesize_t frame_size = args[ARG_frame_size].u_int;
     int8_t jpeg_quality = args[ARG_jpeg_quality].u_int;
-    int8_t framebuffer_count = args[ARG_framebuffer_count].u_int;
+    int8_t fb_count = args[ARG_fb_count].u_int;
     mp_camera_grabmode_t grab_mode = args[ARG_grab_mode].u_int;
     
     mp_camera_obj_t *self = mp_obj_malloc_with_finaliser(mp_camera_obj_t, &camera_type);
     self->base.type = &camera_type;
 
     mp_camera_hal_construct(self, data_pins, xclock_pin, pixel_clock_pin, vsync_pin, href_pin, powerdown_pin, reset_pin, 
-        sda_pin, scl_pin, xclock_frequency, pixel_format, frame_size, jpeg_quality, framebuffer_count, grab_mode);
+        sda_pin, scl_pin, xclock_frequency, pixel_format, frame_size, jpeg_quality, fb_count, grab_mode);
 
     mp_camera_hal_init(self);
 
     if (mp_camera_hal_capture(self, 100) == mp_const_none){
         mp_camera_hal_deinit(self);
-        mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture initial frame. Ensure correct configuration (e.g. FrameSize) of the camera."));
+        mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture initial frame. \
+        Run reconfigure method or construct a new object with appropriate configuration (e.g. FrameSize)."));
         return MP_OBJ_FROM_PTR(self);
     } else {
         return MP_OBJ_FROM_PTR(self);
@@ -130,12 +131,12 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(camera_capture_obj, 1, 2, camera_capt
 static mp_obj_t camera_reconfigure(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args){
     //OPEN: Validate inputs
     mp_camera_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
-    enum { ARG_frame_size, ARG_pixel_format, ARG_grab_mode, ARG_framebuffer_count };
+    enum { ARG_frame_size, ARG_pixel_format, ARG_grab_mode, ARG_fb_count };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_frame_size, MP_ARG_OBJ, {.u_obj = MP_ROM_NONE} },
         { MP_QSTR_pixel_format, MP_ARG_OBJ, {.u_obj = MP_ROM_NONE} },
         { MP_QSTR_grab_mode, MP_ARG_OBJ, {.u_obj = MP_ROM_NONE} },
-        { MP_QSTR_framebuffer_count, MP_ARG_OBJ, {.u_obj = MP_ROM_NONE} },
+        { MP_QSTR_fb_count, MP_ARG_OBJ, {.u_obj = MP_ROM_NONE} },
     };
 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -153,15 +154,15 @@ static mp_obj_t camera_reconfigure(size_t n_args, const mp_obj_t *pos_args, mp_m
         args[ARG_grab_mode].u_obj != MP_ROM_NONE
         ?  mp_obj_get_int(args[ARG_grab_mode].u_obj)
         : mp_camera_hal_get_grab_mode(self);
-    uint8_t framebuffer_count =
-        args[ARG_framebuffer_count].u_obj != MP_ROM_NONE
-        ?  mp_obj_get_int(args[ARG_framebuffer_count].u_obj)
-        : mp_camera_hal_get_framebuffer_count(self);
+    uint8_t fb_count =
+        args[ARG_fb_count].u_obj != MP_ROM_NONE
+        ?  mp_obj_get_int(args[ARG_fb_count].u_obj)
+        : mp_camera_hal_get_fb_count(self);
     
-    mp_camera_hal_reconfigure(self, frame_size, pixel_format, grab_mode, framebuffer_count);
+    mp_camera_hal_reconfigure(self, frame_size, pixel_format, grab_mode, fb_count);
     return mp_const_none;
 }
-MP_DEFINE_CONST_FUN_OBJ_KW(camera_reconfigure_obj, 1, camera_reconfigure);
+static MP_DEFINE_CONST_FUN_OBJ_KW(camera_reconfigure_obj, 1, camera_reconfigure);
 
 static mp_obj_t camera_init(mp_obj_t self_in) {
     mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in);
@@ -190,7 +191,7 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_camera___exit___obj, 4, 4, mp_came
         mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in); \
         return get_function(mp_camera_hal_get_##property(self)); \
     } \
-    MP_DEFINE_CONST_FUN_OBJ_1(camera_get_##property##_obj, camera_get_##property);
+    static MP_DEFINE_CONST_FUN_OBJ_1(camera_get_##property##_obj, camera_get_##property);
 
 #define CREATE_SETTER(property, set_conversion) \
     static mp_obj_t camera_set_##property(const mp_obj_t self_in, const mp_obj_t arg) { \
@@ -201,7 +202,7 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_camera___exit___obj, 4, 4, mp_came
         }; \
         return mp_const_none; \
     } \
-    MP_DEFINE_CONST_FUN_OBJ_2(camera_set_##property##_obj, camera_set_##property);
+    static MP_DEFINE_CONST_FUN_OBJ_2(camera_set_##property##_obj, camera_set_##property);
 
 #define CREATE_GETSET_FUNCTIONS(property, get_function, set_conversion) \
     CREATE_GETTER(property, get_function) \
@@ -215,7 +216,7 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_camera___exit___obj, 4, 4, mp_came
 CREATE_GETTER(frame_size, mp_obj_new_int)
 CREATE_GETTER(pixel_format, mp_obj_new_int)
 CREATE_GETTER(grab_mode, mp_obj_new_int)
-CREATE_GETTER(framebuffer_count, mp_obj_new_int)
+CREATE_GETTER(fb_count, mp_obj_new_int)
 CREATE_GETTER(pixel_width, mp_obj_new_int)
 CREATE_GETTER(pixel_height, mp_obj_new_int)
 CREATE_GETSET_FUNCTIONS(contrast, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
@@ -256,7 +257,7 @@ static const mp_rom_map_elem_t camera_camera_locals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_get_framesize), MP_ROM_PTR(&camera_get_frame_size_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_pixel_format), MP_ROM_PTR(&camera_get_pixel_format_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_grab_mode), MP_ROM_PTR(&camera_get_grab_mode_obj) },
-    { MP_ROM_QSTR(MP_QSTR_get_framebuffer_count), MP_ROM_PTR(&camera_get_framebuffer_count_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_fb_count), MP_ROM_PTR(&camera_get_fb_count_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_pixel_width), MP_ROM_PTR(&camera_get_pixel_width_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_pixel_height), MP_ROM_PTR(&camera_get_pixel_height_obj) },
     ADD_PROPERTY_TO_TABLE(contrast),
@@ -290,7 +291,7 @@ static MP_DEFINE_CONST_DICT(camera_camera_locals_dict, camera_camera_locals_tabl
 //Helper methods
 static void mp_camera_hal_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    if (self->initialized) {
+    if (mp_camera_hal_initialized(self)) {
         mp_printf(print, "Camera with sensor %s", mp_camera_hal_get_sensor_name(self));
     } else {
         mp_printf(print, "Camera unknown");

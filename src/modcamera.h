@@ -119,26 +119,31 @@
 #define CONFIG_OV5640_SUPPORT 1
 #endif
 
-typedef camera_config_t mp_camera_config_t;
-typedef pixformat_t  mp_camera_pixformat_t;
-typedef framesize_t  mp_camera_framesize_t;
-typedef camera_fb_location_t mp_camera_fb_location_t;
-typedef camera_grab_mode_t mp_camera_grabmode_t;
-typedef gainceiling_t mp_camera_gainceiling_t;
-typedef camera_fb_t mp_camera_fb_t;
+typedef camera_config_t hal_camera_config_t;
+typedef pixformat_t  hal_camera_pixformat_t;
+typedef framesize_t  hal_camera_framesize_t;
+typedef camera_fb_location_t hal_camera_fb_location_t;
+typedef camera_grab_mode_t hal_camera_grabmode_t;
+typedef gainceiling_t hal_camera_gainceiling_t;
+typedef camera_fb_t hal_camera_fb_t;
 
-typedef struct mp_camera_obj {
+typedef struct hal_camera_obj {
     mp_obj_base_t       base;
-    mp_camera_config_t  camera_config;
+    hal_camera_config_t camera_config;
     bool                initialized;
-    mp_camera_fb_t      *capture_buffer;
-} mp_camera_obj_t;
+    hal_camera_fb_t     *captured_buffer;
+} hal_camera_obj_t;
 
 #endif // CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 
-//TODO: add help
-extern const mp_rom_map_elem_t mp_camera_hal_frame_size_table[22];
-extern const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[4];
+typedef hal_camera_obj_t mp_camera_obj_t;
+typedef hal_camera_config_t mp_camera_config_t;
+typedef hal_camera_pixformat_t  mp_camera_pixformat_t;
+typedef hal_camera_framesize_t  mp_camera_framesize_t;
+typedef hal_camera_fb_location_t mp_camera_fb_location_t;
+typedef hal_camera_grabmode_t mp_camera_grabmode_t;
+typedef hal_camera_gainceiling_t mp_camera_gainceiling_t;
+typedef hal_camera_fb_t mp_camera_fb_t;
 
 // TODO:    Define how to integrate external time source in constructor (e.g. in ESP is LED-Timer).
 /**
@@ -159,7 +164,7 @@ extern const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[4];
  * @param pixel_format Pixel format.
  * @param frame_size Frame size.
  * @param jpeg_quality JPEG quality.
- * @param framebuffer_count Number of framebuffers.
+ * @param fb_count Number of framebuffers.
  * @param grab_mode Grab mode (single-shot/when-empty OR continous/latest)
  */
 extern void mp_camera_hal_construct(
@@ -177,7 +182,7 @@ extern void mp_camera_hal_construct(
     mp_camera_pixformat_t pixel_format,
     mp_camera_framesize_t frame_size,
     int8_t jpeg_quality,
-    int8_t framebuffer_count,
+    int8_t fb_count,
     mp_camera_grabmode_t grab_mode);
 
 /**
@@ -195,18 +200,25 @@ extern void mp_camera_hal_init(mp_camera_obj_t *self); //since we are not passin
 extern void mp_camera_hal_deinit(mp_camera_obj_t *self);
 
 /**
+ * @brief Returns true, if camera is initialized.
+ * 
+ * @param self Pointer to the camera object.
+ */
+extern bool mp_camera_hal_initialized(mp_camera_obj_t *self);
+
+/**
  * @brief Reconfigures the camera hardware abstraction layer.
  * 
  * @param self Pointer to the camera object.
  * @param frame_size Frame size.
  * @param pixel_format Pixel format.
  * @param grab_mode Grab mode.
- * @param framebuffer_count Number of framebuffers.
+ * @param fb_count Number of framebuffers.
  */
-extern void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t frame_size, mp_camera_pixformat_t pixel_format, mp_camera_grabmode_t grab_mode, mp_int_t framebuffer_count);
+extern void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t frame_size, mp_camera_pixformat_t pixel_format, mp_camera_grabmode_t grab_mode, mp_int_t fb_count);
 
 /**
- * @brief Captures an image as mp_obj_t.
+ * @brief Captures an image and returns it as mp_obj_t (e.g. mp_obj_new_memoryview).
  * 
  * @param self Pointer to the camera object.
  * @param timeout_ms Timeout in milliseconds.
@@ -215,69 +227,80 @@ extern void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize
 extern mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms);
 
 /**
- * @brief Table mapping pixel formats to their corresponding values.
+ * @brief Table mapping pixel formats API to their corresponding values at HAL.
  * @details Needs to be defined in the port-specific implementation.
  */
 extern const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[4];
 
 /**
- * @brief Table mapping frame sizes to their corresponding values.
+ * @brief Table mapping frame sizes API to their corresponding values at HAL.
  * @details Needs to be defined in the port-specific implementation.
  */
 extern const mp_rom_map_elem_t mp_camera_hal_frame_size_table[22];
 
-//TODO: add help
+/**
+ * @brief Table mapping gainceiling API to their corresponding values at HAL.
+ * @details Needs to be defined in the port-specific implementation.
+ */
 extern const mp_rom_map_elem_t mp_camera_hal_gainceiling_table[7];
+
+/**
+ * @brief Table mapping grab mode API to their corresponding values at HAL.
+ * @details Needs to be defined in the port-specific implementation.
+ */
 extern const mp_rom_map_elem_t mp_camera_hal_grab_mode_table[2];
 
-// From here on are helper functions to get and set sensor properties
-// The functions are used to get and set sensor properties in the camera object
-#define DECLARE_SENSOR_GET(type, name) \
+
+#define DECLARE_CAMERA_HAL_GET(type, name) \
     extern type mp_camera_hal_get_##name(mp_camera_obj_t *self);
 
-#define DECLARE_SENSOR_SET(type, name) \
+#define DECLARE_CAMERA_HAL_SET(type, name) \
     extern void mp_camera_hal_set_##name(mp_camera_obj_t *self, type value);
 
-#define DECLARE_SENSOR_GETSET(type, name) \
-    DECLARE_SENSOR_GET(type, name) \
-    DECLARE_SENSOR_SET(type, name)
+/**
+ * @brief Helper functions to get and set sensor properties.
+ * @details The functions are used to get and set sensor properties in the camera object.
+ * Needs to be defined in the port-specific implementation.
+ */
+#define DECLARE_CAMERA_HAL_GETSET(type, name) \
+    DECLARE_CAMERA_HAL_GET(type, name) \
+    DECLARE_CAMERA_HAL_SET(type, name)
 
-DECLARE_SENSOR_GET(mp_camera_pixformat_t, pixel_format)
-DECLARE_SENSOR_GET(mp_camera_framesize_t, frame_size)
-DECLARE_SENSOR_GET(camera_grab_mode_t, grab_mode)
-DECLARE_SENSOR_GET(int, framebuffer_count)
+DECLARE_CAMERA_HAL_GETSET(bool, aec2)
+DECLARE_CAMERA_HAL_GETSET(int, aec_value)
+DECLARE_CAMERA_HAL_GETSET(int, ae_level)
+DECLARE_CAMERA_HAL_GETSET(int, agc_gain)
+DECLARE_CAMERA_HAL_GETSET(bool, awb_gain)
+DECLARE_CAMERA_HAL_GETSET(int, brightness)
+DECLARE_CAMERA_HAL_GETSET(bool, bpc)
+DECLARE_CAMERA_HAL_GETSET(bool, colorbar)
+DECLARE_CAMERA_HAL_GETSET(int, contrast)
+DECLARE_CAMERA_HAL_GETSET(bool, dcw)
+DECLARE_CAMERA_HAL_GETSET(int, denoise)
+DECLARE_CAMERA_HAL_GETSET(bool, exposure_ctrl)
+DECLARE_CAMERA_HAL_GETSET(mp_camera_gainceiling_t, gainceiling)
+DECLARE_CAMERA_HAL_GETSET(bool, gain_ctrl)
+DECLARE_CAMERA_HAL_GETSET(bool, hmirror)
+DECLARE_CAMERA_HAL_GETSET(bool, lenc)
+DECLARE_CAMERA_HAL_GETSET(int, quality)
+DECLARE_CAMERA_HAL_GETSET(bool, raw_gma)
+DECLARE_CAMERA_HAL_GETSET(int, saturation)
+DECLARE_CAMERA_HAL_GETSET(int, sharpness)
+DECLARE_CAMERA_HAL_GETSET(int, special_effect)
+DECLARE_CAMERA_HAL_GETSET(bool, vflip)
+DECLARE_CAMERA_HAL_GETSET(int, wb_mode)
+DECLARE_CAMERA_HAL_GETSET(bool, whitebal)
+DECLARE_CAMERA_HAL_GETSET(bool, wpc)
 
-DECLARE_SENSOR_GETSET(int, contrast)
-DECLARE_SENSOR_GETSET(int, brightness)
-DECLARE_SENSOR_GETSET(int, saturation)
-DECLARE_SENSOR_GETSET(int, sharpness)
-DECLARE_SENSOR_GETSET(int, denoise)
-DECLARE_SENSOR_GETSET(mp_camera_gainceiling_t, gainceiling)
-DECLARE_SENSOR_GETSET(int, quality)
-DECLARE_SENSOR_GETSET(bool, colorbar)
-DECLARE_SENSOR_GETSET(bool, whitebal)
-DECLARE_SENSOR_GETSET(bool, gain_ctrl)
-DECLARE_SENSOR_GETSET(bool, exposure_ctrl)
-DECLARE_SENSOR_GETSET(bool, hmirror)
-DECLARE_SENSOR_GETSET(bool, vflip)
-DECLARE_SENSOR_GETSET(bool, aec2)
-DECLARE_SENSOR_GETSET(bool, awb_gain)
-DECLARE_SENSOR_GETSET(int, agc_gain)
-DECLARE_SENSOR_GETSET(int, aec_value)
-DECLARE_SENSOR_GETSET(int, special_effect)
-DECLARE_SENSOR_GETSET(int, wb_mode)
-DECLARE_SENSOR_GETSET(int, ae_level)
-DECLARE_SENSOR_GETSET(bool, dcw)
-DECLARE_SENSOR_GETSET(bool, bpc)
-DECLARE_SENSOR_GETSET(bool, wpc)
-DECLARE_SENSOR_GETSET(bool, raw_gma)
-DECLARE_SENSOR_GETSET(bool, lenc)
-
-DECLARE_SENSOR_GET(int, address)
-DECLARE_SENSOR_GET(const char *, sensor_name)
-DECLARE_SENSOR_GET(bool, supports_jpeg)
-DECLARE_SENSOR_GET(mp_camera_framesize_t, max_frame_size)
-DECLARE_SENSOR_GET(int, pixel_width)
-DECLARE_SENSOR_GET(int, pixel_height)
+DECLARE_CAMERA_HAL_GET(int, address)
+DECLARE_CAMERA_HAL_GET(int, fb_count)
+DECLARE_CAMERA_HAL_GET(mp_camera_framesize_t, frame_size)
+DECLARE_CAMERA_HAL_GET(camera_grab_mode_t, grab_mode)
+DECLARE_CAMERA_HAL_GET(mp_camera_framesize_t, max_frame_size)
+DECLARE_CAMERA_HAL_GET(mp_camera_pixformat_t, pixel_format)
+DECLARE_CAMERA_HAL_GET(int, pixel_height)
+DECLARE_CAMERA_HAL_GET(int, pixel_width)
+DECLARE_CAMERA_HAL_GET(const char *, sensor_name)
+DECLARE_CAMERA_HAL_GET(bool, supports_jpeg)
 
 #endif // MICROPY_INCLUDED_MODCAMERA_H

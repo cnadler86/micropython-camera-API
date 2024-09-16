@@ -87,7 +87,7 @@ void mp_camera_hal_construct(
     mp_camera_pixformat_t pixel_format,
     mp_camera_framesize_t frame_size,
     int8_t jpeg_quality,
-    int8_t framebuffer_count,
+    int8_t fb_count,
     mp_camera_grabmode_t grab_mode) {
         // configure camera based on arguments
         self->camera_config.pixel_format = pixel_format;
@@ -110,7 +110,7 @@ void mp_camera_hal_construct(
         self->camera_config.pin_sscb_sda = sccb_sda_pin;
         self->camera_config.pin_sscb_scl = sccb_scl_pin;
         self->camera_config.xclk_freq_hz = xclk_freq_hz;
-        self->camera_config.fb_count = framebuffer_count;      //if more than one, i2s runs in continuous mode. TODO: Test with others than JPEG
+        self->camera_config.fb_count = fb_count;      //if more than one, i2s runs in continuous mode. TODO: Test with others than JPEG
         self->camera_config.grab_mode = grab_mode;
 
         // defaul parameters
@@ -119,7 +119,7 @@ void mp_camera_hal_construct(
         self->camera_config.ledc_channel = LEDC_CHANNEL_0;
 
         self->initialized = false;
-        self->capture_buffer = NULL;
+        self->captured_buffer = NULL;
     }
 
 void mp_camera_hal_init(mp_camera_obj_t *self) {
@@ -144,9 +144,9 @@ void mp_camera_hal_init(mp_camera_obj_t *self) {
 
 void mp_camera_hal_deinit(mp_camera_obj_t *self) {
     if (self->initialized) {
-        if (self->capture_buffer) {
-            esp_camera_fb_return(self->capture_buffer);
-            self->capture_buffer = NULL;
+        if (self->captured_buffer) {
+            esp_camera_fb_return(self->captured_buffer);
+            self->captured_buffer = NULL;
         }
         esp_err_t err = esp_camera_deinit();
         raise_micropython_error_from_esp_err(err);
@@ -154,7 +154,7 @@ void mp_camera_hal_deinit(mp_camera_obj_t *self) {
     }
 }
 
-void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t frame_size, mp_camera_pixformat_t pixel_format, mp_camera_grabmode_t grab_mode, mp_int_t framebuffer_count) {
+void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t frame_size, mp_camera_pixformat_t pixel_format, mp_camera_grabmode_t grab_mode, mp_int_t fb_count) {
     if (self->initialized) {
         ESP_LOGI(TAG, "Reconfiguring camera");
         sensor_t *sensor = esp_camera_sensor_get();
@@ -183,11 +183,11 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
             self->camera_config.grab_mode = grab_mode;
         }
         
-        if (framebuffer_count > 2) {
+        if (fb_count > 2) {
             self->camera_config.fb_count = 2;
             mp_warning(NULL, "Frame buffer size limited to 2");
         } else {
-            self->camera_config.fb_count = framebuffer_count;
+            self->camera_config.fb_count = fb_count;
         }
         
         raise_micropython_error_from_esp_err(esp_camera_deinit());
@@ -210,19 +210,19 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms) {
     if (!self->initialized) {
         mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture image: Camera not initialized"));
     }
-    if (self->capture_buffer) {
-        esp_camera_fb_return(self->capture_buffer);
-        self->capture_buffer = NULL;
+    if (self->captured_buffer) {
+        esp_camera_fb_return(self->captured_buffer);
+        self->captured_buffer = NULL;
     }
     ESP_LOGI(TAG, "Capturing image");
-    self->capture_buffer = esp_camera_fb_get();
-    if (self->capture_buffer) {
+    self->captured_buffer = esp_camera_fb_get();
+    if (self->captured_buffer) {
         if (self->camera_config.pixel_format == PIXFORMAT_JPEG) {
             ESP_LOGI(TAG, "Captured image in JPEG format");
-            return mp_obj_new_memoryview('b', self->capture_buffer->len, self->capture_buffer->buf);
+            return mp_obj_new_memoryview('b', self->captured_buffer->len, self->captured_buffer->buf);
         } else {
             ESP_LOGI(TAG, "Captured image in raw format");
-            return mp_obj_new_memoryview('b', self->capture_buffer->len, self->capture_buffer->buf);
+            return mp_obj_new_memoryview('b', self->captured_buffer->len, self->captured_buffer->buf);
             // TODO: Stub at the moment in order to return raw data, but it sould be implemented to return a Bitmap, see following circuitpython example:
             //
             // int width = common_hal_espcamera_camera_get_width(self);
@@ -233,10 +233,14 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms) {
             // return bitmap;
         }
     } else {
-        esp_camera_fb_return(self->capture_buffer);
-        self->capture_buffer = NULL;
+        esp_camera_fb_return(self->captured_buffer);
+        self->captured_buffer = NULL;
         return mp_const_none;
     }
+}
+
+bool mp_camera_hal_initialized(mp_camera_obj_t *self){
+    return self->initialized;
 }
 
 const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[] = {
@@ -310,7 +314,7 @@ const mp_rom_map_elem_t mp_camera_hal_gainceiling_table[] = {
         } \
         sensor_t *sensor = esp_camera_sensor_get(); \
         if (!sensor->getter_function_name) { \
-            mp_raise_ValueError(MP_ERROR_TEXT("no such attribute")); \
+            mp_raise_ValueError(MP_ERROR_TEXT("No attribute " #name)); \
         } \
         return sensor->status_field_name; \
     }
@@ -322,10 +326,10 @@ const mp_rom_map_elem_t mp_camera_hal_gainceiling_table[] = {
         } \
         sensor_t *sensor = esp_camera_sensor_get(); \
         if (!sensor->setter_function_name) { \
-            mp_raise_ValueError(MP_ERROR_TEXT("No such attribute")); \
+            mp_raise_ValueError(MP_ERROR_TEXT("No attribute " #name)); \
         } \
         if (sensor->setter_function_name(sensor, value) < 0) { \
-            mp_raise_ValueError(MP_ERROR_TEXT("Invalid setting")); \
+            mp_raise_ValueError(MP_ERROR_TEXT("Invalid setting for " #name)); \
         } \
     }
 
@@ -339,10 +343,10 @@ const mp_rom_map_elem_t mp_camera_hal_gainceiling_table[] = {
             mp_raise_ValueError(MP_ERROR_TEXT(#name " value must be between " #min_val " and " #max_val)); \
         } \
         if (!sensor->setter_function_name) { \
-            mp_raise_ValueError(MP_ERROR_TEXT("no such attribute")); \
+            mp_raise_ValueError(MP_ERROR_TEXT("No attribute " #name)); \
         } \
         if (sensor->setter_function_name(sensor, value) < 0) { \
-            mp_raise_ValueError(MP_ERROR_TEXT("invalid setting")); \
+            mp_raise_ValueError(MP_ERROR_TEXT("Invalid setting for " #name)); \
         } \
     }
 
@@ -384,7 +388,7 @@ camera_grab_mode_t mp_camera_hal_get_grab_mode(mp_camera_obj_t *self) {
     return self->camera_config.grab_mode;
 }
 
-int mp_camera_hal_get_framebuffer_count(mp_camera_obj_t *self) {
+int mp_camera_hal_get_fb_count(mp_camera_obj_t *self) {
     return self->camera_config.fb_count;
 }
 
