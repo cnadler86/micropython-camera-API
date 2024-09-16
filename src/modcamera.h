@@ -119,31 +119,28 @@
 #define CONFIG_OV5640_SUPPORT 1
 #endif
 
-typedef camera_config_t hal_camera_config_t;
 typedef pixformat_t  hal_camera_pixformat_t;
 typedef framesize_t  hal_camera_framesize_t;
 typedef camera_fb_location_t hal_camera_fb_location_t;
 typedef camera_grab_mode_t hal_camera_grabmode_t;
 typedef gainceiling_t hal_camera_gainceiling_t;
-typedef camera_fb_t hal_camera_fb_t;
 
 typedef struct hal_camera_obj {
     mp_obj_base_t       base;
-    hal_camera_config_t camera_config;
+    camera_config_t     camera_config;
     bool                initialized;
-    hal_camera_fb_t     *captured_buffer;
+    camera_fb_t         *captured_buffer;
 } hal_camera_obj_t;
 
 #endif // CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 
 typedef hal_camera_obj_t mp_camera_obj_t;
-typedef hal_camera_config_t mp_camera_config_t;
+
 typedef hal_camera_pixformat_t  mp_camera_pixformat_t;
 typedef hal_camera_framesize_t  mp_camera_framesize_t;
-typedef hal_camera_fb_location_t mp_camera_fb_location_t;
 typedef hal_camera_grabmode_t mp_camera_grabmode_t;
 typedef hal_camera_gainceiling_t mp_camera_gainceiling_t;
-typedef hal_camera_fb_t mp_camera_fb_t;
+// typedef hal_camera_fb_location_t mp_camera_fb_location_t; //not used at the moment, but might be used in the future
 
 // TODO:    Define how to integrate external time source in constructor (e.g. in ESP is LED-Timer).
 /**
