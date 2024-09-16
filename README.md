@@ -1,5 +1,5 @@
 # Camera API for micropython.
-This is a work in progress to support cameras in different ports in micropython, starting with the ESP32-Port and omnivision cameras. The aim of this project is to implement a general API for cameras in micropython (such as circuitpython have done).
+This is a work in progress to support cameras in different ports in micropython, starting with the ESP32-Port and omnivision (OV2640 & OV5640) cameras. The aim of this project is to implement a general API for cameras in micropython (such as circuitpython have done).
 At the moment, this is a micropython user module, but it might get in the micropython repo in the future.
 The API is stable and IMHO has reached a release candidate status, but it might change without previous anounce and until I make a release, I will not maintain a changelog.
 
