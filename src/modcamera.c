@@ -171,7 +171,7 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
             self->camera_config.frame_size = frame_size;
         }
 
-        if ( pixel_format > PIXFORMAT_RGB555) { //Maximal enum value, but validation should be better sinde wrong pixelformat leads to reboot.
+        if ( pixel_format > PIXFORMAT_RGB555) { //Maximal enum value, but validation should be better since wrong pixelformat leads to reboot.
             mp_raise_ValueError(MP_ERROR_TEXT("Invalid pixel_format"));
         } else {
             self->camera_config.pixel_format = pixel_format;

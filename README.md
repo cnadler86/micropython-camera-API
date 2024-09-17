@@ -15,7 +15,7 @@ To build the project, follow the following instructions:
 
 ## Add camera configurations to your board (Optional, but recomended)
 To make things easier, add the following lines to your board config-file "mpconfigboard.h" with the respective pins and camera parameters. Otherwise you will need to pass all parameters during construction.
-Dont forget the empty line at the buttom.
+Don't forget the empty line at the buttom.
 
 ```
 #define MICROPY_CAMERA_PIN_D0       (15)
@@ -71,16 +71,19 @@ camera = Camera(
     pixel_format=PixelFormat.RGB565,
     frame_size=FrameSize.QVGA,
     jpeg_quality=15,
-    fb_count=2,
-    grab_mode=GrabMode.LATEST
+    fb_count=1,
+    grab_mode=GrabMode.WHEN_EMPTY
 )
+
+#Camera construction using defaults (if you specified them in mpconfigboard.h)
+camera = Camera()
 
 # Capture image
 img = camera.capture()
 
 # Camera reconfiguration 
-camera.reconfigure(PixelFormat.JPEG,FrameSize.QVGA,grab_mode=GrabMode.WHEN_EMPTY, fb_count=1)
-camera.set_quality(20)
+camera.reconfigure(PixelFormat.JPEG,FrameSize.QVGA,grab_mode=GrabMode.LATEST, fb_count=2)
+camera.set_quality(10)
 ```
 
 You can get and set sensor properties by the respective methods (e.g. camera.get_brightness() or camera.set_vflip(True). See autocompletitions in Thonny in order to see the list of methods.

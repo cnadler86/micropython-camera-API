@@ -133,10 +133,10 @@ static mp_obj_t camera_reconfigure(size_t n_args, const mp_obj_t *pos_args, mp_m
     mp_camera_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
     enum { ARG_frame_size, ARG_pixel_format, ARG_grab_mode, ARG_fb_count };
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_frame_size, MP_ARG_OBJ, {.u_obj = MP_ROM_NONE} },
-        { MP_QSTR_pixel_format, MP_ARG_OBJ, {.u_obj = MP_ROM_NONE} },
-        { MP_QSTR_grab_mode, MP_ARG_OBJ, {.u_obj = MP_ROM_NONE} },
-        { MP_QSTR_fb_count, MP_ARG_OBJ, {.u_obj = MP_ROM_NONE} },
+        { MP_QSTR_frame_size, MP_ARG_INT | MP_ARG_KW_ONLY, {.u_obj = MP_ROM_NONE} },
+        { MP_QSTR_pixel_format, MP_ARG_INT | MP_ARG_KW_ONLY, {.u_obj = MP_ROM_NONE} },
+        { MP_QSTR_grab_mode, MP_ARG_INT | MP_ARG_KW_ONLY, {.u_obj = MP_ROM_NONE} },
+        { MP_QSTR_fb_count, MP_ARG_INT | MP_ARG_KW_ONLY, {.u_obj = MP_ROM_NONE} },
     };
 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -144,19 +144,19 @@ static mp_obj_t camera_reconfigure(size_t n_args, const mp_obj_t *pos_args, mp_m
 
     mp_camera_framesize_t frame_size =
         args[ARG_frame_size].u_obj != MP_ROM_NONE
-        ?  mp_obj_get_int(args[ARG_frame_size].u_obj)
+        ?  args[ARG_frame_size].u_int
         : mp_camera_hal_get_frame_size(self);
     mp_camera_pixformat_t pixel_format =
         args[ARG_pixel_format].u_obj != MP_ROM_NONE
-        ?  mp_obj_get_int(args[ARG_pixel_format].u_obj)
+        ?  args[ARG_pixel_format].u_int
         : mp_camera_hal_get_pixel_format(self);
     mp_camera_grabmode_t grab_mode =
         args[ARG_grab_mode].u_obj != MP_ROM_NONE
-        ?  mp_obj_get_int(args[ARG_grab_mode].u_obj)
+        ?  args[ARG_grab_mode].u_int
         : mp_camera_hal_get_grab_mode(self);
     uint8_t fb_count =
         args[ARG_fb_count].u_obj != MP_ROM_NONE
-        ?  mp_obj_get_int(args[ARG_fb_count].u_obj)
+        ?  args[ARG_fb_count].u_int
         : mp_camera_hal_get_fb_count(self);
     
     mp_camera_hal_reconfigure(self, frame_size, pixel_format, grab_mode, fb_count);
