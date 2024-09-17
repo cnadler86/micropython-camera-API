@@ -53,7 +53,39 @@ $ make USER_C_MODULES=../../../../mp_camera/src/micropython.cmake BOARD=<Your-Bo
 ```
 
 ## Using the API
-This will follow.
+```python
+from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
+
+# Camera construction and initialization
+camera = Camera(
+    data_pins=[1,2,3,4,5,6,7,8],
+    vsync_pin=9,
+    href_pin=10,
+    sda_pin=11,
+    scl_pin=12,
+    pclk_pin=13,
+    xclk_pin=14,
+    xclk_freq=20000000,
+    powerdown_pin=-1,
+    reset_pin=-1,
+    pixel_format=PixelFormat.RGB565,
+    frame_size=FrameSize.QVGA,
+    jpeg_quality=15,
+    fb_count=2,
+    grab_mode=GrabMode.LATEST
+)
+
+# Capture image
+img = camera.capture()
+
+# Camera reconfiguration 
+camera.reconfigure(PixelFormat.JPEG,FrameSize.QVGA,grab_mode=GrabMode.WHEN_EMPTY, fb_count=1)
+camera.set_quality(20)
+```
+
+You can get and set sensor properties by the respective methods (e.g. camera.get_brightness() or camera.set_vflip(True). See autocompletitions in Thonny in order to see the list of methods.
+If you want more insides in the methods and what they actually do, cou can find a very good documentation [here](https://docs.circuitpython.org/en/latest/shared-bindings/espcamera/index.html).
+Notice that for the methods in here you need to prefix a get/set, depending that you want to do.
 
 ## Notes
 Note: There are some other repositories supporting camera drivers for the esp32, but they either have only precompiled firmware for older micropython versions, or are not aiming to be a generic camera API for micropython.
