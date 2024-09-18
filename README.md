@@ -15,6 +15,7 @@ To build the project, follow the following instructions:
 ## Add camera configurations to your board (Optional, but recomended)
 To make things easier, add the following lines to your board config-file "mpconfigboard.h" with the respective pins and camera parameters. Otherwise you will need to pass all parameters during construction.
 Don't forget the empty line at the buttom.
+Example for xiao sense:
 
 ```
 #define MICROPY_CAMERA_PIN_D0       (15)
