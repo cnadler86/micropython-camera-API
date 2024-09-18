@@ -1,7 +1,7 @@
 # Camera API for micropython.
-This is a work in progress to support cameras in different ports in micropython, starting with the ESP32-Port and omnivision (OV2640 & OV5640) cameras. The aim of this project is to implement a general API for cameras in micropython (such as circuitpython have done).
+This project aims to support cameras in different ports in micropython, starting with the ESP32-Port and omnivision (OV2640 & OV5640) cameras. The project implements a general API for cameras in micropython (such as circuitpython have done).
 At the moment, this is a micropython user module, but it might get in the micropython repo in the future.
-The API is stable and IMHO has reached a release candidate status, but it might change without previous anounce and until I make a release, I will not maintain a changelog.
+The API is stable, but it might change without previous anounce and until I make a release, I will not maintain a changelog.
 
 ## Setup build environment
 To build the project, follow the following instructions:
@@ -11,7 +11,7 @@ To build the project, follow the following instructions:
     Clone the https://github.com/espressif/esp32-camera repository inside the ~/esp-idf/components folder, or
     Add a dependency on espressif/esp32-camera component (idf.py add-dependency "espressif/esp32-camera"), or
     Manually add a dependency in idf_component.yml of your respective port in the local micropython port folder.
-- Clone the micropython repo and this repo in a folder, e.g. "MyESPCam". I used the actual micropython master branch (between v1.23 and bevore 1.24).
+- Clone the micropython repo and this repo in a folder, e.g. "MyESPCam". I used the actual micropython master branch (between v1.23 and before 1.24).
 
 ## Add camera configurations to your board (Optional, but recomended)
 To make things easier, add the following lines to your board config-file "mpconfigboard.h" with the respective pins and camera parameters. Otherwise you will need to pass all parameters during construction.
@@ -87,5 +87,5 @@ camera.set_quality(10)
 ```
 
 You can get and set sensor properties by the respective methods (e.g. camera.get_brightness() or camera.set_vflip(True). See autocompletitions in Thonny in order to see the list of methods.
-If you want more insides in the methods and what they actually do, cou can find a very good documentation [here](https://docs.circuitpython.org/en/latest/shared-bindings/espcamera/index.html).
+If you want more insides in the methods and what they actually do, you can find a very good documentation [here](https://docs.circuitpython.org/en/latest/shared-bindings/espcamera/index.html).
 Notice that for the methods in here you need to prefix a get/set, depending that you want to do.
