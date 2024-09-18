@@ -89,6 +89,3 @@ camera.set_quality(10)
 You can get and set sensor properties by the respective methods (e.g. camera.get_brightness() or camera.set_vflip(True). See autocompletitions in Thonny in order to see the list of methods.
 If you want more insides in the methods and what they actually do, cou can find a very good documentation [here](https://docs.circuitpython.org/en/latest/shared-bindings/espcamera/index.html).
 Notice that for the methods in here you need to prefix a get/set, depending that you want to do.
-
-## Notes
-Note: There are some other repositories supporting camera drivers for the esp32, but they either have only precompiled firmware for older micropython versions, or are not aiming to be a generic camera API for micropython.
