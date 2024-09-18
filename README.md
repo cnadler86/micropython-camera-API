@@ -50,7 +50,7 @@ $ make USER_C_MODULES=../../../../mp_camera/src/micropython.cmake BOARD=<Your-Bo
 $ make USER_C_MODULES=../../../../mp_camera/src/micropython.cmake BOARD=<Your-Board> submodules
 $ make USER_C_MODULES=../../../../mp_camera/src/micropython.cmake BOARD=<Your-Board> all
 ```
-if you experience ptoblrms, visit [MicroPython external C modules](https://docs.micropython.org/en/latest/develop/cmodules.html).
+if you experience problems, visit [MicroPython external C modules](https://docs.micropython.org/en/latest/develop/cmodules.html).
 
 ## Using the API
 ```python
