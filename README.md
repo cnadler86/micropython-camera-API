@@ -7,7 +7,6 @@ The API is stable, but it might change without previous anounce and until I make
 To build the project, follow the following instructions:
 - [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.2.2/esp32/get-started/index.html): I used version 5.2.2, but it might work with other versions.
 - Clone the micropython repo and this repo in a folder, e.g. "MyESPCam". I used the actual micropython master branch (between v1.23 and before 1.24).
-- [MicroPython external C modules](https://docs.micropython.org/en/latest/develop/cmodules.html).
 - You will have to add the ESP32-Camera driver (I used v2.0.11). Here are 3 posibilities:
     Clone the https://github.com/espressif/esp32-camera repository inside the ~/esp-idf/components folder, or
     Add a dependency on espressif/esp32-camera component (idf.py add-dependency "espressif/esp32-camera"), or
@@ -51,6 +50,7 @@ $ make USER_C_MODULES=../../../../mp_camera/src/micropython.cmake BOARD=<Your-Bo
 $ make USER_C_MODULES=../../../../mp_camera/src/micropython.cmake BOARD=<Your-Board> submodules
 $ make USER_C_MODULES=../../../../mp_camera/src/micropython.cmake BOARD=<Your-Board> all
 ```
+if you experience ptoblrms, visit [MicroPython external C modules](https://docs.micropython.org/en/latest/develop/cmodules.html).
 
 ## Using the API
 ```python
