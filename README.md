@@ -6,12 +6,12 @@ The API is stable, but it might change without previous anounce and until I make
 ## Setup build environment
 To build the project, follow the following instructions:
 - [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.2.2/esp32/get-started/index.html): I used version 5.2.2, but it might work with other versions.
+- Clone the micropython repo and this repo in a folder, e.g. "MyESPCam". I used the actual micropython master branch (between v1.23 and before 1.24).
 - [MicroPython external C modules](https://docs.micropython.org/en/latest/develop/cmodules.html).
 - You will have to add the ESP32-Camera driver (I used v2.0.11). Here are 3 posibilities:
     Clone the https://github.com/espressif/esp32-camera repository inside the ~/esp-idf/components folder, or
     Add a dependency on espressif/esp32-camera component (idf.py add-dependency "espressif/esp32-camera"), or
     Manually add a dependency in idf_component.yml of your respective port in the local micropython port folder.
-- Clone the micropython repo and this repo in a folder, e.g. "MyESPCam". I used the actual micropython master branch (between v1.23 and before 1.24).
 
 ## Add camera configurations to your board (Optional, but recomended)
 To make things easier, add the following lines to your board config-file "mpconfigboard.h" with the respective pins and camera parameters. Otherwise you will need to pass all parameters during construction.
