@@ -82,7 +82,7 @@ camera = Camera()
 img = camera.capture()
 
 # Camera reconfiguration 
-camera.reconfigure(PixelFormat.JPEG,FrameSize.QVGA,grab_mode=GrabMode.LATEST, fb_count=2)
+camera.reconfigure(pixel_format=PixelFormat.JPEG,frame_size=FrameSize.QVGA,grab_mode=GrabMode.LATEST, fb_count=2)
 camera.set_quality(10)
 ```
 
