@@ -1,6 +1,9 @@
 /*
  * The MIT License (MIT)
  *
+ * Code based on circuitpython camera API by Jeff Epler
+ * Copyright (c) 2022 Jeff Epler for Adafruit Industries
+ * Adaptation to MicroPython by Christopher Nadler
  * Copyright (c) 2024 Christopher Nadler
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
