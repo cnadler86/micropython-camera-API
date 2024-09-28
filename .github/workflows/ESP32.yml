@@ -12,36 +12,63 @@ jobs:
       idf-path: ${{ steps.export-idf.outputs.idf-path }}
       micropython-path: ${{ steps.clone-micropython.outputs.micropython-path }}
     steps:
-      # 1. Check out the repository
+      # 1. Cache ESP-IDF dependencies and MicroPython
+      - name: Cache ESP-IDF and MicroPython
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ github.workspace }}/esp-idf
+            ${{ github.workspace }}/micropython
+          key: ${{ runner.os }}-esp-idf-${{ hashFiles('path-to-lock-file-or-important-files') }}
+          restore-keys: |
+            ${{ runner.os }}-esp-idf-
+
+      # 2. Check out the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Install ESP-IDF dependencies
+      # 3. Install ESP-IDF dependencies (if not cached)
       - name: Install ESP-IDF dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
 
-      # 3. Download and set up ESP-IDF 5.2.x
+      # 4. Download and set up ESP-IDF 5.2.x (if not cached)
       - name: Set up ESP-IDF 5.2.x
         id: export-idf
         run: |
-          git clone --branch release/v5.2 --recursive https://github.com/espressif/esp-idf.git
-          cd esp-idf
-          ./install.sh
-          echo "::set-output name=idf-path::$(pwd)"
+          if [ ! -d "esp-idf" ]; then
+            git clone --branch release/v5.2 --recursive https://github.com/espressif/esp-idf.git
+            cd esp-idf
+            ./install.sh
+            echo "::set-output name=idf-path::$(pwd)"
+          else
+            echo "ESP-IDF found in cache."
+            echo "::set-output name=idf-path::$(pwd)/esp-idf"
+          fi
 
-      # 4. Clone the latest MicroPython release
+      # 5. Clone the latest MicroPython release (if not cached)
       - name: Clone MicroPython latest release
         id: clone-micropython
         run: |
-          # Fetch the latest MicroPython release tag using GitHub API
-          LATEST_RELEASE=$(curl --silent "https://api.github.com/repos/micropython/micropython/releases/latest" | jq -r .tag_name)
-          echo "Cloning MicroPython release: $LATEST_RELEASE"
-          git clone --depth 1 --branch $LATEST_RELEASE https://github.com/micropython/micropython.git
-          cd micropython
-          git submodule update --init --depth 1
-          echo "::set-output name=micropython-path::$(pwd)"
+          if [ ! -d "micropython" ]; then
+            LATEST_RELEASE=$(curl --silent "https://api.github.com/repos/micropython/micropython/releases/latest" | jq -r .tag_name)
+            echo "Cloning MicroPython release: $LATEST_RELEASE"
+            git clone --depth 1 --branch $LATEST_RELEASE https://github.com/micropython/micropython.git
+            cd micropython
+            git submodule update --init --depth 1
+            echo "::set-output name=micropython-path::$(pwd)"
+          else
+            echo "MicroPython found in cache."
+            echo "::set-output name=micropython-path::$(pwd)/micropython"
+          fi
+
+      # 6. Build the Mpy-Cross (if not cached)
+      - name: Build mpy-cross
+        run: |
+          cd ${{ steps.clone-micropython.outputs.micropython-path }}/mpy-cross
+          make
+          echo "Mpy-Cross compiler built successfully"
 
   # Dynamically create jobs for each board
   build:
@@ -54,20 +81,38 @@ jobs:
           - ESP32_GENERIC_S2:SPIRAM
           - ESP32_GENERIC_S3:SPIRAM
     steps:
-      # 1. Check out the repository (optional: could be removed if not needed)
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      # 2. Set up ESP-IDF environment for the job
+      # 1. Set up ESP-IDF environment for the job
       - name: Set up ESP-IDF environment
         run: |
           cd ${{ needs.setup-environment.outputs.idf-path }}
           source ./export.sh
           cd -
-      # 3. Parse Board Name and Variant
+
+      # 2. Parse Board Name and Variant
       - name: Parse Board Name and Variant
         id: parse
         run: |
           IFS=':' read -r BOARD_NAME BOARD_VARIANT <<< "${{ matrix.board }}"
           echo "::set-output name=board_name::${BOARD_NAME}"
           echo "::set-output name=board_variant::${BOARD_VARIANT}"
+
+      # 3. Build MicroPython for each board
+      - name: Build MicroPython
+        run: |
+          cd ${{ needs.setup-environment.outputs.micropython-path }}/ports/esp32
+          make submodules
+
+          # Apply sdkconfig if available
+          if [ -f "../../../src/sdkconfig_${{ steps.parse.outputs.board_name }}" ]; then
+            cp ../../../src/sdkconfig_${{ steps.parse.outputs.board_name }} sdkconfig.defaults
+          fi
+
+          if [ -n "${{ steps.parse.outputs.board_variant }}" ]; then
+            make BOARD=${{ steps.parse.outputs.board_name }} VARIANT=${{ steps.parse.outputs.board_variant }} USER_C_MODULES=../../../../src/micropython.cmake
+          else
+            make BOARD=${{ steps.parse.outputs.board_name }} USER_C_MODULES=../../../../src/micropython.cmake
+          fi
+
+          # Store the binary
+          mkdir -p ../../../build/${{ steps.parse.outputs.board_name }}${{ steps.parse.outputs.board_variant:+_${{ steps.parse.outputs.board_variant }} }}
+          cp build/firmware.bin ../../../build/${{ steps.parse.outputs.board_name }}${{ steps.parse.outputs.board_variant:+_${{ steps.parse.outputs.board_variant }} }}/
