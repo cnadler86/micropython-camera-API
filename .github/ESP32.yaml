@@ -1,0 +1,78 @@
+name: Build MicroPython for ESP32 Boards
+
+# Der Workflow wird nur bei Merge auf den Master-Branch ausgeführt
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'src/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      WORKFLOW_ENABLED: false  # Flag, um den Workflow zu aktivieren/deaktivieren
+
+    steps:
+      # 0. Check if the workflow is enabled
+      - name: Check if workflow is enabled
+        run: |
+          if [ "${{ env.WORKFLOW_ENABLED }}" != "true" ]; then
+            echo "Workflow is disabled. Exiting."
+            exit 0
+          fi
+
+      # 1. Check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Set up Python environment
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+    
+      # 3. Install ESP-IDF dependencies
+      - name: Install ESP-IDF dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+
+      # 4. Download and set up ESP-IDF 5.2.x
+      - name: Set up ESP-IDF 5.2.x
+        run: |
+          git clone --branch release/v5.2 --recursive https://github.com/espressif/esp-idf.git
+          cd esp-idf
+          ./install.sh
+          . ./export.sh
+
+      # 5. Set up MicroPython
+      - name: Clone MicroPython repository
+        run: |
+          git clone https://github.com/micropython/micropython.git
+          cd micropython
+          git submodule update --init
+          cd ports/esp32
+          make submodules
+
+      # 6. Build MicroPython for each ESP32 board
+      - name: Build MicroPython for each board
+        run: |
+          BOARDS=("ESP32_GENERIC" "ESP32_GENERIC_S2" "ESP32_GENERIC_S3")  # Liste der ESP32 Boards
+          for BOARD in "${BOARDS[@]}"; do
+            cd micropython/ports/esp32
+            rm -rf build
+            make BOARD=$BOARD USER_C_MODULES=../../../../src/micropython.cmake
+            mkdir -p ../../../build/$BOARD
+            cp build/firmware.bin ../../../build/$BOARD/
+            cd ../../..
+          done
+
+      # 7. Upload firmware binaries as GitHub Actions artifact (only firmware.bin)
+      - name: Upload firmware binaries
+        uses: actions/upload-artifact@v3
+        with:
+          name: esp32-firmware
+          path: build/**/firmware.bin
