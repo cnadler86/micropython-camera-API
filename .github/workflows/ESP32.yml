@@ -64,3 +64,10 @@ jobs:
           cd ${{ needs.setup-environment.outputs.idf-path }}
           source ./export.sh
           cd -
+      # 3. Parse Board Name and Variant
+      - name: Parse Board Name and Variant
+        id: parse
+        run: |
+          IFS=':' read -r BOARD_NAME BOARD_VARIANT <<< "${{ matrix.board }}"
+          echo "::set-output name=board_name::${BOARD_NAME}"
+          echo "::set-output name=board_variant::${BOARD_VARIANT}"
