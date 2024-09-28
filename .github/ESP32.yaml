@@ -1,6 +1,6 @@
 name: Build MicroPython for ESP32 Boards
 
-# Der Workflow wird nur bei Merge auf den Master-Branch ausgeführt
+# The workflow triggers only on a push to the master branch
 on:
   push:
     branches:
@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      WORKFLOW_ENABLED: false  # Flag, um den Workflow zu aktivieren/deaktivieren
+      WORKFLOW_ENABLED: false  # Flag to enable/disable the workflow
 
     steps:
       # 0. Check if the workflow is enabled
@@ -33,7 +33,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
-    
+
       # 3. Install ESP-IDF dependencies
       - name: Install ESP-IDF dependencies
         run: |
@@ -48,25 +48,57 @@ jobs:
           ./install.sh
           . ./export.sh
 
-      # 5. Set up MicroPython
-      - name: Clone MicroPython repository
+      # 5. Clone latest MicroPython release
+      - name: Clone latest MicroPython release
         run: |
           git clone https://github.com/micropython/micropython.git
           cd micropython
+          # Fetch all tags and check out the latest one
+          LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+          git checkout $LATEST_TAG
           git submodule update --init
           cd ports/esp32
           make submodules
 
-      # 6. Build MicroPython for each ESP32 board
+      # 6. Build MicroPython for each board with optional variant and sdkconfig
       - name: Build MicroPython for each board
         run: |
-          BOARDS=("ESP32_GENERIC" "ESP32_GENERIC_S2" "ESP32_GENERIC_S3")  # Liste der ESP32 Boards
+          BOARDS=("ESP32_GENERIC:SPIRAM" "ESP32_GENERIC_S2:SPIRAM" "ESP32_GENERIC_S3:SPIRAM")  # List of ESP32 boards with variants
           for BOARD in "${BOARDS[@]}"; do
+            # Split the board name and variant (if provided)
+            IFS=':' read -r BOARD_NAME BOARD_VARIANT <<< "$BOARD"
+
+            # Navigate to the MicroPython ESP32 port directory
             cd micropython/ports/esp32
+
+            # Clean previous builds
             rm -rf build
-            make BOARD=$BOARD USER_C_MODULES=../../../../src/micropython.cmake
-            mkdir -p ../../../build/$BOARD
-            cp build/firmware.bin ../../../build/$BOARD/
+
+            # Optional: Apply custom sdkconfig file for the board if present
+            if [ -f "../../../src/sdkconfig_$BOARD_NAME" ]; then
+              cp ../../../src/sdkconfig_$BOARD_NAME sdkconfig.defaults
+            fi
+
+            # Use the variant if specified
+            if [ -n "$BOARD_VARIANT" ]; then
+              make BOARD=$BOARD_NAME VARIANT=$BOARD_VARIANT USER_C_MODULES=../../../../src/micropython.cmake
+            else
+              make BOARD=$BOARD_NAME USER_C_MODULES=../../../../src/micropython.cmake
+            fi
+
+            # Optional: Use additional sdkconfig files without overwriting existing ones
+            if [ -f "../../../src/sdkconfig_$BOARD_NAME" ]; then
+              cp ../../../src/sdkconfig_$BOARD_NAME build/sdkconfig
+              cd build
+              make sdkconfig
+              cd ..
+            fi
+
+            # Copy firmware to the appropriate folder
+            mkdir -p ../../../build/$BOARD_NAME${BOARD_VARIANT:+_$BOARD_VARIANT}
+            cp build/firmware.bin ../../../build/$BOARD_NAME${BOARD_VARIANT:+_$BOARD_VARIANT}/
+
+            # Return to the root directory
             cd ../../..
           done
 
