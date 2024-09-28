@@ -81,6 +81,9 @@ jobs:
           - ESP32_GENERIC_S2:SPIRAM
           - ESP32_GENERIC_S3:SPIRAM
     steps:
+      - name: list
+        run: |
+          ls -d */
       # 1. Set up ESP-IDF environment for the job
       - name: Set up ESP-IDF environment
         run: |
