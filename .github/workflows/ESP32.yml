@@ -1,108 +1,93 @@
 name: Build MicroPython for ESP32 Boards
 
-# The workflow triggers only on a push to the master branch
 on:
   push:
     branches:
-      - CI
+      - "CI"
 
 jobs:
-  build:
+  setup-environment:
     runs-on: ubuntu-latest
-
-    env:
-      WORKFLOW_ENABLED: false  # Flag to enable/disable the workflow
-
+    outputs:
+      idf-path: ${{ steps.export-idf.outputs.idf-path }}
     steps:
-      # 0. Check if the workflow is enabled
-      - name: Check if workflow is enabled
-        run: |
-          if [ "${{ env.WORKFLOW_ENABLED }}" != "true" ]; then
-            echo "Workflow is disabled. Exiting."
-            exit 0
-          fi
-
       # 1. Check out the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Set up Python environment
-      - name: Set up Python 3.x
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-
-      # 3. Install ESP-IDF dependencies
+      # 2. Install ESP-IDF dependencies
       - name: Install ESP-IDF dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
 
-      # 4. Download and set up ESP-IDF 5.2.x
+      # 3. Download and set up ESP-IDF 5.2.x
       - name: Set up ESP-IDF 5.2.x
+        id: export-idf
         run: |
           git clone --branch release/v5.2 --recursive https://github.com/espressif/esp-idf.git
           cd esp-idf
           ./install.sh
-          . ./export.sh
+          echo "::set-output name=idf-path::$(pwd)"
 
-      # 5. Clone latest MicroPython release
-      - name: Clone latest MicroPython release
+  # Dynamically create jobs for each board
+  build:
+    needs: setup-environment
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        board: 
+          - ESP32_GENERIC:SPIRAM
+          - ESP32_GENERIC_S2:SPIRAM
+          - ESP32_GENERIC_S3:SPIRAM
+    steps:
+      # 1. Check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Set up ESP-IDF environment for the job
+      - name: Set up ESP-IDF environment
+        run: |
+          cd ${{ needs.setup-environment.outputs.idf-path }}
+          source ./export.sh
+          cd -
+
+      # 3. Parse board name and variant
+      - name: Parse Board Name and Variant
+        id: parse
+        run: |
+          IFS=':' read -r BOARD_NAME BOARD_VARIANT <<< "${{ matrix.board }}"
+          echo "::set-output name=board_name::${BOARD_NAME}"
+          echo "::set-output name=board_variant::${BOARD_VARIANT}"
+
+      # 4. Clone latest MicroPython release and build for each board
+      - name: Build MicroPython
         run: |
           git clone https://github.com/micropython/micropython.git
           cd micropython
-          # Fetch all tags and check out the latest one
-          LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
-          git checkout $LATEST_TAG
+          git checkout $(git describe --tags `git rev-list --tags --max-count=1`)
           git submodule update --init
           cd ports/esp32
           make submodules
 
-      # 6. Build MicroPython for each board with optional variant and sdkconfig
-      - name: Build MicroPython for each board
-        run: |
-          BOARDS=("ESP32_GENERIC:SPIRAM" "ESP32_GENERIC_S2:SPIRAM" "ESP32_GENERIC_S3:SPIRAM")  # List of ESP32 boards with variants
-          for BOARD in "${BOARDS[@]}"; do
-            # Split the board name and variant (if provided)
-            IFS=':' read -r BOARD_NAME BOARD_VARIANT <<< "$BOARD"
+          # Optional: Apply sdkconfig file if available
+          if [ -f "../../../src/sdkconfig_${{ steps.parse.outputs.board_name }}" ]; then
+            cp ../../../src/sdkconfig_${{ steps.parse.outputs.board_name }} sdkconfig.defaults
+          fi
 
-            # Navigate to the MicroPython ESP32 port directory
-            cd micropython/ports/esp32
+          if [ -n "${{ steps.parse.outputs.board_variant }}" ]; then
+            make BOARD=${{ steps.parse.outputs.board_name }} VARIANT=${{ steps.parse.outputs.board_variant }} USER_C_MODULES=../../../../src/micropython.cmake
+          else:
+            make BOARD=${{ steps.parse.outputs.board_name }} USER_C_MODULES=../../../../src/micropython.cmake
+          fi
 
-            # Clean previous builds
-            rm -rf build
+          # Store the binary
+          mkdir -p ../../../build/${{ steps.parse.outputs.board_name }}${{ steps.parse.outputs.board_variant:+_${{ steps.parse.outputs.board_variant }} }}
+          cp build/firmware.bin ../../../build/${{ steps.parse.outputs.board_name }}${{ steps.parse.outputs.board_variant:+_${{ steps.parse.outputs.board_variant }} }}/
 
-            # Optional: Apply custom sdkconfig file for the board if present
-            if [ -f "../../../src/sdkconfig_$BOARD_NAME" ]; then
-              cp ../../../src/sdkconfig_$BOARD_NAME sdkconfig.defaults
-            fi
-
-            # Use the variant if specified
-            if [ -n "$BOARD_VARIANT" ]; then
-              make BOARD=$BOARD_NAME VARIANT=$BOARD_VARIANT USER_C_MODULES=../../../../src/micropython.cmake
-            else
-              make BOARD=$BOARD_NAME USER_C_MODULES=../../../../src/micropython.cmake
-            fi
-
-            # Optional: Use additional sdkconfig files without overwriting existing ones
-            if [ -f "../../../src/sdkconfig_$BOARD_NAME" ]; then
-              cp ../../../src/sdkconfig_$BOARD_NAME build/sdkconfig
-              cd build
-              make sdkconfig
-              cd ..
-            fi
-
-            # Copy firmware to the appropriate folder
-            mkdir -p ../../../build/$BOARD_NAME${BOARD_VARIANT:+_$BOARD_VARIANT}
-            cp build/firmware.bin ../../../build/$BOARD_NAME${BOARD_VARIANT:+_$BOARD_VARIANT}/
-
-            # Return to the root directory
-            cd ../../..
-          done
-
-      # 7. Upload firmware binaries as GitHub Actions artifact (only firmware.bin)
-      - name: Upload firmware binaries
+      # 5. Upload firmware binaries
+      - name: Upload firmware
         uses: actions/upload-artifact@v3
         with:
-          name: esp32-firmware
-          path: build/**/firmware.bin
+          name: ${{ steps.parse.outputs.board_name }}_firmware
+          path: build/${{ steps.parse.outputs.board_name }}${{ steps.parse.outputs.board_variant:+_${{ steps.parse.outputs.board_variant }} }}/firmware.bin
