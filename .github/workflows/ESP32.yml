@@ -106,13 +106,3 @@ jobs:
           if [ -f "../../../src/sdkconfig_${{ steps.parse.outputs.board_name }}" ]; then
             cp ../../../src/sdkconfig_${{ steps.parse.outputs.board_name }} sdkconfig.defaults
           fi
-
-          if [ -n "${{ steps.parse.outputs.board_variant }}" ]; then
-            make BOARD=${{ steps.parse.outputs.board_name }} VARIANT=${{ steps.parse.outputs.board_variant }} USER_C_MODULES=../../../../src/micropython.cmake
-          else
-            make BOARD=${{ steps.parse.outputs.board_name }} USER_C_MODULES=../../../../src/micropython.cmake
-          fi
-
-          # Store the binary
-          mkdir -p ../../../build/${{ steps.parse.outputs.board_name }}${{ steps.parse.outputs.board_variant:+_${{ steps.parse.outputs.board_variant }} }}
-          cp build/firmware.bin ../../../build/${{ steps.parse.outputs.board_name }}${{ steps.parse.outputs.board_variant:+_${{ steps.parse.outputs.board_variant }} }}/
