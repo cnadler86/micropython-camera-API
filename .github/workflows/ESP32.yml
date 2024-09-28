@@ -52,7 +52,7 @@ jobs:
           source ./export.sh
           cd -
 
-      # 3. Parse board name and variant
+      # 3. Parse Board Name and Variant
       - name: Parse Board Name and Variant
         id: parse
         run: |
@@ -60,17 +60,24 @@ jobs:
           echo "::set-output name=board_name::${BOARD_NAME}"
           echo "::set-output name=board_variant::${BOARD_VARIANT}"
 
-      # 4. Clone latest MicroPython release and build for each board
+      # 4. Clone the latest MicroPython release
+      - name: Clone MicroPython latest release
+        run: |
+          # Fetch the latest MicroPython release tag using GitHub API
+          LATEST_RELEASE=$(curl --silent "https://api.github.com/repos/micropython/micropython/releases/latest" | jq -r .tag_name)
+          echo "Cloning MicroPython release: $LATEST_RELEASE"
+          
+          git clone --depth 1 --branch $LATEST_RELEASE https://github.com/micropython/micropython.git
+          cd micropython
+          git submodule update --init --depth 1
+
+      # 5. Build MicroPython for each board
       - name: Build MicroPython
         run: |
-          git clone https://github.com/micropython/micropython.git
-          cd micropython
-          git checkout $(git describe --tags `git rev-list --tags --max-count=1`)
-          git submodule update --init
-          cd ports/esp32
+          cd micropython/ports/esp32
           make submodules
 
-          # Optional: Apply sdkconfig file if available
+          # Apply sdkconfig if available
           if [ -f "../../../src/sdkconfig_${{ steps.parse.outputs.board_name }}" ]; then
             cp ../../../src/sdkconfig_${{ steps.parse.outputs.board_name }} sdkconfig.defaults
           fi
@@ -85,7 +92,7 @@ jobs:
           mkdir -p ../../../build/${{ steps.parse.outputs.board_name }}${{ steps.parse.outputs.board_variant:+_${{ steps.parse.outputs.board_variant }} }}
           cp build/firmware.bin ../../../build/${{ steps.parse.outputs.board_name }}${{ steps.parse.outputs.board_variant:+_${{ steps.parse.outputs.board_variant }} }}/
 
-      # 5. Upload firmware binaries
+      # 6. Upload firmware binaries
       - name: Upload firmware
         uses: actions/upload-artifact@v3
         with:
