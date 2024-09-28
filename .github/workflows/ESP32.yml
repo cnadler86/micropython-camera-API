@@ -42,3 +42,25 @@ jobs:
           cd micropython
           git submodule update --init --depth 1
           echo "::set-output name=micropython-path::$(pwd)"
+
+  # Dynamically create jobs for each board
+  build:
+    needs: setup-environment
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        board: 
+          - ESP32_GENERIC:SPIRAM
+          - ESP32_GENERIC_S2:SPIRAM
+          - ESP32_GENERIC_S3:SPIRAM
+    steps:
+      # 1. Check out the repository (optional: could be removed if not needed)
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Set up ESP-IDF environment for the job
+      - name: Set up ESP-IDF environment
+        run: |
+          cd ${{ needs.setup-environment.outputs.idf-path }}
+          source ./export.sh
+          cd -
