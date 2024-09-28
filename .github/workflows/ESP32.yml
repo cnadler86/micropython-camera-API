@@ -29,6 +29,7 @@ jobs:
 
       # 3. Install ESP-IDF dependencies (if not cached)
       - name: Install ESP-IDF dependencies
+        if: steps.cache-idf.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
@@ -36,6 +37,7 @@ jobs:
       # 4. Download and set up ESP-IDF 5.2.x (if not cached)
       - name: Set up ESP-IDF 5.2.x
         id: export-idf
+        if: steps.cache-idf.outputs.cache-hit != 'true'
         run: |
           if [ ! -d "esp-idf" ]; then
             git clone --branch release/v5.2 --recursive https://github.com/espressif/esp-idf.git
@@ -50,6 +52,7 @@ jobs:
       # 5. Clone the latest MicroPython release (if not cached)
       - name: Clone MicroPython latest release
         id: clone-micropython
+        if: steps.cache-idf.outputs.cache-hit != 'true'
         run: |
           if [ ! -d "micropython" ]; then
             LATEST_RELEASE=$(curl --silent "https://api.github.com/repos/micropython/micropython/releases/latest" | jq -r .tag_name)
@@ -65,6 +68,7 @@ jobs:
 
       # 6. Build the Mpy-Cross (if not cached)
       - name: Build mpy-cross
+        if: steps.cache-idf.outputs.cache-hit != 'true'
         run: |
           cd ${{ steps.clone-micropython.outputs.micropython-path }}/mpy-cross
           make
@@ -82,8 +86,8 @@ jobs:
           - ESP32_GENERIC_S3:SPIRAM
     steps:
       - name: list
-        run: |
-          ls -d */
+        run:
+          find . -type d
       # 1. Set up ESP-IDF environment for the job
       - name: Set up ESP-IDF environment
         run: |
