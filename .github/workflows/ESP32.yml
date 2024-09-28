@@ -3,7 +3,7 @@ name: Build MicroPython for ESP32 Boards
 on:
   push:
     branches:
-      - "CI"
+      - CI
 
 jobs:
   setup-environment:
