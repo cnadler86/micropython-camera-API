@@ -114,8 +114,11 @@ jobs:
         id: parse
         run: |
           IFS=':' read -r BOARD_NAME BOARD_VARIANT <<< "${{ matrix.board }}"
-          echo "::set-output name=board_name::${BOARD_NAME}"
-          echo "::set-output name=board_variant::${BOARD_VARIANT}"
+          echo "BOARD_NAME=${BOARD_NAME}" >> $GITHUB_ENV
+          if [ -n "${BOARD_VARIANT}" ]; then
+            echo "BOARD_VARIANT=${BOARD_VARIANT}" >> $GITHUB_ENV
+          else
+            echo "BOARD_VARIANT=none" >> $GITHUB_ENV
 
       # 3. Build MicroPython for each board
       - name: Build MicroPython
@@ -124,6 +127,15 @@ jobs:
           make submodules
 
           # Apply sdkconfig if available
-          if [ -f "../../../src/sdkconfig_${{ steps.parse.outputs.board_name }}" ]; then
-            cp ../../../src/sdkconfig_${{ steps.parse.outputs.board_name }} sdkconfig.defaults
+          if [ -f "../../../src/sdkconfig_${{ env.BOARD_NAME }}" ]; then
+            cp ../../../src/sdkconfig_${{ env.BOARD_NAME }} sdkconfig.defaults
+          fi
+
+          # Check if a variant is defined and adjust the make command
+          if [ "${{ env.BOARD_VARIANT }}" != "none" ]; then
+            make BOARD=${{ env.BOARD_NAME }} VARIANT=${{ env.BOARD_VARIANT }} defconfig
+            make BOARD=${{ env.BOARD_NAME }} VARIANT=${{ env.BOARD_VARIANT }} -j$(nproc)
+          else
+            make BOARD=${{ env.BOARD_NAME }} defconfig
+            make BOARD=${{ env.BOARD_NAME }} -j$(nproc)
           fi
