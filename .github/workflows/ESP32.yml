@@ -38,6 +38,7 @@ jobs:
       # 4. Download and set up ESP-IDF 5.2.x (if not cached)
       - name: Set up ESP-IDF 5.2.x
         id: export-idf
+        if: steps.cache_esp_idf.outputs.cache-hit != 'true'
         run: |
           if [ ! -d "esp-idf" ]; then
             cd ~
@@ -51,6 +52,7 @@ jobs:
       # 5. Clone the latest MicroPython release (if not cached)
       - name: Clone MicroPython latest release
         id: clone-micropython
+        if: steps.cache_esp_idf.outputs.cache-hit != 'true'
         run: |
           if [ ! -d "micropython" ]; then
             LATEST_RELEASE=$(curl --silent "https://api.github.com/repos/micropython/micropython/releases/latest" | jq -r .tag_name)
