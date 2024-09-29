@@ -16,10 +16,6 @@ jobs:
       idf-path: ${{ steps.export-idf.outputs.idf-path }}
       micropython-path: ${{ steps.clone-micropython.outputs.micropython-path }}
     steps:
-      # Check out the repository
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       # Cache ESP-IDF dependencies and MicroPython
       - name: Cache ESP-IDF and MicroPython
         id: cache_esp_idf
@@ -29,6 +25,7 @@ jobs:
             ./esp-idf/
             ~/.espressif/
             !~/.espressif/dist/
+            ~/.cache/pip/
             ./micropython/
           key: esp-idf-${{ hashFiles('path-to-lock-file-or-important-files') }}
           restore-keys: |
@@ -74,6 +71,10 @@ jobs:
             echo "::set-output name=micropython-path::$(pwd)/micropython"
           fi
 
+      - name: test ESP-IDF environment
+        run: |
+          cd ${{ steps.export-idf.outputs.idf-path }}
+          source ./export.sh
   # Dynamically create jobs for each board
   build:
     needs: setup-environment
@@ -103,6 +104,7 @@ jobs:
             ~/.espressif/
             !~/.espressif/dist/
             ./micropython/
+            ~/.cache/pip/
           key: esp-idf-${{ hashFiles('path-to-lock-file-or-important-files') }}
           restore-keys: |
             esp-idf-
