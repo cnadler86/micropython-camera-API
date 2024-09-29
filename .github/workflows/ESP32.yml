@@ -95,8 +95,8 @@ jobs:
             ./esp-idf/
             ~/.espressif/
             !~/.espressif/dist/
-            ./micropython/
             ~/.cache/pip/
+            ./micropython/
           key: esp-idf-${{ hashFiles('path-to-lock-file-or-important-files') }}
           restore-keys: |
             esp-idf-
