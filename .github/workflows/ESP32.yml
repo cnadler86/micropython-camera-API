@@ -133,9 +133,7 @@ jobs:
 
           # Check if a variant is defined and adjust the make command
           if [ "${{ env.BOARD_VARIANT }}" != "none" ]; then
-            make BOARD=${{ env.BOARD_NAME }} VARIANT=${{ env.BOARD_VARIANT }} defconfig
-            make BOARD=${{ env.BOARD_NAME }} VARIANT=${{ env.BOARD_VARIANT }} -j$(nproc)
+            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=${{ env.BOARD_NAME }} VARIANT=${{ env.BOARD_VARIANT }} all
           else
-            make BOARD=${{ env.BOARD_NAME }} defconfig
-            make BOARD=${{ env.BOARD_NAME }} -j$(nproc)
+            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=${{ env.BOARD_NAME }} all
           fi
