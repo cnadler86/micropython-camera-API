@@ -10,8 +10,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  runs-on: ubuntu-24.04
   setup-environment:
+    runs-on: ubuntu-24.04
     steps:
       # Cache ESP-IDF dependencies and MicroPython
       - name: Cache ESP-IDF and MicroPython
@@ -23,7 +23,7 @@ jobs:
             ~/.espressif/
             !~/.espressif/dist/
             ~/.cache/pip/
-            ./micropython/
+            ~/micropython/
           key: esp-idf-${{ hashFiles('path-to-lock-file-or-important-files') }}
           restore-keys: |
             esp-idf-
@@ -56,6 +56,7 @@ jobs:
         run: |
           LATEST_RELEASE=$(curl --silent "https://api.github.com/repos/micropython/micropython/releases/latest" | jq -r .tag_name)
           echo "Cloning MicroPython release: $LATEST_RELEASE"
+          cd ~
           git clone --depth 1 --branch $LATEST_RELEASE https://github.com/micropython/micropython.git
           cd micropython
           git submodule update --init --depth 1
@@ -70,6 +71,7 @@ jobs:
   # Dynamically create jobs for each board
   build:
     needs: setup-environment
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -87,7 +89,7 @@ jobs:
             ~/.espressif/
             !~/.espressif/dist/
             ~/.cache/pip/
-            ./micropython/
+            ~/micropython/
           key: esp-idf-${{ hashFiles('path-to-lock-file-or-important-files') }}
           restore-keys: |
             esp-idf-
@@ -118,7 +120,7 @@ jobs:
       # 3. Build MicroPython for each board
       - name: Build MicroPython
         run: |
-          cd ${{ needs.setup-environment.outputs.micropython-path }}/ports/esp32
+          cd ~/micropython/ports/esp32
           make submodules
 
           # Apply sdkconfig if available
