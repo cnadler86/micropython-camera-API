@@ -12,9 +12,6 @@ concurrency:
 jobs:
   setup-environment:
     runs-on: ubuntu-24.04
-    outputs:
-      idf-path: ${{ steps.export-idf.outputs.idf-path }}
-      micropython-path: ${{ steps.clone-micropython.outputs.micropython-path }}
     steps:
       # Cache ESP-IDF dependencies and MicroPython
       - name: Cache ESP-IDF and MicroPython
@@ -22,7 +19,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ./esp-idf/
+            ~/esp-idf/
             ~/.espressif/
             !~/.espressif/dist/
             ~/.cache/pip/
@@ -43,13 +40,12 @@ jobs:
         id: export-idf
         run: |
           if [ ! -d "esp-idf" ]; then
+            cd ~
             git clone --branch release/v5.2 --recursive https://github.com/espressif/esp-idf.git
             cd esp-idf
             ./install.sh all
-            echo "::set-output name=idf-path::$(pwd)"
           else
             echo "ESP-IDF found in cache."
-            echo "::set-output name=idf-path::$(pwd)/esp-idf"
           fi
 
       # 5. Clone the latest MicroPython release (if not cached)
@@ -92,7 +88,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ./esp-idf/
+            ~/esp-idf/
             ~/.espressif/
             !~/.espressif/dist/
             ~/.cache/pip/
