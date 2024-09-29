@@ -108,7 +108,7 @@ jobs:
       # 1. Set up ESP-IDF environment for the job
       - name: Set up ESP-IDF environment
         run: |
-          cd esp-idf
+          cd ~/esp-idf/
           source ./export.sh
           cd -
 
