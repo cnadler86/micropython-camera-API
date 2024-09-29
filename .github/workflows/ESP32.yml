@@ -102,13 +102,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
 
-      # 1. Set up ESP-IDF environment for the job
-      - name: Set up ESP-IDF environment
-        run: |
-          cd ~/esp-idf/
-          source ./export.sh
-          cd -
-
       # 2. Parse Board Name and Variant
       - name: Parse Board Name and Variant
         id: parse
@@ -123,6 +116,8 @@ jobs:
       # 3. Build MicroPython for each board
       - name: Build MicroPython
         run: |
+          cd ~/esp-idf/
+          source ./export.sh
           cd ~/micropython/ports/esp32
           make submodules
 
