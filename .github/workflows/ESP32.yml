@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   setup-environment:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       idf-path: ${{ steps.export-idf.outputs.idf-path }}
       micropython-path: ${{ steps.clone-micropython.outputs.micropython-path }}
@@ -26,6 +26,8 @@ jobs:
         with:
           path: |
             ./esp-idf/
+            ~/.espressif/
+            !~/.espressif/dist/
             ./micropython/
           key: esp-idf-${{ hashFiles('path-to-lock-file-or-important-files') }}
           restore-keys: |
