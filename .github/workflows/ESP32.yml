@@ -62,7 +62,9 @@ jobs:
           git submodule update --init --depth 1
           cd mpy-cross
           make
-          echo "Mpy-Cross compiler built successfully"
+          cd ~/micropython/ports/esp32
+          make submodules
+          echo "Micropython setup successfully"
 
       - name: test ESP-IDF environment
         run: |
@@ -102,7 +104,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
 
-      # 2. Parse Board Name and Variant
+      # Parse Board Name and Variant
       - name: Parse Board Name and Variant
         id: parse
         run: |
@@ -113,22 +115,25 @@ jobs:
           else
             echo "BOARD_VARIANT=none" >> $GITHUB_ENV
           fi
-      # 3. Build MicroPython for each board
+      
+      # Build MicroPython for each board
       - name: Build MicroPython
         run: |
           cd ~/esp-idf/
           source ./export.sh
-          cd ~/micropython/ports/esp32
-          make submodules
 
           # Apply sdkconfig if available
           if [ -f "../../../src/sdkconfig_${{ env.BOARD_NAME }}" ]; then
             cp ../../../src/sdkconfig_${{ env.BOARD_NAME }} sdkconfig.defaults
           fi
 
+          # Create a specific build directory
+          BUILD_DIR=~/build/${{ env.BOARD_NAME }}
+          mkdir -p $BUILD_DIR
+
           # Check if a variant is defined and adjust the make command
           if [ "${{ env.BOARD_VARIANT }}" != "none" ]; then
-            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=${{ env.BOARD_NAME }} VARIANT=${{ env.BOARD_VARIANT }} all
+            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=${{ env.BOARD_NAME }} VARIANT=${{ env.BOARD_VARIANT }} BUILD=$BUILD_DIR all
           else
-            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=${{ env.BOARD_NAME }} all
+            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=${{ env.BOARD_NAME }} BUILD=$BUILD_DIR all
           fi
