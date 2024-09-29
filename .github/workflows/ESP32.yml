@@ -76,7 +76,7 @@ jobs:
   # Dynamically create jobs for each board
   build:
     needs: setup-environment
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
