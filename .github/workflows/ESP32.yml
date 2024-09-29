@@ -69,7 +69,7 @@ jobs:
 
       - name: test ESP-IDF environment
         run: |
-          cd ${{ steps.export-idf.outputs.idf-path }}
+          cd ~/esp-idf/
           source ./export.sh
   # Dynamically create jobs for each board
   build:
