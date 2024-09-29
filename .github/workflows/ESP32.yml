@@ -22,6 +22,7 @@ jobs:
 
       # Cache ESP-IDF dependencies and MicroPython
       - name: Cache ESP-IDF and MicroPython
+        id: cache_esp_idf
         uses: actions/cache@v4
         with:
           path: |
@@ -29,12 +30,13 @@ jobs:
             ~/.espressif/
             !~/.espressif/dist/
             ./micropython/
-          key: esp-idf-${{ hashFiles('path-to-lock-file-or-important-files') }}
+          key: 2esp-idf-${{ hashFiles('path-to-lock-file-or-important-files') }}
           restore-keys: |
-            esp-idf-
+            2esp-idf-
 
       # 3. Install ESP-IDF dependencies (if not cached)
       - name: Install ESP-IDF dependencies
+        if: steps.cache_esp_idf.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
