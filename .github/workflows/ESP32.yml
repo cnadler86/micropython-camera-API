@@ -10,8 +10,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  runs-on: ubuntu-24.04
   setup-environment:
-    runs-on: ubuntu-24.04
     steps:
       # Cache ESP-IDF dependencies and MicroPython
       - name: Cache ESP-IDF and MicroPython
@@ -54,20 +54,14 @@ jobs:
         id: clone-micropython
         if: steps.cache_esp_idf.outputs.cache-hit != 'true'
         run: |
-          if [ ! -d "micropython" ]; then
-            LATEST_RELEASE=$(curl --silent "https://api.github.com/repos/micropython/micropython/releases/latest" | jq -r .tag_name)
-            echo "Cloning MicroPython release: $LATEST_RELEASE"
-            git clone --depth 1 --branch $LATEST_RELEASE https://github.com/micropython/micropython.git
-            cd micropython
-            git submodule update --init --depth 1
-            echo "::set-output name=micropython-path::$(pwd)"
-            cd mpy-cross
-            make
-            echo "Mpy-Cross compiler built successfully"
-          else
-            echo "MicroPython found in cache."
-            echo "::set-output name=micropython-path::$(pwd)/micropython"
-          fi
+          LATEST_RELEASE=$(curl --silent "https://api.github.com/repos/micropython/micropython/releases/latest" | jq -r .tag_name)
+          echo "Cloning MicroPython release: $LATEST_RELEASE"
+          git clone --depth 1 --branch $LATEST_RELEASE https://github.com/micropython/micropython.git
+          cd micropython
+          git submodule update --init --depth 1
+          cd mpy-cross
+          make
+          echo "Mpy-Cross compiler built successfully"
 
       - name: test ESP-IDF environment
         run: |
@@ -76,7 +70,6 @@ jobs:
   # Dynamically create jobs for each board
   build:
     needs: setup-environment
-    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
