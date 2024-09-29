@@ -5,6 +5,10 @@ on:
     branches:
       - CI
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   setup-environment:
     runs-on: ubuntu-latest
@@ -12,24 +16,23 @@ jobs:
       idf-path: ${{ steps.export-idf.outputs.idf-path }}
       micropython-path: ${{ steps.clone-micropython.outputs.micropython-path }}
     steps:
-      # 1. Cache ESP-IDF dependencies and MicroPython
+      # Check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Cache ESP-IDF dependencies and MicroPython
       - name: Cache ESP-IDF and MicroPython
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
-            ${{ github.workspace }}/esp-idf
-            ${{ github.workspace }}/micropython
-          key: ${{ runner.os }}-esp-idf-${{ hashFiles('path-to-lock-file-or-important-files') }}
+            ./esp-idf/
+            ./micropython/
+          key: esp-idf-${{ hashFiles('path-to-lock-file-or-important-files') }}
           restore-keys: |
-            ${{ runner.os }}-esp-idf-
-
-      # 2. Check out the repository
-      - name: Checkout repository
-        uses: actions/checkout@v3
+            esp-idf-
 
       # 3. Install ESP-IDF dependencies (if not cached)
       - name: Install ESP-IDF dependencies
-        if: steps.cache-idf.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
@@ -37,7 +40,6 @@ jobs:
       # 4. Download and set up ESP-IDF 5.2.x (if not cached)
       - name: Set up ESP-IDF 5.2.x
         id: export-idf
-        if: steps.cache-idf.outputs.cache-hit != 'true'
         run: |
           if [ ! -d "esp-idf" ]; then
             git clone --branch release/v5.2 --recursive https://github.com/espressif/esp-idf.git
@@ -52,7 +54,6 @@ jobs:
       # 5. Clone the latest MicroPython release (if not cached)
       - name: Clone MicroPython latest release
         id: clone-micropython
-        if: steps.cache-idf.outputs.cache-hit != 'true'
         run: |
           if [ ! -d "micropython" ]; then
             LATEST_RELEASE=$(curl --silent "https://api.github.com/repos/micropython/micropython/releases/latest" | jq -r .tag_name)
@@ -61,33 +62,39 @@ jobs:
             cd micropython
             git submodule update --init --depth 1
             echo "::set-output name=micropython-path::$(pwd)"
+            cd mpy-cross
+            make
+            echo "Mpy-Cross compiler built successfully"
           else
             echo "MicroPython found in cache."
             echo "::set-output name=micropython-path::$(pwd)/micropython"
           fi
-
-      # 6. Build the Mpy-Cross (if not cached)
-      - name: Build mpy-cross
-        if: steps.cache-idf.outputs.cache-hit != 'true'
-        run: |
-          cd ${{ steps.clone-micropython.outputs.micropython-path }}/mpy-cross
-          make
-          echo "Mpy-Cross compiler built successfully"
 
   # Dynamically create jobs for each board
   build:
     needs: setup-environment
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         board: 
           - ESP32_GENERIC:SPIRAM
           - ESP32_GENERIC_S2:SPIRAM
           - ESP32_GENERIC_S3:SPIRAM
     steps:
-      - name: list
-        run:
-          find . -type d
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Cache ESP-IDF dependencies and MicroPython
+      - name: Cache ESP-IDF and MicroPython
+        uses: actions/cache@v4
+        with:
+          path: |
+            ./esp-idf/
+            ./micropython/
+          key: esp-idf-${{ hashFiles('path-to-lock-file-or-important-files') }}
+          restore-keys: |
+            esp-idf-
       # 1. Set up ESP-IDF environment for the job
       - name: Set up ESP-IDF environment
         run: |
