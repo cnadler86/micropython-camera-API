@@ -119,7 +119,7 @@ jobs:
             echo "BOARD_VARIANT=${BOARD_VARIANT}" >> $GITHUB_ENV
           else
             echo "BOARD_VARIANT=none" >> $GITHUB_ENV
-
+          fi
       # 3. Build MicroPython for each board
       - name: Build MicroPython
         run: |
