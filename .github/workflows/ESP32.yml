@@ -30,9 +30,9 @@ jobs:
             ~/.espressif/
             !~/.espressif/dist/
             ./micropython/
-          key: 2esp-idf-${{ hashFiles('path-to-lock-file-or-important-files') }}
+          key: esp-idf-${{ hashFiles('path-to-lock-file-or-important-files') }}
           restore-keys: |
-            2esp-idf-
+            esp-idf-
 
       # 3. Install ESP-IDF dependencies (if not cached)
       - name: Install ESP-IDF dependencies
