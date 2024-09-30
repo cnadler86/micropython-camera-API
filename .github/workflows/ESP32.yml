@@ -119,15 +119,9 @@ jobs:
       # Build MicroPython for each board
       - name: Build MicroPython
         run: |
-          cd ~/esp-idf/
-          source ./export.sh
-
-          # Apply sdkconfig if available
-          if [ -f "../../../src/sdkconfig_${{ env.BOARD_NAME }}" ]; then
-            cp ../../../src/sdkconfig_${{ env.BOARD_NAME }} sdkconfig.defaults
-          fi
-
           cd ~/micropython/ports/esp32
+          source ~/esp-idf/export.sh
+
           # Check if a variant is defined and adjust the make command
           if [ "${{ env.BOARD_VARIANT }}" != "none" ]; then
             make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=${{ env.BOARD_NAME }} VARIANT=${{ env.BOARD_VARIANT }} BUILD=~/build/${{ env.BOARD_NAME }} all
