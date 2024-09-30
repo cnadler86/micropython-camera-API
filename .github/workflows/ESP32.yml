@@ -136,6 +136,6 @@ jobs:
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
         with:
-          name: firmware-${{ matrix.board }}
+          name: firmware-${BOARD_NAME}
           path: ~/micropython/ports/esp32/build-${BOARD_NAME}-${BOARD_VARIANT}/firmware.bin
           retention-days: 90
