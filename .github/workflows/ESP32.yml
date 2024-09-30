@@ -121,6 +121,7 @@ jobs:
           source ~/esp-idf/export.sh
 
           # Check if a variant is defined and adjust the make command
+          make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=${{ env.BOARD_NAME }} BUILD=~/build/${{ env.BOARD_NAME }} submodules
           if [ "${{ env.BOARD_VARIANT }}" != "none" ]; then
             make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=${{ env.BOARD_NAME }} VARIANT=${{ env.BOARD_VARIANT }} BUILD=~/build/${{ env.BOARD_NAME }} all
           else
