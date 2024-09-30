@@ -127,15 +127,11 @@ jobs:
             cp ../../../src/sdkconfig_${{ env.BOARD_NAME }} sdkconfig.defaults
           fi
 
-          # Create a specific build directory
-          BUILD_DIR=~/build/${{ env.BOARD_NAME }}
-          mkdir -p $BUILD_DIR
-
           # Check if a variant is defined and adjust the make command
           if [ "${{ env.BOARD_VARIANT }}" != "none" ]; then
-            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=${{ env.BOARD_NAME }} VARIANT=${{ env.BOARD_VARIANT }} BUILD=$BUILD_DIR
+            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=${{ env.BOARD_NAME }} VARIANT=${{ env.BOARD_VARIANT }} BUILD=~/build/${{ env.BOARD_NAME }}
           else
-            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=${{ env.BOARD_NAME }} BUILD=$BUILD_DIR
+            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=${{ env.BOARD_NAME }} BUILD=~/build/${{ env.BOARD_NAME }}
           fi
 
       # delete Build in MicroPython
