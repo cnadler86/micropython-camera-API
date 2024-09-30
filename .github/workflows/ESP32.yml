@@ -40,14 +40,12 @@ jobs:
         id: export-idf
         if: steps.cache_esp_idf.outputs.cache-hit != 'true'
         run: |
-          if [ ! -d "esp-idf" ]; then
-            cd ~
-            git clone --branch release/v5.2 --recursive https://github.com/espressif/esp-idf.git
-            cd esp-idf
-            ./install.sh all
-          else
-            echo "ESP-IDF found in cache."
-          fi
+          cd ~
+          git clone --branch release/v5.2 --recursive https://github.com/espressif/esp-idf.git
+          cd esp-idf
+          ./install.sh all
+          cd ./components
+          git clone https://github.com/espressif/esp32-camera
 
       # 5. Clone the latest MicroPython release (if not cached)
       - name: Clone MicroPython latest release
