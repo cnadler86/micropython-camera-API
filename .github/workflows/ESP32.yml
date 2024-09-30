@@ -44,7 +44,7 @@ jobs:
           git clone --branch release/v5.2 --recursive https://github.com/espressif/esp-idf.git
           cd esp-idf
           ./install.sh all
-          cd ./components
+          cd components
           git clone https://github.com/espressif/esp32-camera
 
       # 5. Clone the latest MicroPython release (if not cached)
