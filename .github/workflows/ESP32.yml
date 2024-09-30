@@ -126,16 +126,13 @@ jobs:
           make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=${{ env.BOARD_NAME }} BUILD=~/build/${{ env.BOARD_NAME }} submodules
           if [ "${{ env.BOARD_VARIANT }}" != "none" ]; then
             make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=${{ env.BOARD_NAME }} VARIANT=${{ env.BOARD_VARIANT }} all
-            # make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=${{ env.BOARD_NAME }} VARIANT=${{ env.BOARD_VARIANT }} BUILD=~/build/${{ env.BOARD_NAME }} all
           else
-            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=${{ env.BOARD_NAME }} BUILD=~/build/${{ env.BOARD_NAME }} all
+            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=${{ env.BOARD_NAME }} all
           fi
-          cd ~/micropython/ports/esp32/build-${BOARD_NAME}-${BOARD_VARIANT}
-          ls
 
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
         with:
           name: firmware-${BOARD_NAME}
-          path: ~/micropython/ports/esp32/build-${BOARD_NAME}-${BOARD_VARIANT}/firmware.bin
+          path: ~/micropython/ports/esp32/build-${{ env.BOARD_NAME }}-${{ env.BOARD_VARIANT }}/firmware.bin
           retention-days: 90
