@@ -75,8 +75,7 @@ jobs:
       matrix:
         board: 
           - ESP32_GENERIC-SPIRAM
-          - ESP32_GENERIC_S2-SPIRAM
-          - ESP32_GENERIC_S3-SPIRAM
+          - ESP32_GENERIC_S3-SPIRAM_OCT
     steps:
       # Cache ESP-IDF dependencies and MicroPython
       - name: Cache ESP-IDF and MicroPython
