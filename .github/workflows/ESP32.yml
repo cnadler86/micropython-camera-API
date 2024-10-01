@@ -76,9 +76,9 @@ jobs:
       fail-fast: false
       matrix:
         board: 
-          - ESP32_GENERIC:SPIRAM
-          - ESP32_GENERIC_S2:SPIRAM
-          - ESP32_GENERIC_S3:SPIRAM
+          - ESP32_GENERIC-SPIRAM
+          - ESP32_GENERIC_S2-SPIRAM
+          - ESP32_GENERIC_S3-SPIRAM
     steps:
       # Cache ESP-IDF dependencies and MicroPython
       - name: Cache ESP-IDF and MicroPython
@@ -106,7 +106,7 @@ jobs:
       - name: Parse Board Name and Variant
         id: parse
         run: |
-          IFS=':' read -r BOARD_NAME BOARD_VARIANT <<< "${{ matrix.board }}"
+          IFS='-' read -r BOARD_NAME BOARD_VARIANT <<< "${{ matrix.board }}"
           echo "BOARD_NAME=${BOARD_NAME}" >> $GITHUB_ENV
           if [ -n "${BOARD_VARIANT}" ]; then
             echo "BOARD_VARIANT=${BOARD_VARIANT}" >> $GITHUB_ENV
@@ -129,10 +129,11 @@ jobs:
           else
             make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=${{ env.BOARD_NAME }} all
           fi
+          mv ~/micropython/ports/esp32/build-${{ matrix.board }}/firmware.bin ~/${{ matrix.board }}.bin
 
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
         with:
           name: firmware-${BOARD_NAME}
-          path: ~/micropython/ports/esp32/build-${{ env.BOARD_NAME }}-${{ env.BOARD_VARIANT }}/firmware.bin
-          retention-days: 90
+          path: ~/${{ matrix.board }}.bin
+          retention-days: 1
