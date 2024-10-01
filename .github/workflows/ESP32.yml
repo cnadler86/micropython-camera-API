@@ -115,8 +115,6 @@ jobs:
       # Build MicroPython for each board
       - name: Build MicroPython
         run: |
-          cd ~/micropython/mpy-cross
-          make
           cd ~/micropython/ports/esp32
           source ~/esp-idf/export.sh
 
