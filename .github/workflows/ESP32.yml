@@ -119,8 +119,10 @@ jobs:
           # Check if a variant is defined and adjust the make command
           IFS='-' read -r BOARD_NAME BOARD_VARIANT <<< "${{ matrix.board }}"
           if [ -n "${BOARD_VARIANT}" ]; then
+            echo "$BOARD_NAME $BOARD_VARIANT"
             make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=$BOARD_NAME VARIANT=$BOARD_VARIANT all
           else
+            echo "$BOARD_NAME $BOARD_VARIANT"
             make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=$BOARD_NAME all
           fi
           mv ~/micropython/ports/esp32/build-${{ matrix.board }}/firmware.bin ~/${{ matrix.board }}.bin
