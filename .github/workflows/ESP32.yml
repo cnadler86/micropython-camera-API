@@ -110,18 +110,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0 build-essential pkg-config
 
-      # Parse Board Name and Variant
-      - name: Parse Board Name and Variant
-        id: parse
-        run: |
-          IFS='-' read -r BOARD_NAME BOARD_VARIANT <<< "${{ matrix.board }}"
-          echo "BOARD_NAME=${BOARD_NAME}" >> $GITHUB_ENV
-          if [ -n "${BOARD_VARIANT}" ]; then
-            echo "BOARD_VARIANT=${BOARD_VARIANT}" >> $GITHUB_ENV
-          else
-            echo "BOARD_VARIANT=none" >> $GITHUB_ENV
-          fi
-      
       # Build MicroPython for each board
       - name: Build MicroPython
         run: |
