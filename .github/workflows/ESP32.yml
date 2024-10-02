@@ -13,6 +13,13 @@ jobs:
   setup-environment:
     runs-on: ubuntu-24.04
     steps:
+     # Get the latest MicroPython release
+      - name: Get MicroPython latest release
+        id: get-micropython-release
+        run: |
+          LATEST_RELEASE=$(curl --silent "https://api.github.com/repos/micropython/micropython/releases/latest" | jq -r .tag_name)
+          echo "LATEST_RELEASE=${LATEST_RELEASE}" >> $GITHUB_ENV
+
       # Cache ESP-IDF dependencies and MicroPython
       - name: Cache ESP-IDF and MicroPython
         id: cache_esp_idf
@@ -29,25 +36,11 @@ jobs:
             esp-idf-
 
       # Install ESP-IDF dependencies (if not cached)
-      - name: Install ESP-IDF dependencies
+      - name: Install dependencies
         if: steps.cache_esp_idf.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
-
-      # Download and set up ESP-IDF 5.2.x (if not cached)
-      - name: Set up ESP-IDF 5.2.x
-        id: export-idf
-        if: steps.cache_esp_idf.outputs.cache-hit != 'true'
-        run: |
-          cd ~
-          git clone --branch release/v5.2 --recursive https://github.com/espressif/esp-idf.git
-          cd esp-idf
-          ./install.sh all
-          cd components
-          git clone https://github.com/espressif/esp32-camera
-          cd ~/esp-idf/
-          source ./export.sh
 
       # Clone the latest MicroPython release (if not cached)
       - name: Clone MicroPython latest release
@@ -65,6 +58,20 @@ jobs:
           cd ~/micropython/ports/esp32
           make submodules
           echo "Micropython setup successfully"
+
+      # Download and set up ESP-IDF 5.2.x (if not cached)
+      - name: Set up ESP-IDF 5.2.x
+        id: export-idf
+        if: steps.cache_esp_idf.outputs.cache-hit != 'true'
+        run: |
+          cd ~
+          git clone --branch release/v5.2 --recursive https://github.com/espressif/esp-idf.git
+          cd esp-idf
+          ./install.sh all
+          cd components
+          git clone https://github.com/espressif/esp32-camera
+          cd ~/esp-idf/
+          source ./export.sh
 
   # Dynamically create jobs for each board
   build:
@@ -122,10 +129,11 @@ jobs:
           source ~/esp-idf/export.sh
 
           # Check if a variant is defined and adjust the make command
-          if [ "${{ env.BOARD_VARIANT }}" != "none" ]; then
-            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=${{ env.BOARD_NAME }} VARIANT=${{ env.BOARD_VARIANT }} all
+          IFS='-' read -r BOARD_NAME BOARD_VARIANT <<< "${{ matrix.board }}"
+          if [ -n "${BOARD_VARIANT}" ]; then
+            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=$BOARD_NAME VARIANT=$BOARD_VARIANT all
           else
-            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=${{ env.BOARD_NAME }} all
+            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=$BOARD_NAME all
           fi
           mv ~/micropython/ports/esp32/build-${{ matrix.board }}/firmware.bin ~/${{ matrix.board }}.bin
 
