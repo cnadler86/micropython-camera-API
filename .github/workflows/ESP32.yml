@@ -15,7 +15,6 @@ jobs:
     steps:
      # Get the latest MicroPython release
       - name: Get MicroPython latest release
-        id: get-micropython-release
         run: |
           LATEST_RELEASE=$(curl --silent "https://api.github.com/repos/micropython/micropython/releases/latest" | jq -r .tag_name)
           echo "LATEST_RELEASE=${LATEST_RELEASE}" >> $GITHUB_ENV
@@ -90,6 +89,12 @@ jobs:
           - ESP32_GENERIC_S3-FLASH_4M
 
     steps:
+     # Get the latest MicroPython release
+      - name: Get MicroPython latest release
+        run: |
+          LATEST_RELEASE=$(curl --silent "https://api.github.com/repos/micropython/micropython/releases/latest" | jq -r .tag_name)
+          echo "LATEST_RELEASE=${LATEST_RELEASE}" >> $GITHUB_ENV
+
       # Cache ESP-IDF dependencies and MicroPython
       - name: Cache ESP-IDF and MicroPython
         uses: actions/cache@v4
