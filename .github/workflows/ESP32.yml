@@ -32,9 +32,7 @@ jobs:
             !~/.espressif/dist/
             ~/.cache/pip/
             ~/micropython/
-          key: esp-idf-${{ hashFiles('path-to-lock-file-or-important-files') }}
-          restore-keys: |
-            esp-idf-
+          key: mpy-${{ env.LATEST_RELEASE }}
 
       # Install ESP-IDF dependencies (if not cached)
       - name: Install dependencies
@@ -99,9 +97,7 @@ jobs:
             !~/.espressif/dist/
             ~/.cache/pip/
             ~/micropython/
-          key: esp-idf-${{ hashFiles('path-to-lock-file-or-important-files') }}
-          restore-keys: |
-            esp-idf-
+          key: mpy-${{ env.LATEST_RELEASE }}
 
       - name: Checkout repository
         uses: actions/checkout@v4
