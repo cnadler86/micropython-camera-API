@@ -64,10 +64,8 @@ jobs:
         if: steps.cache_esp_idf.outputs.cache-hit != 'true'
         run: |
           cd ~
-          git clone --branch release/v5.2 --recursive https://github.com/espressif/esp-idf.git
-          cd esp-idf
-          ./install.sh all
-          cd components
+          source micropython/tools/ci.sh && ci_esp32_idf_setup
+          cd ~/esp-idf/components
           git clone https://github.com/espressif/esp32-camera
           cd ~/esp-idf/
           source ./export.sh
