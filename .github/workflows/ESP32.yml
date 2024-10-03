@@ -64,7 +64,8 @@ jobs:
         if: steps.cache_esp_idf.outputs.cache-hit != 'true'
         run: |
           cd ~
-          git clone --branch release/${{ env.IDF_VER }} --recursive https://github.com/espressif/esp-idf.git
+          # git clone --branch release/v5.2 --recursive https://github.com/espressif/esp-idf.git
+          git clone --depth 1 --branch ${{ env.IDF_VER }} https://github.com/espressif/esp-idf.git
           cd esp-idf
           ./install.sh all
           cd components
