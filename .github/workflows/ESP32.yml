@@ -33,6 +33,7 @@ jobs:
             ~/.cache/pip/
             ~/micropython/
           key: mpy-${{ env.LATEST_RELEASE }}
+          restore-keys: mpy-
 
       # Install ESP-IDF dependencies (if not cached)
       - name: Install dependencies
@@ -100,6 +101,7 @@ jobs:
             ~/.cache/pip/
             ~/micropython/
           key: mpy-${{ env.LATEST_RELEASE }}
+          restore-keys: mpy-
 
       - name: Checkout repository
         uses: actions/checkout@v4
