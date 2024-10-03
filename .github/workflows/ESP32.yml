@@ -25,6 +25,7 @@ jobs:
         id: cache_esp_idf
         uses: actions/cache@v4
         with:
+          lookup-only: true
           path: |
             ~/esp-idf/
             ~/.espressif/
