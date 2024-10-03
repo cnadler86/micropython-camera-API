@@ -46,10 +46,9 @@ jobs:
         id: clone-micropython
         if: steps.cache_esp_idf.outputs.cache-hit != 'true'
         run: |
-          LATEST_RELEASE=$(curl --silent "https://api.github.com/repos/micropython/micropython/releases/latest" | jq -r .tag_name)
           echo "Cloning MicroPython release: $LATEST_RELEASE"
           cd ~
-          git clone --depth 1 --branch $LATEST_RELEASE https://github.com/micropython/micropython.git
+          git clone --depth 1 --branch ${{ env.LATEST_RELEASE }} https://github.com/micropython/micropython.git
           cd micropython
           git submodule update --init --depth 1
           cd mpy-cross
@@ -57,15 +56,18 @@ jobs:
           cd ~/micropython/ports/esp32
           make submodules
           echo "Micropython setup successfully"
+          source ~/micropython/tools/ci.sh && echo "IDF_VER=$IDF_VER" >> $GITHUB_ENV
 
-      # Download and set up ESP-IDF 5.2.x (if not cached)
-      - name: Set up ESP-IDF 5.2.x
+      # Download and set up ESP-IDF (if not cached)
+      - name: Set up ESP-IDF
         id: export-idf
         if: steps.cache_esp_idf.outputs.cache-hit != 'true'
         run: |
           cd ~
-          source micropython/tools/ci.sh && ci_esp32_idf_setup
-          cd ~/esp-idf/components
+          git clone --branch release/${{ env.IDF_VER }} --recursive https://github.com/espressif/esp-idf.git
+          cd esp-idf
+          ./install.sh all
+          cd components
           git clone https://github.com/espressif/esp32-camera
           cd ~/esp-idf/
           source ./export.sh
