@@ -1,4 +1,4 @@
-name: Build MicroPython for ESP32 Boards
+name: Build MicroPython Camera for ESP32 Boards
 
 on:
   push:
@@ -16,8 +16,8 @@ jobs:
      # Get the latest MicroPython release
       - name: Get MicroPython latest release
         run: |
-          LATEST_RELEASE=$(curl --silent "https://api.github.com/repos/micropython/micropython/releases/latest" | jq -r .tag_name)
-          echo "LATEST_RELEASE=${LATEST_RELEASE}" >> $GITHUB_ENV
+          MPY_RELEASE=$(curl --silent "https://api.github.com/repos/micropython/micropython/releases/latest" | jq -r .tag_name)
+          echo "MPY_RELEASE=${MPY_RELEASE}" >> $GITHUB_ENV
 
       # Cache ESP-IDF dependencies and MicroPython
       - name: Cache ESP-IDF and MicroPython
@@ -31,7 +31,7 @@ jobs:
             !~/.espressif/dist/
             ~/.cache/pip/
             ~/micropython/
-          key: mpy-${{ env.LATEST_RELEASE }}
+          key: mpy-${{ env.MPY_RELEASE }}
           restore-keys: mpy-
 
       # Install ESP-IDF dependencies (if not cached)
@@ -46,9 +46,9 @@ jobs:
         id: clone-micropython
         if: steps.cache_esp_idf.outputs.cache-hit != 'true'
         run: |
-          echo "Cloning MicroPython release: $LATEST_RELEASE"
+          echo "Cloning MicroPython release: $MPY_RELEASE"
           cd ~
-          git clone --depth 1 --branch ${{ env.LATEST_RELEASE }} https://github.com/micropython/micropython.git
+          git clone --depth 1 --branch ${{ env.MPY_RELEASE }} https://github.com/micropython/micropython.git
           cd micropython
           git submodule update --init --depth 1
           cd mpy-cross
@@ -64,8 +64,8 @@ jobs:
         if: steps.cache_esp_idf.outputs.cache-hit != 'true'
         run: |
           cd ~
-          # git clone --branch release/v5.2 --recursive https://github.com/espressif/esp-idf.git
-          git clone --depth 1 --branch ${{ env.IDF_VER }} https://github.com/espressif/esp-idf.git
+          git clone --depth 1 --branch release/v5.2 https://github.com/espressif/esp-idf.git
+          # git clone --depth 1 --branch ${{ env.IDF_VER }} https://github.com/espressif/esp-idf.git
           git -C esp-idf submodule update --init --recursive --filter=tree:0
           cd esp-idf
           ./install.sh all
@@ -92,8 +92,8 @@ jobs:
      # Get the latest MicroPython release
       - name: Get MicroPython latest release
         run: |
-          LATEST_RELEASE=$(curl --silent "https://api.github.com/repos/micropython/micropython/releases/latest" | jq -r .tag_name)
-          echo "LATEST_RELEASE=${LATEST_RELEASE}" >> $GITHUB_ENV
+          MPY_RELEASE=$(curl --silent "https://api.github.com/repos/micropython/micropython/releases/latest" | jq -r .tag_name)
+          echo "MPY_RELEASE=${MPY_RELEASE}" >> $GITHUB_ENV
 
       # Cache ESP-IDF dependencies and MicroPython
       - name: Cache ESP-IDF and MicroPython
@@ -105,7 +105,7 @@ jobs:
             !~/.espressif/dist/
             ~/.cache/pip/
             ~/micropython/
-          key: mpy-${{ env.LATEST_RELEASE }}
+          key: mpy-${{ env.MPY_RELEASE }}
           restore-keys: mpy-
 
       - name: Checkout repository
