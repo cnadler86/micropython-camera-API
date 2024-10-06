@@ -1,5 +1,5 @@
 # Check if IDF_VERSION is less than 5.2.0 AND MICROPY_BOARD is ESP32_GENERIC
-if (IDF_VERSION VERSION_LESS "5.3.0" AND MICROPY_TARGET STREQUAL "esp32")
+if (IDF_VERSION VERSION_LESS "5.3.0" AND IDF_TARGET STREQUAL "esp32")
     message(WARNING "You might get IRAM errors. In this case either update to IDF Version >= 5.2 OR define CONFIG_SPIRAM_CACHE_WORKAROUND=n and CONFIG_ESP32_REV_MIN_3=y in the respective sdkconfig file.")
 endif()
 

@@ -59,7 +59,7 @@
 #define MICROPY_CAMERA_PIN_SIOC    (-1)
 #endif
 
-#ifndef MICROPY_CAMERA_PIN_D0   (-1)
+#ifndef MICROPY_CAMERA_PIN_D0
 #define MICROPY_CAMERA_PIN_D0   (-1)
 #define MICROPY_CAMERA_PIN_D1   (-1)
 #define MICROPY_CAMERA_PIN_D2   (-1)
