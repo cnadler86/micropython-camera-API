@@ -76,7 +76,7 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
             data_pins[6] = MICROPY_CAMERA_PIN_D6;
             data_pins[7] = MICROPY_CAMERA_PIN_D7;
         } else {
-            mp_raise_OSError(MP_ERROR_TEXT("Specify a valid camera configuration"));
+            mp_raise_ValueError(MP_ERROR_TEXT("Specify a valid camera configuration"));
         }
     } else {
         if (!mp_obj_is_type(data_pins_obj, &mp_type_list) && !mp_obj_is_type(data_pins_obj, &mp_type_bytearray)) {
