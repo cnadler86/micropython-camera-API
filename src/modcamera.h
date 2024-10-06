@@ -43,6 +43,12 @@
 #include "esp_camera.h"
 #include "sensor.h"
 
+#if defined(MICROPY_CAMERA_PIN_SIOD) && defined(MICROPY_CAMERA_PIN_SIOC) && defined(MICROPY_CAMERA_PIN_D0) && defined(MICROPY_CAMERA_PIN_D1) && defined(MICROPY_CAMERA_PIN_D2) && \
+defined(MICROPY_CAMERA_PIN_D3) && defined(MICROPY_CAMERA_PIN_D4) && defined(MICROPY_CAMERA_PIN_D5) && defined(MICROPY_CAMERA_PIN_D6) && defined(MICROPY_CAMERA_PIN_D7) && \
+defined(MICROPY_CAMERA_PIN_PCLK) && defined(MICROPY_CAMERA_PIN_VSYNC) && defined(MICROPY_CAMERA_PIN_HREF) &&  defined(MICROPY_CAMERA_PIN_XCLK)
+#define MICROPY_CAMERA_ALL_REQ_PINS_DEFINED (1)
+#endif
+
 #ifndef MICROPY_CAMERA_PIN_PWDN
 #define MICROPY_CAMERA_PIN_PWDN    (-1)
 #endif

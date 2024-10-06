@@ -42,7 +42,7 @@ const mp_obj_type_t camera_type;
 static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
     enum { ARG_data_pins, ARG_pixel_clock_pin, ARG_vsync_pin, ARG_href_pin, ARG_sda_pin, ARG_scl_pin, ARG_xclock_pin, ARG_xclock_frequency, ARG_powerdown_pin, ARG_reset_pin, ARG_pixel_format, ARG_frame_size, ARG_jpeg_quality, ARG_fb_count, ARG_grab_mode, NUM_ARGS };
     static const mp_arg_t allowed_args[] = {
-        #if defined(MICROPY_CAMERA_PIN_SIOD) && defined(MICROPY_CAMERA_PIN_SIOC) && defined(MICROPY_CAMERA_PIN_D0)
+        #ifdef MICROPY_CAMERA_ALL_REQ_PINS_DEFINED
             { MP_QSTR_data_pins, MP_ARG_OBJ | MP_ARG_KW_ONLY , { .u_obj = MP_ROM_NONE } },
             { MP_QSTR_pclk_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_PCLK } },
             { MP_QSTR_vsync_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_VSYNC } },
@@ -77,7 +77,7 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
     int8_t data_pins[8];
     mp_obj_t data_pins_obj = args[ARG_data_pins].u_obj;
     if (data_pins_obj == MP_ROM_NONE) {
-        #if defined(MICROPY_CAMERA_PIN_SIOD) && defined(MICROPY_CAMERA_PIN_SIOC) && defined(MICROPY_CAMERA_PIN_D0)
+        #ifdef MICROPY_CAMERA_ALL_REQ_PINS_DEFINED
             if (MICROPY_CAMERA_PIN_D0 != -1) {
                 data_pins[0] = MICROPY_CAMERA_PIN_D0;
                 data_pins[1] = MICROPY_CAMERA_PIN_D1;
