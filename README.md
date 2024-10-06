@@ -3,6 +3,9 @@ This project aims to support cameras in different ports in micropython, starting
 At the moment, this is a micropython user module, but it might get in the micropython repo in the future.
 The API is stable, but it might change without previous anounce.
 
+## Precomiled FW
+Start [Start the build](https://github.com/cnadler86/micropython-camera-API/blob/CI/.github/workflows/ESP32.yml/dispatch)
+
 ## Setup build environment
 To build the project, follow the following instructions:
 - [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.2.2/esp32/get-started/index.html): I used version 5.2.2, but it might work with other versions.
@@ -12,7 +15,7 @@ To build the project, follow the following instructions:
   espressif/esp32-camera:
     git: https://github.com/espressif/esp32-camera
 ```
-Note: Im am trying to figure out a more elegant way to do this.
+You can also clone the https://github.com/espressif/esp32-camera repository inside the esp-idf/components folder instead of altering the idf_component.yml file.
 
 ## Add camera configurations to your board (Optional, but recomended)
 To make things easier, add the following lines to your board config-file "mpconfigboard.h" with the respective pins and camera parameters. Otherwise you will need to pass all parameters during construction.

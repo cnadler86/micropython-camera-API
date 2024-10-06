@@ -1,9 +1,11 @@
 name: Build MicroPython Camera for ESP32 Boards
 
 on:
+  workflow_dispatch:
   push:
+  pull_request:
     branches:
-      - CI
+      - master
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
