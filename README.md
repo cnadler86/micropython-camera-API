@@ -3,8 +3,8 @@ This project aims to support cameras in different ports in micropython, starting
 At the moment, this is a micropython user module, but it might get in the micropython repo in the future.
 The API is stable, but it might change without previous anounce.
 
-## Precomiled FW (the easy way)
-If you are not familiar with building a custom firmware, you can go to the actions tab and start the build workflow by yourself. Then, you can download one if the generic FWs that suits your board.
+## Precomiled FW (the easy way) (work in progress)
+If you are not familiar with building a custom firmware, you can go to the actions tab and start the build workflow by yourself. Then, you can download one of the generic FWs that suits your board.
 
 ## Setup build environment (the DIY way)
 To build the project, follow the following instructions:
