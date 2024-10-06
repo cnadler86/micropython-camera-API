@@ -42,13 +42,23 @@ const mp_obj_type_t camera_type;
 static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
     enum { ARG_data_pins, ARG_pixel_clock_pin, ARG_vsync_pin, ARG_href_pin, ARG_sda_pin, ARG_scl_pin, ARG_xclock_pin, ARG_xclock_frequency, ARG_powerdown_pin, ARG_reset_pin, ARG_pixel_format, ARG_frame_size, ARG_jpeg_quality, ARG_fb_count, ARG_grab_mode, NUM_ARGS };
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_data_pins, MP_ARG_OBJ | MP_ARG_KW_ONLY , { .u_obj = MP_ROM_NONE } },
-        { MP_QSTR_pclk_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_PCLK } },
-        { MP_QSTR_vsync_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_VSYNC } },
-        { MP_QSTR_href_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_HREF } },
-        { MP_QSTR_sda_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_SIOD } },
-        { MP_QSTR_scl_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_SIOC } },
-        { MP_QSTR_xclk_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_PIN_XCLK } },
+        #ifdef MICROPY_CAMERA_PIN_SIOD && MICROPY_CAMERA_PIN_SIOC && MICROPY_CAMERA_PIN_D0
+            { MP_QSTR_data_pins, MP_ARG_OBJ | MP_ARG_KW_ONLY , { .u_obj = MP_ROM_NONE } },
+            { MP_QSTR_pclk_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_PCLK } },
+            { MP_QSTR_vsync_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_VSYNC } },
+            { MP_QSTR_href_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_HREF } },
+            { MP_QSTR_sda_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_SIOD } },
+            { MP_QSTR_scl_pin, MP_ARG_INT | MP_ARG_KW_ONLY , { .u_int = MICROPY_CAMERA_PIN_SIOC } },
+            { MP_QSTR_xclk_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_PIN_XCLK } },
+        #else
+            { MP_QSTR_data_pins, MP_ARG_OBJ | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
+            { MP_QSTR_pclk_pin, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
+            { MP_QSTR_vsync_pin, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
+            { MP_QSTR_href_pin, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
+            { MP_QSTR_sda_pin, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
+            { MP_QSTR_scl_pin, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
+            { MP_QSTR_xclk_pin, MP_ARG_INT | MP_ARG_KW_ONLY, MP_ARG_REQUIRED },
+        #endif
         { MP_QSTR_xclk_freq, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_XCLK_FREQ } },
         { MP_QSTR_powerdown_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_PIN_PWDN } },
         { MP_QSTR_reset_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_PIN_RESET } },
@@ -58,6 +68,7 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
         { MP_QSTR_fb_count, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_FB_COUNT } },
         { MP_QSTR_grab_mode, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_GRAB_MODE } },
     };
+
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     MP_STATIC_ASSERT(MP_ARRAY_SIZE(allowed_args) == NUM_ARGS);
     mp_arg_parse_all_kw_array(n_args, n_kw, all_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);

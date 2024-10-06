@@ -51,41 +51,6 @@
 #define MICROPY_CAMERA_PIN_RESET   (-1)
 #endif
 
-#ifndef MICROPY_CAMERA_PIN_SIOD
-#define MICROPY_CAMERA_PIN_SIOD    (-1)
-#endif
-
-#ifndef MICROPY_CAMERA_PIN_SIOC
-#define MICROPY_CAMERA_PIN_SIOC    (-1)
-#endif
-
-#ifndef MICROPY_CAMERA_PIN_D0
-#define MICROPY_CAMERA_PIN_D0   (-1)
-#define MICROPY_CAMERA_PIN_D1   (-1)
-#define MICROPY_CAMERA_PIN_D2   (-1)
-#define MICROPY_CAMERA_PIN_D3   (-1)
-#define MICROPY_CAMERA_PIN_D4   (-1)
-#define MICROPY_CAMERA_PIN_D5   (-1)
-#define MICROPY_CAMERA_PIN_D6   (-1)
-#define MICROPY_CAMERA_PIN_D7   (-1)
-#endif
-
-#ifndef MICROPY_CAMERA_PIN_VSYNC
-#define MICROPY_CAMERA_PIN_VSYNC   (-1)
-#endif
-
-#ifndef MICROPY_CAMERA_PIN_HREF
-#define MICROPY_CAMERA_PIN_HREF    (-1)
-#endif
-
-#ifndef MICROPY_CAMERA_PIN_PCLK
-#define MICROPY_CAMERA_PIN_PCLK    (-1)
-#endif
-
-#ifndef MICROPY_CAMERA_PIN_XCLK
-#define MICROPY_CAMERA_PIN_XCLK     (-1)
-#endif
-
 #ifndef MICROPY_CAMERA_XCLK_FREQ
 #define MICROPY_CAMERA_XCLK_FREQ     (10)
 #endif
