@@ -35,8 +35,10 @@
 #error Camera only works on boards configured with spiram
 #endif
 
-#if (IDF_VERSION_MAJOR < 5) || (IDF_VERSION_MAJOR == 5 && IDF_VERSION_MINOR < 2) && CONFIG_IDF_TARGET_ESP32
-#warning "You might get IRAM errors. In this case either update to IDF Version >= 5.2 OR define CONFIG_SPIRAM_CACHE_WORKAROUND=n and CONFIG_ESP32_REV_MIN_3=y in the respective sdkconfig file."
+#if defined(CONFIG_IDF_TARGET_ESP32) && !defined(CONFIG_IDF_TARGET_ESP32S3) && !defined(CONFIG_IDF_TARGET_ESP32S2)
+    #if ((IDF_VERSION_MAJOR < 5) || (IDF_VERSION_MAJOR == 5 && IDF_VERSION_MINOR < 2))
+        #warning "You might get IRAM errors. In this case either update to IDF Version >= 5.2 OR define CONFIG_SPIRAM_CACHE_WORKAROUND=n and CONFIG_ESP32_REV_MIN_3=y in the respective sdkconfig file."
+    #endif
 #endif
 
 //TODO: improve error message
