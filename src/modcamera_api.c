@@ -77,6 +77,7 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
     int8_t data_pins[8];
     mp_obj_t data_pins_obj = args[ARG_data_pins].u_obj;
     if (data_pins_obj == MP_ROM_NONE) {
+        #if defined(MICROPY_CAMERA_PIN_SIOD) && defined(MICROPY_CAMERA_PIN_SIOC) && defined(MICROPY_CAMERA_PIN_D0)
         if (MICROPY_CAMERA_PIN_D0 != -1) {
             data_pins[0] = MICROPY_CAMERA_PIN_D0;
             data_pins[1] = MICROPY_CAMERA_PIN_D1;
@@ -86,6 +87,7 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
             data_pins[5] = MICROPY_CAMERA_PIN_D5;
             data_pins[6] = MICROPY_CAMERA_PIN_D6;
             data_pins[7] = MICROPY_CAMERA_PIN_D7;
+        #endif
         } else {
             mp_raise_ValueError(MP_ERROR_TEXT("Specify a valid camera configuration"));
         }
