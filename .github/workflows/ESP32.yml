@@ -1,4 +1,4 @@
-name: Build MicroPython Camera for ESP32 Boards
+name: ESP32
 
 on:
   workflow_dispatch:
