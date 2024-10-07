@@ -31,34 +31,33 @@
 
 #define TAG "ESP32_MPY_CAMERA"
 
-#if !CONFIG_SPIRAM //TODO: Better test if enought RAM is available on runtime?
+#if !CONFIG_SPIRAM
 #error Camera only works on boards configured with spiram
 #endif
 
-//TODO: improve error message
 void raise_micropython_error_from_esp_err(esp_err_t err) {
     switch (err) {
         case ESP_OK:
             return;
 
         case ESP_ERR_NO_MEM:
-            mp_raise_msg(&mp_type_MemoryError, MP_ERROR_TEXT("ESP_ERR_NO_MEM: Out of memory"));
+            mp_raise_msg(&mp_type_MemoryError, MP_ERROR_TEXT("Out of memory"));
             break;
 
         case ESP_ERR_INVALID_ARG:
-            mp_raise_ValueError(MP_ERROR_TEXT("ESP_ERR_INVALID_ARG: Invalid argument"));
+            mp_raise_ValueError(MP_ERROR_TEXT("Invalid argument"));
             break;
 
         case ESP_ERR_INVALID_STATE:
-            mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("ESP_ERR_INVALID_STATE: Invalid state"));
+            mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Invalid state"));
             break;
 
         case ESP_ERR_NOT_FOUND:
-            mp_raise_OSError(MP_ENOENT);
+            mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Camera not found"));
             break;
 
         case ESP_ERR_NOT_SUPPORTED:
-            mp_raise_NotImplementedError(MP_ERROR_TEXT("ESP_ERR_NOT_SUPPORTED: Operation not supported"));
+            mp_raise_NotImplementedError(MP_ERROR_TEXT("Operation/Function not supported/implemented"));
             break;
 
         case ESP_ERR_TIMEOUT:
@@ -66,8 +65,8 @@ void raise_micropython_error_from_esp_err(esp_err_t err) {
             break;
 
         default:
-            // mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("ESP_ERR: Unknown error 0x%04x"), err);
-            mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("ESP_ERR: Unknown error"));
+            mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error 0x%04x"), err);
+            // mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error"));
             break;
     }
 }
@@ -151,6 +150,7 @@ void mp_camera_hal_deinit(mp_camera_obj_t *self) {
         esp_err_t err = esp_camera_deinit();
         raise_micropython_error_from_esp_err(err);
         self->initialized = false;
+        ESP_LOGI(TAG, "Camera deinitialized");
     }
 }
 
@@ -290,7 +290,7 @@ const mp_rom_map_elem_t mp_camera_hal_gainceiling_table[] = {
     { MP_ROM_QSTR(MP_QSTR_128X),    MP_ROM_INT(GAINCEILING_128X) },
 };
 
-//OPEN: Makros with convertion function, since the API will use standarized values.
+//TODO: Makros with convertion function, since the API will use standarized values.
 // Helper functions to get and set camera and sensor information
 #define SENSOR_STATUS_GETSET_IN_RANGE(type, name, status_field_name, setter_function_name, min_val, max_val) \
     SENSOR_GETSET_IN_RANGE(type, name, status.status_field_name, setter_function_name, min_val, max_val)

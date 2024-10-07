@@ -1,8 +1,10 @@
-name: Build MicroPython Camera for ESP32 Boards
+name: ESP32
 
 on:
   workflow_dispatch:
   push:
+    paths:
+      - 'src/**'
   pull_request:
     branches:
       - master
@@ -138,4 +140,4 @@ jobs:
         with:
           name: firmware-${{ matrix.board }}
           path: ~/${{ matrix.board }}.bin
-          retention-days: 1
+          retention-days: 90
