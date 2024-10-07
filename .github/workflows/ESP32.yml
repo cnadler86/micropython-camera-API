@@ -3,6 +3,8 @@ name: Build MicroPython Camera for ESP32 Boards
 on:
   workflow_dispatch:
   push:
+    paths:
+      - 'src/**'
   pull_request:
     branches:
       - master
