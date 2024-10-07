@@ -97,4 +97,4 @@ If you want more insides in the methods and what they actually do, you can find 
 Notice that for the methods in here you need to prefix a get/set, depending that you want to do.
 
 ## Notes
-If your target board is a ESP32, I recomend using IDF >= 5.2, since older versions may lead to IRAM overflow during build. Alternatively you can modify your sdkconfig-file (see #1).
+If your target board is a ESP32, I recomend using IDF >= 5.2, since older versions may lead to IRAM overflow during build. Alternatively you can modify your sdkconfig-file (see [issue #1](https://github.com/cnadler86/micropython-camera-API/issues/1)).
