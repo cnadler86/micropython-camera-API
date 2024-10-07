@@ -1,12 +1,14 @@
 # Camera API for micropython.
+[![ESP32 Port](https://github.com/cnadler86/micropython-camera-API/actions/workflows/ESP32.yml/badge.svg)](https://github.com/cnadler86/micropython-camera-API/actions/workflows/ESP32.yml)
 This project aims to support cameras in different ports in micropython, starting with the ESP32-Port and omnivision (OV2640 & OV5640) cameras. The project implements a general API for cameras in micropython (such as circuitpython have done).
 At the moment, this is a micropython user module, but it might get in the micropython repo in the future.
 The API is stable, but it might change without previous anounce.
 
 ## Precomiled FW (the easy way) (work in progress)
-If you are not familiar with building a custom firmware, you can go to the actions tab and start the build workflow by yourself. Then, you can download one of the generic FWs that suits your board.
+If you are not familiar with building a custom firmware, you can [click here](https://nightly.link/cnadler86/micropython-camera-API/workflows/ESP32/master?preview) and download one of the generic FWs that suits your board.
 
-## Setup build environment (the DIY way)
+## Build your custom FW
+### Setup build environment (the DIY way)
 To build the project, follow the following instructions:
 - [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.2.3/esp32/get-started/index.html): I used version 5.2.2, but it might work with other versions (see notes).
 - Clone the micropython repo and this repo in a folder, e.g. "MyESPCam". I used the actual micropython master branch (between v1.23 and before 1.24).
@@ -17,7 +19,7 @@ To build the project, follow the following instructions:
 ```
 You can also clone the https://github.com/espressif/esp32-camera repository inside the esp-idf/components folder instead of altering the idf_component.yml file.
 
-## Add camera configurations to your board (Optional, but recomended)
+### Add camera configurations to your board (Optional, but recomended)
 To make things easier, add the following lines to your board config-file "mpconfigboard.h" with the respective pins and camera parameters. Otherwise you will need to pass all parameters during construction.
 Don't forget the empty line at the buttom.
 Example for xiao sense:
@@ -46,7 +48,7 @@ Example for xiao sense:
 
 ```
 
-## Build the API
+### Build the API
 To build the project, you could do it the following way:
 
 ```bash

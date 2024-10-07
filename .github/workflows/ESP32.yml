@@ -140,4 +140,4 @@ jobs:
         with:
           name: firmware-${{ matrix.board }}
           path: ~/${{ matrix.board }}.bin
-          retention-days: 1
+          retention-days: 90
