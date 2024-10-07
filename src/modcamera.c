@@ -35,30 +35,29 @@
 #error Camera only works on boards configured with spiram
 #endif
 
-//TODO: improve error message
 void raise_micropython_error_from_esp_err(esp_err_t err) {
     switch (err) {
         case ESP_OK:
             return;
 
         case ESP_ERR_NO_MEM:
-            mp_raise_msg(&mp_type_MemoryError, MP_ERROR_TEXT("ESP_ERR_NO_MEM: Out of memory"));
+            mp_raise_msg(&mp_type_MemoryError, MP_ERROR_TEXT("Out of memory"));
             break;
 
         case ESP_ERR_INVALID_ARG:
-            mp_raise_ValueError(MP_ERROR_TEXT("ESP_ERR_INVALID_ARG: Invalid argument"));
+            mp_raise_ValueError(MP_ERROR_TEXT("Invalid argument"));
             break;
 
         case ESP_ERR_INVALID_STATE:
-            mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("ESP_ERR_INVALID_STATE: Invalid state"));
+            mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Invalid state"));
             break;
 
         case ESP_ERR_NOT_FOUND:
-            mp_raise_OSError(MP_ENOENT);
+            mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Camera not found"));
             break;
 
         case ESP_ERR_NOT_SUPPORTED:
-            mp_raise_NotImplementedError(MP_ERROR_TEXT("ESP_ERR_NOT_SUPPORTED: Operation not supported"));
+            mp_raise_NotImplementedError(MP_ERROR_TEXT("Operation/Function not supported/implemented"));
             break;
 
         case ESP_ERR_TIMEOUT:
@@ -66,8 +65,8 @@ void raise_micropython_error_from_esp_err(esp_err_t err) {
             break;
 
         default:
-            // mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("ESP_ERR: Unknown error 0x%04x"), err);
-            mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("ESP_ERR: Unknown error"));
+            mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error 0x%04x"), err);
+            // mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error"));
             break;
     }
 }
