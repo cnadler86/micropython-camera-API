@@ -8,7 +8,7 @@ If you are not familiar with building a custom firmware, you can go to the actio
 
 ## Setup build environment (the DIY way)
 To build the project, follow the following instructions:
-- [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.2.2/esp32/get-started/index.html): I used version 5.2.2, but it might work with other versions.
+- [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.2.3/esp32/get-started/index.html): I used version 5.2.2, but it might work with other versions (see notes).
 - Clone the micropython repo and this repo in a folder, e.g. "MyESPCam". I used the actual micropython master branch (between v1.23 and before 1.24).
 - You will have to add the ESP32-Camera driver (I used v2.0.12). To do this, add the following to the respective idf_component.yml file  (e.g. in micropython/ports/esp32/main_esp32s3/idf_component.yml):
 ```
@@ -95,3 +95,6 @@ camera.set_quality(10)
 You can get and set sensor properties by the respective methods (e.g. camera.get_brightness() or camera.set_vflip(True). See autocompletitions in Thonny in order to see the list of methods.
 If you want more insides in the methods and what they actually do, you can find a very good documentation [here](https://docs.circuitpython.org/en/latest/shared-bindings/espcamera/index.html).
 Notice that for the methods in here you need to prefix a get/set, depending that you want to do.
+
+## Notes
+If your target board is a ESP32, I recomend using IDF >= 5.2, since older versions may lead to IRAM overflow during build. Alternatively you can modify your sdkconfig-file (see #1).
