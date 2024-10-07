@@ -5,8 +5,46 @@ This project aims to support cameras in different ports in micropython, starting
 At the moment, this is a micropython user module, but it might get in the micropython repo in the future.
 The API is stable, but it might change without previous anounce.
 
-## Precomiled FW (the easy way) (work in progress)
-If you are not familiar with building a custom firmware, you can [click here](https://nightly.link/cnadler86/micropython-camera-API/workflows/ESP32/master?preview) and download one of the generic FWs that suits your board.
+## Precomiled FW (the easy way)
+If you are not familiar with building a custom firmware, you can go to the [releases](https://github.com/cnadler86/micropython-camera-API/releases) page and download one of the generic FWs that suits your board.
+
+## Using the API
+```python
+from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
+
+# Camera construction and initialization
+camera = Camera(
+    data_pins=[1,2,3,4,5,6,7,8],
+    vsync_pin=9,
+    href_pin=10,
+    sda_pin=11,
+    scl_pin=12,
+    pclk_pin=13,
+    xclk_pin=14,
+    xclk_freq=20000000,
+    powerdown_pin=-1,
+    reset_pin=-1,
+    pixel_format=PixelFormat.RGB565,
+    frame_size=FrameSize.QVGA,
+    jpeg_quality=15,
+    fb_count=1,
+    grab_mode=GrabMode.WHEN_EMPTY
+)
+
+#Camera construction using defaults (if you specified them in mpconfigboard.h)
+camera = Camera()
+
+# Capture image
+img = camera.capture()
+
+# Camera reconfiguration 
+camera.reconfigure(pixel_format=PixelFormat.JPEG,frame_size=FrameSize.QVGA,grab_mode=GrabMode.LATEST, fb_count=2)
+camera.set_quality(10)
+```
+
+You can get and set sensor properties by the respective methods (e.g. camera.get_brightness() or camera.set_vflip(True). See autocompletitions in Thonny in order to see the list of methods.
+If you want more insides in the methods and what they actually do, you can find a very good documentation [here](https://docs.circuitpython.org/en/latest/shared-bindings/espcamera/index.html).
+Notice that for the methods in here you need to prefix a get/set, depending that you want to do.
 
 ## Build your custom FW
 ### Setup build environment (the DIY way)
@@ -55,49 +93,11 @@ To build the project, you could do it the following way:
 ```bash
 $ . <path2esp-idf>/esp-idf/export.sh
 $ cd MyESPCam/micropython/ports/esp32
-$ make USER_C_MODULES=../../../../mp_camera/src/micropython.cmake BOARD=<Your-Board> clean
-$ make USER_C_MODULES=../../../../mp_camera/src/micropython.cmake BOARD=<Your-Board> submodules
-$ make USER_C_MODULES=../../../../mp_camera/src/micropython.cmake BOARD=<Your-Board> all
+$ make USER_C_MODULES=../../../../micropython-camera-API/src/micropython.cmake BOARD=<Your-Board> clean
+$ make USER_C_MODULES=../../../../micropython-camera-API/src/micropython.cmake BOARD=<Your-Board> submodules
+$ make USER_C_MODULES=../../../../micropython-camera-API/src/micropython.cmake BOARD=<Your-Board> all
 ```
 if you experience problems, visit [MicroPython external C modules](https://docs.micropython.org/en/latest/develop/cmodules.html).
-
-## Using the API
-```python
-from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
-
-# Camera construction and initialization
-camera = Camera(
-    data_pins=[1,2,3,4,5,6,7,8],
-    vsync_pin=9,
-    href_pin=10,
-    sda_pin=11,
-    scl_pin=12,
-    pclk_pin=13,
-    xclk_pin=14,
-    xclk_freq=20000000,
-    powerdown_pin=-1,
-    reset_pin=-1,
-    pixel_format=PixelFormat.RGB565,
-    frame_size=FrameSize.QVGA,
-    jpeg_quality=15,
-    fb_count=1,
-    grab_mode=GrabMode.WHEN_EMPTY
-)
-
-#Camera construction using defaults (if you specified them in mpconfigboard.h)
-camera = Camera()
-
-# Capture image
-img = camera.capture()
-
-# Camera reconfiguration 
-camera.reconfigure(pixel_format=PixelFormat.JPEG,frame_size=FrameSize.QVGA,grab_mode=GrabMode.LATEST, fb_count=2)
-camera.set_quality(10)
-```
-
-You can get and set sensor properties by the respective methods (e.g. camera.get_brightness() or camera.set_vflip(True). See autocompletitions in Thonny in order to see the list of methods.
-If you want more insides in the methods and what they actually do, you can find a very good documentation [here](https://docs.circuitpython.org/en/latest/shared-bindings/espcamera/index.html).
-Notice that for the methods in here you need to prefix a get/set, depending that you want to do.
 
 ## Notes
 If your target board is a ESP32, I recomend using IDF >= 5.2, since older versions may lead to IRAM overflow during build. Alternatively you can modify your sdkconfig-file (see [issue #1](https://github.com/cnadler86/micropython-camera-API/issues/1)).

@@ -31,7 +31,7 @@
 
 #define TAG "ESP32_MPY_CAMERA"
 
-#if !CONFIG_SPIRAM //TODO: Better test if enought RAM is available on runtime?
+#if !CONFIG_SPIRAM
 #error Camera only works on boards configured with spiram
 #endif
 
@@ -150,6 +150,7 @@ void mp_camera_hal_deinit(mp_camera_obj_t *self) {
         esp_err_t err = esp_camera_deinit();
         raise_micropython_error_from_esp_err(err);
         self->initialized = false;
+        ESP_LOGI(TAG, "Camera deinitialized");
     }
 }
 
@@ -289,7 +290,7 @@ const mp_rom_map_elem_t mp_camera_hal_gainceiling_table[] = {
     { MP_ROM_QSTR(MP_QSTR_128X),    MP_ROM_INT(GAINCEILING_128X) },
 };
 
-//OPEN: Makros with convertion function, since the API will use standarized values.
+//TODO: Makros with convertion function, since the API will use standarized values.
 // Helper functions to get and set camera and sensor information
 #define SENSOR_STATUS_GETSET_IN_RANGE(type, name, status_field_name, setter_function_name, min_val, max_val) \
     SENSOR_GETSET_IN_RANGE(type, name, status.status_field_name, setter_function_name, min_val, max_val)
