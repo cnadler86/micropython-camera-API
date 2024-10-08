@@ -1,4 +1,5 @@
 # Camera API for micropython
+
 [![ESP32 Port](https://github.com/cnadler86/micropython-camera-API/actions/workflows/ESP32.yml/badge.svg)](https://github.com/cnadler86/micropython-camera-API/actions/workflows/ESP32.yml)
 
 This project aims to support cameras in different ports in micropython, starting with the ESP32-Port and omnivision (OV2640 & OV5640) cameras. The project implements a general API for cameras in micropython (such as circuitpython have done).
@@ -6,9 +7,11 @@ At the moment, this is a micropython user module, but it might get in the microp
 The API is stable, but it might change without previous anounce.
 
 ## Precomiled FW (the easy way)
+
 If you are not familiar with building a custom firmware, you can go to the [releases](https://github.com/cnadler86/micropython-camera-API/releases) page and download one of the generic FWs that suits your board.
 
 ## Using the API
+
 ```python
 from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
 
@@ -47,23 +50,29 @@ If you want more insides in the methods and what they actually do, you can find 
 Notice that for the methods in here you need to prefix a get/set, depending that you want to do.
 
 ## Build your custom FW
+
 ### Setup build environment (the DIY way)
+
 To build the project, follow the following instructions:
+
 - [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.2.3/esp32/get-started/index.html): I used version 5.2.2, but it might work with other versions (see notes).
 - Clone the micropython repo and this repo in a folder, e.g. "MyESPCam". I used the actual micropython master branch (between v1.23 and before 1.24).
 - You will have to add the ESP32-Camera driver (I used v2.0.12). To do this, add the following to the respective idf_component.yml file  (e.g. in micropython/ports/esp32/main_esp32s3/idf_component.yml):
-```
+
+```yml
   espressif/esp32-camera:
     git: https://github.com/espressif/esp32-camera
 ```
-You can also clone the https://github.com/espressif/esp32-camera repository inside the esp-idf/components folder instead of altering the idf_component.yml file.
+
+You can also clone the <https://github.com/espressif/esp32-camera> repository inside the esp-idf/components folder instead of altering the idf_component.yml file.
 
 ### Add camera configurations to your board (Optional, but recomended)
+
 To make things easier, add the following lines to your board config-file "mpconfigboard.h" with the respective pins and camera parameters. Otherwise you will need to pass all parameters during construction.
 Don't forget the empty line at the buttom.
 Example for xiao sense:
 
-```
+```c
 #define MICROPY_CAMERA_PIN_D0       (15)
 #define MICROPY_CAMERA_PIN_D1       (17)
 #define MICROPY_CAMERA_PIN_D2       (18)
@@ -88,17 +97,20 @@ Example for xiao sense:
 ```
 
 ### Build the API
+
 To build the project, you could do it the following way:
 
 ```bash
-$ . <path2esp-idf>/esp-idf/export.sh
+. <path2esp-idf>/esp-idf/export.sh
 $ cd MyESPCam/micropython/ports/esp32
 $ make USER_C_MODULES=../../../../micropython-camera-API/src/micropython.cmake BOARD=<Your-Board> clean
 $ make USER_C_MODULES=../../../../micropython-camera-API/src/micropython.cmake BOARD=<Your-Board> submodules
 $ make USER_C_MODULES=../../../../micropython-camera-API/src/micropython.cmake BOARD=<Your-Board> all
 ```
+
 if you experience problems, visit [MicroPython external C modules](https://docs.micropython.org/en/latest/develop/cmodules.html).
 
 ## Notes
+
 - The OV5640 pinout is compatible with boards designed for the OV2640 but the voltage supply is too high for the internal 1.5V regulator, so the camera overheats unless a heat sink is applied. For recording purposes the OV5640 should only be used with an ESP32S3 board. Frame sizes above FHD framesize should only be used for still images due to memory limitations.
 - If your target board is a ESP32, I recomend using IDF >= 5.2, since older versions may lead to IRAM overflow during build. Alternatively you can modify your sdkconfig-file (see [issue #1](https://github.com/cnadler86/micropython-camera-API/issues/1)).
