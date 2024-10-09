@@ -47,7 +47,7 @@ camera.set_quality(10)
 
 You can get and set sensor properties by the respective methods (e.g. camera.get_brightness() or camera.set_vflip(True). See autocompletitions in Thonny in order to see the list of methods.
 If you want more insides in the methods and what they actually do, you can find a very good documentation [here](https://docs.circuitpython.org/en/latest/shared-bindings/espcamera/index.html).
-Notice that for the methods in here you need to prefix a get/set, depending that you want to do.
+Notice that for the methods in here you need to prefix a get/set, depending on what you want to do.
 
 ## Build your custom FW
 
@@ -55,7 +55,7 @@ Notice that for the methods in here you need to prefix a get/set, depending that
 
 To build the project, follow the following instructions:
 
-- [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.2.3/esp32/get-started/index.html): I used version 5.2.2, but it might work with other versions (see notes).
+- [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.2.3/esp32/get-started/index.html): I used version 5.2.3, but it might work with other versions (see notes).
 - Clone the micropython repo and this repo in a folder, e.g. "MyESPCam". I used the actual micropython master branch (between v1.23 and before 1.24).
 - You will have to add the ESP32-Camera driver (I used v2.0.12). To do this, add the following to the respective idf_component.yml file  (e.g. in micropython/ports/esp32/main_esp32s3/idf_component.yml):
 
@@ -64,13 +64,13 @@ To build the project, follow the following instructions:
     git: https://github.com/espressif/esp32-camera
 ```
 
-You can also clone the <https://github.com/espressif/esp32-camera> repository inside the esp-idf/components folder instead of altering the idf_component.yml file.
+Alternatively, you can clone the <https://github.com/espressif/esp32-camera> repository inside the esp-idf/components folder instead of altering the idf_component.yml file.
 
-### Add camera configurations to your board (Optional, but recomended)
+### Add camera configurations to your board (Optional, but recommended)
 
-To make things easier, add the following lines to your board config-file "mpconfigboard.h" with the respective pins and camera parameters. Otherwise you will need to pass all parameters during construction.
-Don't forget the empty line at the buttom.
-Example for xiao sense:
+To make things easier, add the following lines to your board config-file "mpconfigboard.h" with the respective pins and camera parameters. Otherwise, you will need to pass all parameters during construction.
+Don't forget the empty line at the bottom.
+Example for Xiao sense:
 
 ```c
 #define MICROPY_CAMERA_PIN_D0       (15)
@@ -108,9 +108,9 @@ make USER_C_MODULES=../../../../micropython-camera-API/src/micropython.cmake BOA
 make USER_C_MODULES=../../../../micropython-camera-API/src/micropython.cmake BOARD=<Your-Board> all
 ```
 
-if you experience problems, visit [MicroPython external C modules](https://docs.micropython.org/en/latest/develop/cmodules.html).
+If you experience problems, visit [MicroPython external C modules](https://docs.micropython.org/en/latest/develop/cmodules.html).
 
 ## Notes
 
 - The OV5640 pinout is compatible with boards designed for the OV2640 but the voltage supply is too high for the internal 1.5V regulator, so the camera overheats unless a heat sink is applied. For recording purposes the OV5640 should only be used with an ESP32S3 board. Frame sizes above FHD framesize should only be used for still images due to memory limitations.
-- If your target board is a ESP32, I recomend using IDF >= 5.2, since older versions may lead to IRAM overflow during build. Alternatively you can modify your sdkconfig-file (see [issue #1](https://github.com/cnadler86/micropython-camera-API/issues/1)).
+- If your target board is a ESP32, I recommend using IDF >= 5.2, since older versions may lead to IRAM overflow during build. Alternatively you can modify your sdkconfig-file (see [issue #1](https://github.com/cnadler86/micropython-camera-API/issues/1)).
