@@ -1,5 +1,4 @@
 from camera import Camera, FrameSize, PixelFormat
-import uinspect as inspect
 
 def test_property_get_frame_size():
     camera = Camera()
