@@ -42,6 +42,7 @@
 
 #include "esp_camera.h"
 #include "sensor.h"
+#include "camera_pins.h"
 
 #if defined(MICROPY_CAMERA_PIN_SIOD) && defined(MICROPY_CAMERA_PIN_SIOC) && defined(MICROPY_CAMERA_PIN_D0) && defined(MICROPY_CAMERA_PIN_D1) && defined(MICROPY_CAMERA_PIN_D2) && \
 defined(MICROPY_CAMERA_PIN_D3) && defined(MICROPY_CAMERA_PIN_D4) && defined(MICROPY_CAMERA_PIN_D5) && defined(MICROPY_CAMERA_PIN_D6) && defined(MICROPY_CAMERA_PIN_D7) && \
@@ -57,7 +58,9 @@ defined(MICROPY_CAMERA_PIN_PCLK) && defined(MICROPY_CAMERA_PIN_VSYNC) && defined
 #define MICROPY_CAMERA_PIN_RESET   (-1)
 #endif
 
-#ifndef MICROPY_CAMERA_XCLK_FREQ
+#if !defined(MICROPY_CAMERA_XCLK_FREQ) && defined(CONFIG_IDF_TARGET_ESP32S3)
+#define MICROPY_CAMERA_XCLK_FREQ     (20)
+#elif !defined(MICROPY_CAMERA_XCLK_FREQ)
 #define MICROPY_CAMERA_XCLK_FREQ     (10)
 #endif
 
@@ -78,7 +81,7 @@ defined(MICROPY_CAMERA_PIN_PCLK) && defined(MICROPY_CAMERA_PIN_VSYNC) && defined
 #endif
 
 #ifndef MICROPY_CAMERA_JPEG_QUALITY
-#define MICROPY_CAMERA_JPEG_QUALITY (15)
+#define MICROPY_CAMERA_JPEG_QUALITY (85)
 #endif
 
 //Supported Camera sensors

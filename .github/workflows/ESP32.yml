@@ -95,6 +95,7 @@ jobs:
           - ESP32_GENERIC_S3
           - ESP32_GENERIC_S3-SPIRAM_OCT
           - ESP32_GENERIC_S3-FLASH_4M
+          - ESP32_GENERIC_S3-SPIRAM_OCT:XIAO_ESP32S3
 
     steps:
      # Get the latest MicroPython release
@@ -132,10 +133,16 @@ jobs:
 
           # Check if a variant is defined and adjust the make command
           IFS='-' read -r BOARD_NAME BOARD_VARIANT <<< "${{ matrix.board }}"
+          IFS=':' read -r NOT_USED CAMERA_MODEL <<< "${{ matrix.board }}"
           if [ -n "${BOARD_VARIANT}" ]; then
-            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=$BOARD_NAME BOARD_VARIANT=$BOARD_VARIANT all
+            MAKE_CMD="USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=$BOARD_NAME BOARD_VARIANT=$BOARD_VARIANT"
           else
-            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=$BOARD_NAME all
+            MAKE_CMD="USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=$BOARD_NAME"
+          fi
+          if [ -n "${CAMERA_MODEL}" ]; then
+            make $MAKE_CMD CFLAGS_EXTRA="-DMP_CAMERA_MODEL_${CAMERA_MODEL}" all
+          else
+            make $MAKE_CMD all
           fi
           mv ~/micropython/ports/esp32/build-${{ matrix.board }}/firmware.bin ~/${{ matrix.board }}.bin
 
