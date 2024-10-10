@@ -365,7 +365,7 @@ SENSOR_STATUS_GETSET_IN_RANGE(int, saturation, saturation, set_saturation, -2, 2
 SENSOR_STATUS_GETSET_IN_RANGE(int, sharpness, sharpness, set_sharpness, -2, 2);
 SENSOR_STATUS_GETSET(int, denoise, denoise, set_denoise);
 SENSOR_STATUS_GETSET(mp_camera_gainceiling_t, gainceiling, gainceiling, set_gainceiling);
-SENSOR_STATUS_GETSET(int, quality_raw, quality, set_quality); //in_Range not needed since driver limits value. Raw to be used in wrapper funtion
+static SENSOR_STATUS_GETSET(int, quality_raw, quality, set_quality); //in_Range not needed since driver limits value. Raw to be used in wrapper funtion
 SENSOR_STATUS_GETSET(bool, colorbar, colorbar, set_colorbar);
 SENSOR_STATUS_GETSET(bool, whitebal, awb, set_whitebal);
 SENSOR_STATUS_GETSET(bool, gain_ctrl, agc, set_gain_ctrl);
