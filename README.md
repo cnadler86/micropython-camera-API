@@ -110,13 +110,15 @@ make USER_C_MODULES=../../../../micropython-camera-API/src/micropython.cmake BOA
 ```
 
 If you experience problems, visit [MicroPython external C modules](https://docs.micropython.org/en/latest/develop/cmodules.html).
+
 ## Notes
 
 - The OV5640 pinout is compatible with boards designed for the OV2640 but the voltage supply is too high for the internal 1.5V regulator, so the camera overheats unless a heat sink is applied. For recording purposes the OV5640 should only be used with an ESP32S3 board. Frame sizes above FHD framesize should only be used for still images due to memory limitations.
 - If your target board is a ESP32, I recommend using IDF >= 5.2, since older versions may lead to IRAM overflow during build. Alternatively you can modify your sdkconfig-file (see [issue #1](https://github.com/cnadler86/micropython-camera-API/issues/1)).
 
 ## Plans for the future
-- [ ] imolrment structure in repo to include other boards like xiao sense
+
+- [ ] implement structure in repo to include other boards like xiao sense
 - [ ] harmonize properties to standard ones at API level, e.g. jpeg quality to the range 100=very good, 1/0= very bad
 - [ ] edge case: enable usage of pins such as i2c for other applications
 - [ ] provide examples in binary image with lfs-merge
