@@ -132,24 +132,19 @@ jobs:
           source ~/esp-idf/export.sh
 
           # Check if a variant is defined and adjust the make command
-          IFS='-' read -r BOARD_NAME BOARD_VARIANT <<< "${{ matrix.board }}"
           IFS=':' read -r BUILD_DIR CAMERA_MODEL <<< "${{ matrix.board }}"
+          IFS='-' read -r BOARD_NAME BOARD_VARIANT <<< "${BUILD_DIR}"
+          
           if [ -n "${BOARD_VARIANT}" ]; then
             MAKE_CMD="USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=$BOARD_NAME BOARD_VARIANT=$BOARD_VARIANT"
           else
             MAKE_CMD="USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=$BOARD_NAME"
           fi
           if [ -n "${CAMERA_MODEL}" ]; then
-            FINAL_CMD="make ${MAKE_CMD} CFLAGS_EXTRA=\"-DMP_CAMERA_MODEL_${CAMERA_MODEL}=1\" all"
+            make ${MAKE_CMD} CFLAGS_EXTRA="-DMP_CAMERA_MODEL_${CAMERA_MODEL}=1" all
           else
-            FINAL_CMD="make ${MAKE_CMD} all"
+            make ${MAKE_CMD} all
           fi
-
-          # Print the final command for debugging
-          echo "Running command: $FINAL_CMD"
-
-          # Run the final command
-          eval $FINAL_CMD
           mv ~/micropython/ports/esp32/build-${BUILD_DIR}/firmware.bin ~/${{ matrix.board }}.bin
 
       - name: Upload firmware artifact
