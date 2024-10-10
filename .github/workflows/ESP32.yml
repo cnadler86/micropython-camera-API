@@ -142,7 +142,7 @@ jobs:
           fi
           if [ -n "${CAMERA_MODEL}" ]; then
             echo "FW_NAME=${CAMERA_MODEL}" >> $GITHUB_ENV
-            FINAL_CMD="${IDF_CMD} -D MP_CAMERA_MODEL=${CAMERA_MODEL build"
+            FINAL_CMD="${IDF_CMD} -D MP_CAMERA_MODEL=${CAMERA_MODEL} build"
           else
             echo "FW_NAME=${BUILD_TARGET}" >> $GITHUB_ENV
             FINAL_CMD="${IDF_CMD} build"
