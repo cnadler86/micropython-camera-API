@@ -136,9 +136,9 @@ jobs:
           IFS='-' read -r BOARD_NAME BOARD_VARIANT <<< "${BUILD_TARGET}"
           
           if [ -n "${BOARD_VARIANT}" ]; then
-            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D MICROPY_BOARD_DIR=~/micropython/ports/esp32/boards/$BOARD_NAME -DUSER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -D MICROPY_BOARD_VARIANT=$BOARD_VARIANT -B build-$BUILD_TARGET"
+            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D MICROPY_BOARD_DIR=~/micropython/ports/esp32/boards/$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -D MICROPY_BOARD_VARIANT=$BOARD_VARIANT -B build-$BUILD_TARGET"
           else
-            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D MICROPY_BOARD_DIR=~/micropython/ports/esp32/boards/$BOARD_NAME -DUSER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -B build-$BUILD_TARGET"
+            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D MICROPY_BOARD_DIR=~/micropython/ports/esp32/boards/$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -B build-$BUILD_TARGET"
           fi
           if [ -n "${CAMERA_MODEL}" ]; then
             echo "FW_NAME=${CAMERA_MODEL}" >> $GITHUB_ENV
