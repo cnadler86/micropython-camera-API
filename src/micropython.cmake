@@ -13,3 +13,6 @@ target_include_directories(usermod_mp_camera INTERFACE
 )
 target_compile_definitions(usermod_mp_camera INTERFACE)
 target_link_libraries(usermod INTERFACE usermod_mp_camera)
+if (MP_CAMERA_MODEL)
+	add_compile_definitions(MP_CAMERA_MODEL_${MP_CAMERA_MODEL}=1)
+endif()
