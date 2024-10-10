@@ -149,7 +149,7 @@ jobs:
           fi
           echo "Running command: $FINAL_CMD"
           eval $FINAL_CMD
-          mv ~/micropython/ports/esp32/build-${BUILD_TARGET}/firmware.bin ~/firmware.bin
+          mv ~/micropython/ports/esp32/build-${BUILD_TARGET}/micropython.bin ~/firmware.bin
           
 
       - name: Upload firmware artifact
