@@ -16,6 +16,7 @@ If you are not familiar with building a custom firmware, you can go to the [rele
 from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
 
 # Camera construction and initialization
+# These pins are just examples and if you use them just like that will get a watchdog error. Adapt them to your board!
 camera = Camera(
     data_pins=[1,2,3,4,5,6,7,8],
     vsync_pin=9,
@@ -87,12 +88,12 @@ Example for Xiao sense:
 #define MICROPY_CAMERA_PIN_XCLK     (10)
 #define MICROPY_CAMERA_PIN_PWDN     (-1)
 #define MICROPY_CAMERA_PIN_RESET    (-1)
-#define MICROPY_CAMERA_PIN_SIOD     (40)
-#define MICROPY_CAMERA_PIN_SIOC     (39)
-#define MICROPY_CAMERA_XCLK_FREQ    (20000000)
-#define MICROPY_CAMERA_FB_COUNT     (2)
-#define MICROPY_CAMERA_JPEG_QUALITY (10)
-#define MICROPY_CAMERA_GRAB_MODE    (1)
+#define MICROPY_CAMERA_PIN_SIOD     (40)  // SDA
+#define MICROPY_CAMERA_PIN_SIOC     (39)  // SCL
+#define MICROPY_CAMERA_XCLK_FREQ    (20000000)  // Frequencies are normally either 10 MHz or 20 MHz
+#define MICROPY_CAMERA_FB_COUNT     (2)   // Usually the value is between 1 (slow) and 2 (fast, but more load on CPU)
+#define MICROPY_CAMERA_JPEG_QUALITY (10)  // Quality of JPEG output. 0-63 lower means higher quality. Definition will change in the future
+#define MICROPY_CAMERA_GRAB_MODE    (1)   // 0=WHEN_EMPTY (might have old data, but less resources), 1=LATEST (best, but more resources)
 
 ```
 
