@@ -5,11 +5,13 @@ on:
   push:
     paths:
       - 'src/**'
+      - '.github/workflows/**'
   pull_request:
     branches:
       - master
     paths:
       - 'src/**'
+      - '.github/workflows/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
