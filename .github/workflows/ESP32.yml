@@ -131,21 +131,21 @@ jobs:
           cd ~/micropython/ports/esp32
           source ~/esp-idf/export.sh
 
-          # Check if a variant is defined and adjust the make command
+          # Check if a variant is defined and adjust the idf.py command
           IFS='@' read -r BUILD_TARGET CAMERA_MODEL <<< "${{ matrix.board }}"
           IFS='-' read -r BOARD_NAME BOARD_VARIANT <<< "${BUILD_TARGET}"
           
           if [ -n "${BOARD_VARIANT}" ]; then
-            MAKE_CMD="USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=$BOARD_NAME BOARD_VARIANT=$BOARD_VARIANT"
+            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D MICROPY_BOARD_DIR=~/micropython/ports/esp32/boards/$BOARD_NAME -DUSER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -D MICROPY_BOARD_VARIANT=$BOARD_VARIANT -B build-$BUILD_TARGET"
           else
-            MAKE_CMD="USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=$BOARD_NAME"
+            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D MICROPY_BOARD_DIR=~/micropython/ports/esp32/boards/$BOARD_NAME -DUSER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -B build-$BUILD_TARGET"
           fi
           if [ -n "${CAMERA_MODEL}" ]; then
             echo "FW_NAME=${CAMERA_MODEL}" >> $GITHUB_ENV
-            FINAL_CMD="make ${MAKE_CMD} CFLAGS_EXTRA=-DMP_CAMERA_MODEL_${CAMERA_MODEL}=1 all"
+            FINAL_CMD="${IDF_CMD} -D MP_CAMERA_MODEL_${CAMERA_MODEL}=1 build"
           else
             echo "FW_NAME=${BUILD_TARGET}" >> $GITHUB_ENV
-            FINAL_CMD="make ${MAKE_CMD} all"
+            FINAL_CMD="${IDF_CMD} build"
           fi
           echo "Running command: $FINAL_CMD"
           eval $FINAL_CMD
