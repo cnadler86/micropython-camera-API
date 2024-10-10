@@ -5,13 +5,13 @@ on:
   push:
     paths:
       - 'src/**'
-      - '.github/workflows/**'
+      - '.github/workflows/*.yml'
   pull_request:
     branches:
       - master
     paths:
       - 'src/**'
-      - '.github/workflows/**'
+      - '.github/workflows/*.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
