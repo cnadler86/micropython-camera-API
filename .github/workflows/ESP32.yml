@@ -95,7 +95,7 @@ jobs:
           - ESP32_GENERIC_S3
           - ESP32_GENERIC_S3-SPIRAM_OCT
           - ESP32_GENERIC_S3-FLASH_4M
-          - ESP32_GENERIC_S3-SPIRAM_OCT:XIAO_ESP32S3
+          - ESP32_GENERIC_S3-SPIRAM_OCT@XIAO_ESP32S3
 
     steps:
      # Get the latest MicroPython release
@@ -132,7 +132,7 @@ jobs:
           source ~/esp-idf/export.sh
 
           # Check if a variant is defined and adjust the make command
-          IFS=':' read -r BUILD_DIR CAMERA_MODEL <<< "${{ matrix.board }}"
+          IFS='@' read -r BUILD_DIR CAMERA_MODEL <<< "${{ matrix.board }}"
           IFS='-' read -r BOARD_NAME BOARD_VARIANT <<< "${BUILD_DIR}"
           
           if [ -n "${BOARD_VARIANT}" ]; then
