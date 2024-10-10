@@ -35,6 +35,7 @@
 #error Camera only works on boards configured with spiram
 #endif
 
+// Supporting functions
 void raise_micropython_error_from_esp_err(esp_err_t err) {
     switch (err) {
         case ESP_OK:
@@ -71,6 +72,14 @@ void raise_micropython_error_from_esp_err(esp_err_t err) {
     }
 }
 
+static int map(int value, int fromLow, int fromHigh, int toLow, int toHigh) {
+    if (fromHigh == fromLow) {
+        mp_raise_ValueError(MP_ERROR_TEXT("fromLow und fromHigh shall not be equal"));
+    }
+    return (int)((int32_t)(value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow) + toLow);
+}
+
+// Camera HAL Funcitons
 void mp_camera_hal_construct(
     mp_camera_obj_t *self,
     int8_t data_pins[8],
@@ -289,14 +298,6 @@ const mp_rom_map_elem_t mp_camera_hal_gainceiling_table[] = {
     { MP_ROM_QSTR(MP_QSTR_64X),     MP_ROM_INT(GAINCEILING_64X) },
     { MP_ROM_QSTR(MP_QSTR_128X),    MP_ROM_INT(GAINCEILING_128X) },
 };
-
-// Supporting functions
-static int map(int value, int fromLow, int fromHigh, int toLow, int toHigh) {
-    if (fromHigh == fromLow) {
-        mp_raise_ValueError(MP_ERROR_TEXT("fromLow und fromHigh shall not be equal"));
-    }
-    return (int)((int32_t)(value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow) + toLow);
-}
 
 //TODO: Makros with convertion function, since the API will use standarized values.
 // Helper functions to get and set camera and sensor information
