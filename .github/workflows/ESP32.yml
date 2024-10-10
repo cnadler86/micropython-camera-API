@@ -140,10 +140,16 @@ jobs:
             MAKE_CMD="USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=$BOARD_NAME"
           fi
           if [ -n "${CAMERA_MODEL}" ]; then
-            make ${MAKE_CMD} CFLAGS_EXTRA="-DMP_CAMERA_MODEL_${CAMERA_MODEL}=1" all
+            FINAL_CMD="make ${MAKE_CMD} CFLAGS_EXTRA=\"-DMP_CAMERA_MODEL_${CAMERA_MODEL}=1\" all"
           else
-            make ${MAKE_CMD} all
+            FINAL_CMD="make ${MAKE_CMD} all"
           fi
+
+          # Print the final command for debugging
+          echo "Running command: $FINAL_CMD"
+
+          # Run the final command
+          eval $FINAL_CMD
           mv ~/micropython/ports/esp32/build-${BUILD_DIR}/firmware.bin ~/${{ matrix.board }}.bin
 
       - name: Upload firmware artifact
