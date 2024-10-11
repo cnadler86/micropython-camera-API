@@ -149,12 +149,14 @@ jobs:
           fi
           echo "Running command: $FINAL_CMD"
           eval $FINAL_CMD
-          mv ~/micropython/ports/esp32/build-${BUILD_TARGET}/micropython.bin ~/firmware.bin
-          
+          cd ~/micropython/ports/esp32/build-${BUILD_TARGET}
+          python ../makeimg.py sdkconfig bootloader/bootloader.bin partition_table/partition-table.bin micropython.bin firmware.bin micropython.uf2
+          mkdir -p ~/artifacts
+          mv ~/micropython/ports/esp32/build-${BUILD_TARGET}/firmware.bin ~/artifacts/firmware.bin
 
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
         with:
           name: firmware-${{ env.FW_NAME }}
-          path: ~/firmware.bin
+          path: ~/artifacts/**
           retention-days: 5
