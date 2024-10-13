@@ -95,6 +95,7 @@ jobs:
           - ESP32_GENERIC_S3
           - ESP32_GENERIC_S3-SPIRAM_OCT
           - ESP32_GENERIC_S3-FLASH_4M
+          - ESP32_GENERIC_S3-SPIRAM_OCT@XIAO_ESP32S3
 
     steps:
      # Get the latest MicroPython release
@@ -130,18 +131,32 @@ jobs:
           cd ~/micropython/ports/esp32
           source ~/esp-idf/export.sh
 
-          # Check if a variant is defined and adjust the make command
-          IFS='-' read -r BOARD_NAME BOARD_VARIANT <<< "${{ matrix.board }}"
+          # Check if a variant is defined and adjust the idf.py command
+          IFS='@' read -r BUILD_TARGET CAMERA_MODEL <<< "${{ matrix.board }}"
+          IFS='-' read -r BOARD_NAME BOARD_VARIANT <<< "${BUILD_TARGET}"
+          
           if [ -n "${BOARD_VARIANT}" ]; then
-            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=$BOARD_NAME BOARD_VARIANT=$BOARD_VARIANT all
+            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -D MICROPY_BOARD_VARIANT=$BOARD_VARIANT -B build-$BUILD_TARGET"
           else
-            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=$BOARD_NAME all
+            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -B build-$BUILD_TARGET"
           fi
-          mv ~/micropython/ports/esp32/build-${{ matrix.board }}/firmware.bin ~/${{ matrix.board }}.bin
+          if [ -n "${CAMERA_MODEL}" ]; then
+            echo "FW_NAME=${CAMERA_MODEL}" >> $GITHUB_ENV
+            FINAL_CMD="${IDF_CMD} -D MICROPY_CAMERA_MODEL=${CAMERA_MODEL} build"
+          else
+            echo "FW_NAME=${BUILD_TARGET}" >> $GITHUB_ENV
+            FINAL_CMD="${IDF_CMD} build"
+          fi
+          echo "Running command: $FINAL_CMD"
+          eval $FINAL_CMD
+          cd ~/micropython/ports/esp32/build-${BUILD_TARGET}
+          python ../makeimg.py sdkconfig bootloader/bootloader.bin partition_table/partition-table.bin micropython.bin firmware.bin micropython.uf2
+          mkdir -p ~/artifacts
+          mv ~/micropython/ports/esp32/build-${BUILD_TARGET}/firmware.bin ~/artifacts/firmware.bin
 
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
         with:
-          name: firmware-${{ matrix.board }}
-          path: ~/${{ matrix.board }}.bin
-          retention-days: 90
+          name: firmware-${{ env.FW_NAME }}
+          path: ~/artifacts/**
+          retention-days: 5
