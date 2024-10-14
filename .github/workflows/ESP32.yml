@@ -176,7 +176,7 @@ jobs:
 
       - name: Write files to binary image
         run: |
-          vfsmerge --port auto --firmware ~/micropython/ports/esp32/build-${BUILD_TARGET}/firmware.bin --source ${{ github.workspace }}/examples --build ~/artifacts/firmware2.bin
+          vfsmerge --port auto --firmware ~/artifacts/firmware.bin --source ${{ github.workspace }}/examples --build ~/artifacts/firmware2.bin
 
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
