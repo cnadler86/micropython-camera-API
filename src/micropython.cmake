@@ -22,4 +22,5 @@ if (MICROPY_CAMERA_MODEL)
 endif()
 
 target_link_libraries(usermod INTERFACE usermod_mp_camera)
+
 micropy_gather_target_properties(usermod_mp_camera)

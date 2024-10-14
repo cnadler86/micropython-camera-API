@@ -117,8 +117,22 @@ void mp_camera_hal_construct(
         self->camera_config.pin_xclk = external_clock_pin;
         self->camera_config.pin_sscb_sda = sccb_sda_pin;
         self->camera_config.pin_sscb_scl = sccb_scl_pin;
-        self->camera_config.xclk_freq_hz = xclk_freq_hz;
-        self->camera_config.fb_count = fb_count;      //if more than one, i2s runs in continuous mode. TODO: Test with others than JPEG
+        if ( xclk_freq_hz > 20000000) {
+            mp_raise_ValueError(MP_ERROR_TEXT("xclk frequency cannot be grather than 20MHz"));
+        } else {
+            self->camera_config.xclk_freq_hz = xclk_freq_hz;
+        }
+
+        if (fb_count > 2) {
+            self->camera_config.fb_count = 2;
+            mp_warning(NULL, "Frame buffer size limited to 2");
+        } else if (fb_count < 1) {
+            self->camera_config.fb_count = 1;
+            mp_warning(NULL, "Frame buffer size must be >0. Set to 1");
+        }
+        else {
+            self->camera_config.fb_count = fb_count;          //if more than one, i2s runs in continuous mode. TODO: Test with others than JPEG
+        }
         self->camera_config.grab_mode = grab_mode;
 
         // defaul parameters
@@ -195,7 +209,11 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
         if (fb_count > 2) {
             self->camera_config.fb_count = 2;
             mp_warning(NULL, "Frame buffer size limited to 2");
-        } else {
+        } else if (fb_count < 1) {
+            self->camera_config.fb_count = 1;
+            mp_warning(NULL, "Set to min frame buffer size of 1");
+        }
+        else {
             self->camera_config.fb_count = fb_count;
         }
         

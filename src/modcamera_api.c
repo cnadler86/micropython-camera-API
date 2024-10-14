@@ -40,7 +40,7 @@ const mp_obj_type_t camera_type;
 
 //Constructor
 static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
-    enum { ARG_data_pins, ARG_pixel_clock_pin, ARG_vsync_pin, ARG_href_pin, ARG_sda_pin, ARG_scl_pin, ARG_xclock_pin, ARG_xclock_frequency, ARG_powerdown_pin, ARG_reset_pin, ARG_pixel_format, ARG_frame_size, ARG_jpeg_quality, ARG_fb_count, ARG_grab_mode, NUM_ARGS };
+    enum { ARG_data_pins, ARG_pixel_clock_pin, ARG_vsync_pin, ARG_href_pin, ARG_sda_pin, ARG_scl_pin, ARG_xclock_pin, ARG_xclock_frequency, ARG_powerdown_pin, ARG_reset_pin, ARG_pixel_format, ARG_frame_size, ARG_jpeg_quality, ARG_fb_count, ARG_grab_mode, ARG_init, NUM_ARGS };
     static const mp_arg_t allowed_args[] = {
         #ifdef MICROPY_CAMERA_ALL_REQ_PINS_DEFINED
             { MP_QSTR_data_pins, MP_ARG_OBJ | MP_ARG_KW_ONLY , { .u_obj = MP_ROM_NONE } },
@@ -67,6 +67,7 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
         { MP_QSTR_jpeg_quality, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_JPEG_QUALITY } },
         { MP_QSTR_fb_count, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_FB_COUNT } },
         { MP_QSTR_grab_mode, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_GRAB_MODE } },
+        { MP_QSTR_init, MP_ARG_BOOL | MP_ARG_KW_ONLY, { .u_bool = true } },
     };
 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -119,6 +120,9 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
     mp_camera_pixformat_t pixel_format = args[ARG_pixel_format].u_int;
     mp_camera_framesize_t frame_size = args[ARG_frame_size].u_int;
     int8_t jpeg_quality = args[ARG_jpeg_quality].u_int;
+    if ((jpeg_quality < 0) || (jpeg_quality > 100)) {
+        mp_raise_ValueError(MP_ERROR_TEXT("jpeg quality must be in range 0-100"));
+    }
     int8_t fb_count = args[ARG_fb_count].u_int;
     mp_camera_grabmode_t grab_mode = args[ARG_grab_mode].u_int;
     
@@ -136,6 +140,9 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
         Run reconfigure method or construct a new object with appropriate configuration (e.g. FrameSize)."));
         return MP_OBJ_FROM_PTR(self);
     } else {
+        if ( !args[ARG_init].u_bool ){
+            mp_camera_hal_deinit(self);
+        }
         return MP_OBJ_FROM_PTR(self);
     }
 }
