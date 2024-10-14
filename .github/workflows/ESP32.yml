@@ -141,7 +141,8 @@ jobs:
       - name: Install ESP-IDF dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0 build-essential pkg-config
+          sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0 build-essential pkg-config pipx
+          pipx install vfs_merge
 
       # Build MicroPython for each board
       - name: Build MicroPython
@@ -174,7 +175,6 @@ jobs:
 
       - name: Write files to binary image
         run: |
-          pip install vfs_merge
           vfsmerge --port auto --firmware ~/micropython/ports/esp32/build-${BUILD_TARGET}/firmware.bin --source {{ github.workspace }}/examples --build ~/artifacts/firmware2.bin
 
       - name: Upload firmware artifact
