@@ -18,7 +18,7 @@ from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
 #Camera construction using defaults (if you are using a non-generic precompiled firmware or if you specified them in mpconfigboard.h during your build)
 camera = Camera()
 
-# Camera construction and initialization if using a generic precompiled firmware
+# Camera construction needs some keyword arguments, if using a generic precompiled firmware
 # These pins are just examples and if you use them just like that will get a watchdog error. Adapt them to your board!
 camera = Camera(
     data_pins=[1,2,3,4,5,6,7,8],
@@ -49,6 +49,22 @@ camera.set_quality(90)  # The quality goes from 0% to 100%, meaning 100% is the 
 You can get and set sensor properties by the respective methods (e.g. camera.get_brightness() or camera.set_vflip(True). See autocompletions in Thonny in order to see the list of methods.
 If you want more insides in the methods and what they actually do, you can find a very good documentation [here](https://docs.circuitpython.org/en/latest/shared-bindings/espcamera/index.html).
 Notice that for the methods in here you need to prefix a get/set, depending on what you want to do.
+
+## Default values
+
+The default values of the following keyword arguments are:
+
+- xclk_freq: 20MHz    // Frequencies are normally either 10 MHz or 20 MHz
+- frame_size: QQVGA
+- pixel_format: RGB565
+- jpeg_quality: 85    // Quality of JPEG output in percent. Higher means higher quality.
+- powerdown_pin and reset_pin: -1 (not used/available/needed)
+- fb_count:
+  - 2 for ESP32S3 boards
+  - 1 for all other
+- grab_mode:
+  - LATEST for ESP32S3 boards
+  - WHEN_EMPTY for all other
 
 ## Build your custom FW
 
@@ -91,7 +107,7 @@ Example for Xiao sense:
 #define MICROPY_CAMERA_PIN_SIOD     (40)  // SDA
 #define MICROPY_CAMERA_PIN_SIOC     (39)  // SCL
 #define MICROPY_CAMERA_XCLK_FREQ    (20000000)  // Frequencies are normally either 10 MHz or 20 MHz
-#define MICROPY_CAMERA_FB_COUNT     (2)   // The value is between 1 (slow) and 2 (fast, but more load on CPU)
+#define MICROPY_CAMERA_FB_COUNT     (2)   // The value is between 1 (slow) and 2 (fast, but more load on CPU and more ram usage)
 #define MICROPY_CAMERA_JPEG_QUALITY (85)  // Quality of JPEG output in percent. Higher means higher quality.
 #define MICROPY_CAMERA_GRAB_MODE    (1)   // 0=WHEN_EMPTY (might have old data, but less resources), 1=LATEST (best, but more resources)
 
@@ -122,4 +138,4 @@ If you experience problems, visit [MicroPython external C modules](https://docs.
 - [ ] harmonize properties to standard ones at API level, e.g. jpeg quality to the range 100=very good, 1/0= very bad
 - [ ] edge case: enable usage of pins such as i2c for other applications
 - [ ] provide examples in binary image with lfs-merge
-- [ ] include driver version in API
+- [ ] include camera driver version in API
