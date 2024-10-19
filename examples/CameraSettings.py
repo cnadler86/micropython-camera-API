@@ -18,7 +18,7 @@ while not station.isconnected():
 print(f'Connected! IP: {station.ifconfig()[0]}. Open this IP in your browser')
 
 with open("ESP32cam.html", 'r') as file:
-    html = (""{file.read()}"")
+    html = file.read()
 
 async def stream_camera(writer):
     try:

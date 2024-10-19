@@ -24,9 +24,10 @@
             padding: 20px;
             background-color: #ffffff;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
         }
         .setting {
-            margin-bottom: 20px;
+            margin-bottom: 14px;
         }
         .video-container {
             display: flex;
@@ -36,80 +37,66 @@
             padding: 20px;
         }
         img {
-            width: 100%;
-            height: auto;
+            width: auto;
+            height: 100%;
         }
         .title-container {
             width: 100%;
             text-align: center;
             background-color: #ffffff;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
         }
     </style>
     <script>
         function updateValue(method, value) {
-            console.log("Updating value: " + value + " using method: " + method);
-            fetch('/set_' + method + '?value=' + value)
+            console.log(`Updating ${method} to ${value}`);
+            fetch(`/set_${method}?value=${value}`)
                 .then(response => {
                     if (!response.ok) {
-                        console.error("Error setting " + method);
-                    } else {
-                        console.log(method + " set to " + value);
+                        console.error(`Error setting ${method}`);
                     }
                 })
                 .catch(error => {
-                    console.error("Fetch error: ", error);
+                    console.error(`Fetch error: `, error);
                 });
         }
 
-        function fetchValue(method, elementId) {
-            console.log("Fetching value using method: " + method);
-            fetch('/get_' + method)
+        function fetchValue(method, type = 'range') {
+            console.log(`Fetching ${method}`);
+            fetch(`/get_${method}`)
                 .then(response => response.text())
                 .then(value => {
-                    console.log(method + " value: " + value);
-                    document.getElementById(elementId).value = value;
+                    const element = document.getElementById(method);
+                    if (type === 'checkbox') {
+                        element.checked = value === "1";
+                    } else {
+                        element.value = value;
+                    }
                 })
                 .catch(error => {
-                    console.error("Fetch error: ", error);
+                    console.error(`Fetch error: `, error);
                 });
         }
 
-        function updateCheckbox(method, elementId) {
-            const checkbox = document.getElementById(elementId);
-            const value = checkbox.checked ? 1 : 0;
-            updateValue(method, value);
-        }
-
-        function fetchCheckbox(method, elementId) {
-            console.log("Fetching value using method: " + method);
-            fetch('/get_' + method)
-                .then(response => response.text())
-                .then(value => {
-                    console.log(method + " value: " + value);
-                    document.getElementById(elementId).checked = value === "1";
-                })
-                .catch(error => {
-                    console.error("Fetch error: ", error);
+        function setupEventListeners() {
+            const inputs = document.querySelectorAll('input');
+            inputs.forEach(input => {
+                const type = input.type === 'checkbox' ? 'checkbox' : 'range';
+                input.addEventListener(type === 'checkbox' ? 'change' : 'input', () => {
+                    const value = type === 'checkbox' ? (input.checked ? 1 : 0) : input.value;
+                    updateValue(input.id, value);
                 });
+                fetchValue(input.id, type);
+            });
+
+            const selects = document.querySelectorAll('select');
+            selects.forEach(select => {
+                select.addEventListener('change', () => updateValue(select.id, select.value));
+                fetchValue(select.id, 'select');
+            });
         }
 
-        document.addEventListener("DOMContentLoaded", function() {
-            fetchValue('quality', 'quality');
-            fetchValue('wb_mode', 'wb_mode');
-            fetchValue('contrast', 'contrast');
-            fetchValue('brightness', 'brightness');
-            fetchValue('saturation', 'saturation');
-            fetchValue('sharpness', 'sharpness');
-            fetchCheckbox('whitebal', 'whitebal');
-            fetchCheckbox('gain_ctrl', 'gain_ctrl');
-            fetchCheckbox('exposure_ctrl', 'exposure_ctrl');
-            fetchCheckbox('hmirror', 'hmirror');
-            fetchCheckbox('vflip', 'vflip');
-            fetchCheckbox('aec2', 'aec2');
-            fetchCheckbox('awb_gain', 'awb_gain');
-        });
+        document.addEventListener("DOMContentLoaded", setupEventListeners);
     </script>
 </head>
 <body>
@@ -120,11 +107,11 @@
         <div class="settings-container">
             <div class="setting">
                 <label for="quality">JPEG quality:</label>
-                <input type="range" id="quality" min="0" max="90" oninput="updateValue('quality', this.value)">
+                <input type="range" id="quality" min="0" max="90">
             </div>
             <div class="setting">
                 <label for="wb_mode">White Balance Mode:</label>
-                <select id="wb_mode" onchange="updateValue('wb_mode', this.value)">
+                <select id="wb_mode">
                     <option value="0">Auto</option>
                     <option value="1">Sunny</option>
                     <option value="2">Cloudy</option>
@@ -132,49 +119,62 @@
                     <option value="4">Home</option>
                 </select>
             </div>
+            <!-- Neue Elemente -->
             <div class="setting">
-                <label for="contrast" title="The sensor contrast. Positive values increase contrast, negative values lower it. The total range is device-specific but is often from -2 to +2 inclusive.">Contrast:</label>
-                <input type="range" id="contrast" min="-2" max="2" oninput="updateValue('contrast', this.value)">
+                <label for="contrast" title="Regelt den Kontrast des Sensors. Positive Werte erhöhen den Kontrast, negative verringern ihn. Bereich: -2 bis +2.">Contrast:</label>
+                <input type="range" id="contrast" min="-2" max="2">
             </div>
             <div class="setting">
-                <label for="brightness" title="The sensor brightness. Positive values increase brightness, negative values lower it. The total range is device-specific but is often from -2 to +2 inclusive.">Brightness:</label>
-                <input type="range" id="brightness" min="-2" max="2" oninput="updateValue('brightness', this.value)">
+                <label for="brightness" title="Regelt die Helligkeit des Sensors. Positive Werte erhöhen die Helligkeit, negative verringern sie. Bereich: -2 bis +2.">Brightness:</label>
+                <input type="range" id="brightness" min="-2" max="2">
             </div>
             <div class="setting">
-                <label for="saturation" title="The sensor saturation. Positive values increase saturation (more vibrant colors), negative values lower it (more muted colors). The total range is device-specific but the value is often from -2 to +2 inclusive.">Saturation:</label>
-                <input type="range" id="saturation" min="-2" max="2" oninput="updateValue('saturation', this.value)">
+                <label for="saturation" title="Regelt die Sättigung des Sensors. Positive Werte erhöhen die Farbintensität, negative verringern sie. Bereich: -2 bis +2.">Saturation:</label>
+                <input type="range" id="saturation" min="-2" max="2">
             </div>
             <div class="setting">
-                <label for="sharpness" title="The sensor sharpness. Positive values increase sharpness (more defined edges), negative values lower it (softer edges). The total range is device-specific but the value is often from -2 to +2 inclusive.">Sharpness:</label>
-                <input type="range" id="sharpness" min="-2" max="2" oninput="updateValue('sharpness', this.value)">
+                <label for="sharpness" title="Regelt die Schärfe des Sensors. Positive Werte erhöhen die Schärfe, negative verringern sie. Bereich: -2 bis +2.">Sharpness:</label>
+                <input type="range" id="sharpness" min="-2" max="2">
             </div>
             <div class="setting">
-                <label for="whitebal" title="When True, the camera attempts to automatically control white balance. When False, the wb_mode setting is used instead.">Auto White Balance:</label>
-                <input type="checkbox" id="whitebal" onchange="updateCheckbox('whitebal', 'whitebal')">
+                <label for="whitebal" title="Automatische Weißabgleich-Kontrolle aktivieren.">Auto White Balance:</label>
+                <input type="checkbox" id="whitebal">
             </div>
             <div class="setting">
-                <label for="gain_ctrl" title="When True, the camera attempts to automatically control the sensor gain, up to the value in the gain_ceiling property. When False, the agc_gain setting is used instead.">Auto Gain Control:</label>
-                <input type="checkbox" id="gain_ctrl" onchange="updateCheckbox('gain_ctrl', 'gain_ctrl')">
+                <label for="gain_ctrl" title="Automatische Verstärkungsregelung aktivieren.">Auto Gain Control:</label>
+                <input type="checkbox" id="gain_ctrl">
             </div>
             <div class="setting">
-                <label for="exposure_ctrl" title="When True the camera attempts to automatically control the exposure. When False, the aec_value setting is used instead.">Auto Exposure Control:</label>
-                <input type="checkbox" id="exposure_ctrl" onchange="updateCheckbox('exposure_ctrl', 'exposure_ctrl')">
+                <label for="exposure_ctrl" title="Automatische Belichtungsregelung aktivieren.">Auto Exposure Control:</label>
+                <input type="checkbox" id="exposure_ctrl">
             </div>
             <div class="setting">
-                <label for="hmirror" title="When True the camera image is mirrored left-to-right.">Horizontal Mirror:</label>
-                <input type="checkbox" id="hmirror" onchange="updateCheckbox('hmirror', 'hmirror')">
+                <label for="hmirror" title="Horizontales Spiegeln des Bildes aktivieren.">Horizontal Mirror:</label>
+                <input type="checkbox" id="hmirror">
             </div>
             <div class="setting">
-                <label for="vflip" title="When True the camera image is flipped top-to-bottom.">Vertical Flip:</label>
-                <input type="checkbox" id="vflip" onchange="updateCheckbox('vflip', 'vflip')">
+                <label for="vflip" title="Vertikales Spiegeln des Bildes aktivieren.">Vertical Flip:</label>
+                <input type="checkbox" id="vflip">
             </div>
             <div class="setting">
-                <label for="aec2" title="When True the sensor’s “night mode” is enabled, extending the range of automatic gain control.">Night Mode:</label>
-                <input type="checkbox" id="aec2" onchange="updateCheckbox('aec2', 'aec2')">
+                <label for="aec2" title="Nachtmodus aktivieren (verlängert den Regelbereich der automatischen Verstärkungsregelung).">Night Mode:</label>
+                <input type="checkbox" id="aec2">
             </div>
             <div class="setting">
-                <label for="awb_gain" title="Access the awb_gain property of the camera sensor.">AWB Gain:</label>
-                <input type="checkbox" id="awb_gain" onchange="updateCheckbox('awb_gain', 'awb_gain')">
+                <label for="awb_gain" title="Automatische Weißabgleichs-Verstärkung aktivieren.">AWB Gain:</label>
+                <input type="checkbox" id="awb_gain">
+            </div>
+            <div class="setting">
+                <label for="special_effect" title="Wählen Sie einen speziellen Effekt für das Bild.">Special Effect:</label>
+                <select id="special_effect">
+                    <option value="0">No effect</option>
+                    <option value="1">Negative</option>
+                    <option value="2">Black and White</option>
+                    <option value="3">Reddish</option>
+                    <option value="4">Greenish</option>
+                    <option value="5">Blue</option>
+                    <option value="6">Retro</option>
+                </select>
             </div>
         </div>
         <div class="video-container">
