@@ -30,8 +30,11 @@ async def stream_camera(writer):
         while True:
             frame = cam.capture()
             if frame:
-                writer.write(b'--frame\r\n')
-                writer.write(b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+                writer.write(b'--frame\r\nContent-Type: image/jpeg\r\n\r\n')
+                await writer.drain()
+                writer.write(frame)
+                await writer.drain()
+                writer.write(b'\r\n')
                 await writer.drain()
             else:
                 pass
