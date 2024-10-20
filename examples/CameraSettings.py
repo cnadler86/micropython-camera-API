@@ -31,13 +31,9 @@ async def stream_camera(writer):
             frame = cam.capture()
             if frame:
                 writer.write(b'--frame\r\nContent-Type: image/jpeg\r\n\r\n')
-                await writer.drain()
                 writer.write(frame)
-                writer.drain()
-                writer.write(b'\r\n')
                 await writer.drain()
-            else:
-                pass
+                
     finally:
         cam.deinit()
         writer.close()
