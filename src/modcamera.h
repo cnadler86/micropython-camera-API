@@ -267,7 +267,7 @@ DECLARE_CAMERA_HAL_GETSET(bool, wpc)
 
 DECLARE_CAMERA_HAL_GET(int, address)
 DECLARE_CAMERA_HAL_GET(int, fb_count)
-DECLARE_CAMERA_HAL_GET(mp_camera_framesize_t, frame_size)
+DECLARE_CAMERA_HAL_GETSET(mp_camera_framesize_t, frame_size)
 DECLARE_CAMERA_HAL_GET(camera_grab_mode_t, grab_mode)
 DECLARE_CAMERA_HAL_GET(mp_camera_framesize_t, max_frame_size)
 DECLARE_CAMERA_HAL_GET(mp_camera_pixformat_t, pixel_format)

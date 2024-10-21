@@ -240,12 +240,13 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_camera___exit___obj, 4, 4, mp_came
     { MP_ROM_QSTR(MP_QSTR_get_##property), MP_ROM_PTR(&camera_get_##property##_obj) }, \
     { MP_ROM_QSTR(MP_QSTR_set_##property), MP_ROM_PTR(&camera_set_##property##_obj) }
 
-CREATE_GETTER(frame_size, mp_obj_new_int)
+CREATE_GETSET_FUNCTIONS(frame_size, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int)
 CREATE_GETTER(pixel_format, mp_obj_new_int)
 CREATE_GETTER(grab_mode, mp_obj_new_int)
 CREATE_GETTER(fb_count, mp_obj_new_int)
 CREATE_GETTER(pixel_width, mp_obj_new_int)
 CREATE_GETTER(pixel_height, mp_obj_new_int)
+CREATE_GETTER(max_frame_size, mp_obj_new_int)
 CREATE_GETSET_FUNCTIONS(contrast, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
 CREATE_GETSET_FUNCTIONS(brightness, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
 CREATE_GETSET_FUNCTIONS(saturation, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
@@ -281,12 +282,13 @@ static const mp_rom_map_elem_t camera_camera_locals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&mp_camera_deinit_obj) },
     { MP_ROM_QSTR(MP_QSTR___enter__), MP_ROM_PTR(&mp_identity_obj) },
     { MP_ROM_QSTR(MP_QSTR___exit__), MP_ROM_PTR(&mp_camera___exit___obj) },
-    { MP_ROM_QSTR(MP_QSTR_get_framesize), MP_ROM_PTR(&camera_get_frame_size_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_pixel_format), MP_ROM_PTR(&camera_get_pixel_format_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_grab_mode), MP_ROM_PTR(&camera_get_grab_mode_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_fb_count), MP_ROM_PTR(&camera_get_fb_count_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_pixel_width), MP_ROM_PTR(&camera_get_pixel_width_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_pixel_height), MP_ROM_PTR(&camera_get_pixel_height_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_max_frame_size), MP_ROM_PTR(&camera_get_max_frame_size_obj) },
+    ADD_PROPERTY_TO_TABLE(frame_size),
     ADD_PROPERTY_TO_TABLE(contrast),
     ADD_PROPERTY_TO_TABLE(brightness),
     ADD_PROPERTY_TO_TABLE(saturation),

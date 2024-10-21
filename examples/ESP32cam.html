@@ -96,7 +96,40 @@
             });
         }
 
-        document.addEventListener("DOMContentLoaded", setupEventListeners);
+        // New function to populate the frame size dropdown based on max frame size
+        function populateFrameSizeDropdown() {
+            const frameSizes = [
+                "R96x96", "QQVGA", "CIF", "HQVGA", "R240x240", "QVGA", 
+                "CIF", "HVGA", "VGA", "SVGA", "XGA", "HD", "SXGA", 
+                "UXGA", "FHD", "P_HD", "P_3MP", "QXGA", "QHD", "WQXGA", "P_FHD", "QSXGA"
+            ];
+
+            const frameSizeDropdown = document.getElementById('frame_size');
+
+            fetch('/get_max_frame_size')
+                .then(response => response.text())
+                .then(maxFrameSize => {
+                    const maxSizeIndex = parseInt(maxFrameSize, 10);
+                    frameSizeDropdown.innerHTML = '';
+
+                    frameSizes.forEach((size, index) => {
+                        if (index <= maxSizeIndex) {
+                            const option = document.createElement('option');
+                            option.value = index;
+                            option.textContent = size;
+                            frameSizeDropdown.appendChild(option);
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching max frame size:', error);
+                });
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            setupEventListeners();
+            populateFrameSizeDropdown();  // Call this to populate the frame size options dynamically
+        });
     </script>
 </head>
 <body>
@@ -105,6 +138,33 @@
     </div>
     <div class="container">
         <div class="settings-container">
+            <div class="setting">
+                <label for="frame_size">Frame Size:</label>
+                <select id="frame_size">
+                    <option value="0">R96x96</option>
+                    <option value="1">QQVGA</option>
+                    <option value="2">CIF</option>
+                    <option value="3">HQVGA</option>
+                    <option value="4">R240x240</option>
+                    <option value="5">QVGA</option>
+                    <option value="6">CIF</option>
+                    <option value="7">HVGA</option>
+                    <option value="8">VGA</option>
+                    <option value="9">SVGA</option>
+                    <option value="10">XGA</option>
+                    <option value="11">HD</option>
+                    <option value="12">SXGA</option>
+                    <option value="13">UXGA</option>
+                    <option value="14">FHD</option>
+                    <option value="15">P_HD</option>
+                    <option value="16">P_3MP</option>
+                    <option value="17">QXGA</option>
+                    <option value="18">QHD</option>
+                    <option value="19">WQXGA</option>
+                    <option value="20">P_FHD</option>
+                    <option value="21">QSXGA</option>
+                  </select>
+            </div>
             <div class="setting">
                 <label for="quality">JPEG quality:</label>
                 <input type="range" id="quality" min="0" max="100">
@@ -119,7 +179,6 @@
                     <option value="4">Home</option>
                 </select>
             </div>
-            <!-- Neue Elemente -->
             <div class="setting">
                 <label for="contrast" title="Regelt den Kontrast des Sensors. Positive Werte erhöhen den Kontrast, negative verringern ihn. Bereich: -2 bis +2.">Contrast:</label>
                 <input type="range" id="contrast" min="-2" max="2">

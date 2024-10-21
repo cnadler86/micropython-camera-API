@@ -100,7 +100,7 @@ void mp_camera_hal_construct(
         // configure camera based on arguments
         self->camera_config.pixel_format = pixel_format;
         self->camera_config.frame_size = frame_size;        
-        self->camera_config.jpeg_quality = (int8_t)map(jpeg_quality,0,100,63,0);    //0-63 lower number means higher quality. TODO: Harmonization in API and Validation
+        self->camera_config.jpeg_quality = (int8_t)map(jpeg_quality,0,100,63,0);    //0-63 lower number means higher quality.
         self->camera_config.pin_d0 = data_pins[0];
         self->camera_config.pin_d1 = data_pins[1];
         self->camera_config.pin_d2 = data_pins[2];
@@ -128,7 +128,7 @@ void mp_camera_hal_construct(
             mp_warning(NULL, "Frame buffer size limited to 2");
         } else if (fb_count < 1) {
             self->camera_config.fb_count = 1;
-            mp_warning(NULL, "Frame buffer size must be >0. Set to 1");
+            mp_warning(NULL, "Frame buffer size must be >0. Setting it to 1");
         }
         else {
             self->camera_config.fb_count = fb_count;          //if more than one, i2s runs in continuous mode. TODO: Test with others than JPEG
@@ -327,22 +327,19 @@ const mp_rom_map_elem_t mp_camera_hal_gainceiling_table[] = {
 
 // For subsequent modules using this as example, you will probably only need the makros below.
 #define SENSOR_GETSET(type, name, field_name, setter_function_name) \
-    SENSOR_GET(type, name, field_name, setter_function_name) \
+    SENSOR_GET(type, name, field_name) \
     SENSOR_SET(type, name, setter_function_name)
 
 #define SENSOR_GETSET_IN_RANGE(type, name, field_name, setter_function_name, min_val, max_val) \
-    SENSOR_GET(type, name, field_name, setter_function_name) \
+    SENSOR_GET(type, name, field_name) \
     SENSOR_SET_IN_RANGE(type, name, setter_function_name, min_val, max_val)
 
-#define SENSOR_GET(type, name, status_field_name, getter_function_name) \
+#define SENSOR_GET(type, name, status_field_name) \
     type mp_camera_hal_get_##name(mp_camera_obj_t * self) { \
         if (!self->initialized) { \
             mp_raise_ValueError(MP_ERROR_TEXT("Camera not initialized")); \
         } \
         sensor_t *sensor = esp_camera_sensor_get(); \
-        if (!sensor->getter_function_name) { \
-            mp_raise_ValueError(MP_ERROR_TEXT("No attribute " #name)); \
-        } \
         return sensor->status_field_name; \
     }
 
@@ -377,13 +374,13 @@ const mp_rom_map_elem_t mp_camera_hal_gainceiling_table[] = {
         } \
     }
 
+SENSOR_GET(framesize_t, frame_size, status.framesize);
 SENSOR_STATUS_GETSET_IN_RANGE(int, contrast, contrast, set_contrast, -2, 2);
 SENSOR_STATUS_GETSET_IN_RANGE(int, brightness, brightness, set_brightness, -2, 2);
 SENSOR_STATUS_GETSET_IN_RANGE(int, saturation, saturation, set_saturation, -2, 2);
 SENSOR_STATUS_GETSET_IN_RANGE(int, sharpness, sharpness, set_sharpness, -2, 2);
 SENSOR_STATUS_GETSET(int, denoise, denoise, set_denoise);
 SENSOR_STATUS_GETSET(mp_camera_gainceiling_t, gainceiling, gainceiling, set_gainceiling);
-static SENSOR_STATUS_GETSET(int, quality_raw, quality, set_quality); //in_Range not needed since driver limits value. Raw to be used in wrapper funtion
 SENSOR_STATUS_GETSET(bool, colorbar, colorbar, set_colorbar);
 SENSOR_STATUS_GETSET(bool, whitebal, awb, set_whitebal);
 SENSOR_STATUS_GETSET(bool, gain_ctrl, agc, set_gain_ctrl);
@@ -403,20 +400,45 @@ SENSOR_STATUS_GETSET(bool, wpc, wpc, set_wpc);
 SENSOR_STATUS_GETSET(bool, raw_gma, raw_gma, set_raw_gma);
 SENSOR_STATUS_GETSET(bool, lenc, lenc, set_lenc);
 
-int mp_camera_hal_get_quality(mp_camera_obj_t *self){
-    return map(mp_camera_hal_get_quality_raw(self),63,0,0,100);
+void mp_camera_hal_set_frame_size(mp_camera_obj_t * self, framesize_t value) {
+    if (!self->initialized) {
+        mp_raise_ValueError(MP_ERROR_TEXT("Camera not initialized"));
+    }
+    sensor_t *sensor = esp_camera_sensor_get();
+    if (!sensor->set_framesize) {
+        mp_raise_ValueError(MP_ERROR_TEXT("No attribute frame_size"));
+    }
+    if (sensor->set_framesize(sensor, value) < 0) {
+        mp_raise_ValueError(MP_ERROR_TEXT("Invalid setting for frame_size"));
+    } else {
+        self->camera_config.frame_size = value;
+    }
+}
+int mp_camera_hal_get_quality(mp_camera_obj_t * self) {
+    if (!self->initialized) {
+        mp_raise_ValueError(MP_ERROR_TEXT("Camera not initialized"));
+    }
+    sensor_t *sensor = esp_camera_sensor_get();
+    return map(sensor->status.quality,63,0,0,100);
 }
 
-void mp_camera_hal_set_quality(mp_camera_obj_t *self,int quality){
-    mp_camera_hal_set_quality_raw(self,map(quality,0,100,63,0));
+void mp_camera_hal_set_quality(mp_camera_obj_t * self, int value) {
+    if (!self->initialized) {
+        mp_raise_ValueError(MP_ERROR_TEXT("Camera not initialized"));
+    }
+    sensor_t *sensor = esp_camera_sensor_get();
+    if (!sensor->set_quality) {
+        mp_raise_ValueError(MP_ERROR_TEXT("No attribute quality"));
+    }
+    if (sensor->set_quality(sensor, map(value,0,100,63,0)) < 0) {
+        mp_raise_ValueError(MP_ERROR_TEXT("Invalid setting for quality"));
+    } else {
+        self->camera_config.jpeg_quality = map(value,0,100,63,0);
+    }
 }
 
 mp_camera_pixformat_t mp_camera_hal_get_pixel_format(mp_camera_obj_t *self) {
     return self->camera_config.pixel_format;
-}
-
-mp_camera_framesize_t mp_camera_hal_get_frame_size(mp_camera_obj_t *self) {
-    return self->camera_config.frame_size;
 }
 
 camera_grab_mode_t mp_camera_hal_get_grab_mode(mp_camera_obj_t *self) {
