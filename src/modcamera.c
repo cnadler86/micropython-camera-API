@@ -422,8 +422,7 @@ int mp_camera_hal_get_quality(mp_camera_obj_t * self) {
     if (!self->initialized) {
         mp_raise_ValueError(MP_ERROR_TEXT("Camera not initialized"));
     }
-    sensor_t *sensor = esp_camera_sensor_get();
-    return map(sensor->status.quality,63,0,0,100);
+    return self->camera_config.jpeg_quality;
 }
 
 void mp_camera_hal_set_quality(mp_camera_obj_t * self, int value) {
