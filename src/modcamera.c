@@ -100,7 +100,8 @@ void mp_camera_hal_construct(
         // configure camera based on arguments
         self->camera_config.pixel_format = pixel_format;
         self->camera_config.frame_size = frame_size;        
-        self->camera_config.jpeg_quality = (int8_t)map(jpeg_quality,0,100,63,0);    //0-63 lower number means higher quality.
+        // self->camera_config.jpeg_quality = (int8_t)map(jpeg_quality,0,100,63,0);    //0-63 lower number means higher quality.
+        self->camera_config.jpeg_quality = jpeg_quality;    //save value in here, but will be corrected (with map) before passing it to the esp32-driver
         self->camera_config.pin_d0 = data_pins[0];
         self->camera_config.pin_d1 = data_pins[1];
         self->camera_config.pin_d2 = data_pins[2];
@@ -152,6 +153,7 @@ void mp_camera_hal_init(mp_camera_obj_t *self) {
     camera_config_t temp_config = self->camera_config;
     temp_config.frame_size = FRAMESIZE_QVGA;        //use values supported by all cameras
     temp_config.pixel_format = PIXFORMAT_RGB565;    //use values supported by all cameras
+    temp_config.jpeg_quality = (int8_t)map(self->camera_config.jpeg_quality,0,100,63,0);
     esp_err_t err = esp_camera_init(&temp_config);
     if (err != ESP_OK) {
         self->initialized = false;
@@ -219,10 +221,12 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
         
         raise_micropython_error_from_esp_err(esp_camera_deinit());
 
-        // sensor->set_pixformat(sensor, self->camera_config.pixel_format);    //seems to be needed because of some bug?
-        // sensor->set_framesize(sensor, self->camera_config.frame_size);      //seems to be needed because of some bug?
-
+        // Correct the quality before it is passed to esp32 driver and then "undo" the correction in the camera_config
+        int8_t api_jpeg_quality = self->camera_config.jpeg_quality;
+        self->camera_config.jpeg_quality = (int8_t)map(api_jpeg_quality,0,100,63,0);
         esp_err_t err = esp_camera_init(&self->camera_config);
+        self->camera_config.jpeg_quality = api_jpeg_quality;
+
         if (err != ESP_OK) {
             self->initialized = false;
             raise_micropython_error_from_esp_err(err);
@@ -433,7 +437,7 @@ void mp_camera_hal_set_quality(mp_camera_obj_t * self, int value) {
     if (sensor->set_quality(sensor, map(value,0,100,63,0)) < 0) {
         mp_raise_ValueError(MP_ERROR_TEXT("Invalid setting for quality"));
     } else {
-        self->camera_config.jpeg_quality = map(value,0,100,63,0);
+        self->camera_config.jpeg_quality = value;
     }
 }
 
