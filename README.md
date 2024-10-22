@@ -95,64 +95,27 @@ Example (don't forget to add the empty line at the bottom):
 
 ```
 
-Below is a list of the possible definitions for `MICROPY_CAMERA_MODEL_xxx` and links to the corresponding boards:
+Below is a list of the possible definitions for `MICROPY_CAMERA_MODEL_xxx`:
 
-- **MICROPY_CAMERA_MODEL_WROVER_KIT**
-  - [ESP32-WROVER-KIT](https://www.espressif.com/en/products/devkits/esp32-wrover-kit/overview)
-
-- **MICROPY_CAMERA_MODEL_ESP_EYE**
-  - [ESP-EYE](https://www.espressif.com/en/products/devkits/esp-eye/overview)
-
-- **MICROPY_CAMERA_MODEL_M5STACK_PSRAM**
-  - [M5Stack PSRAM](https://shop.m5stack.com/collections/m5-cameras)
-
-- **MICROPY_CAMERA_MODEL_M5STACK_UNITCAM**
-  - [M5Stack UnitCam](https://shop.m5stack.com/collections/m5-cameras)
-
-- **MICROPY_CAMERA_MODEL_M5STACK_V2_PSRAM**
-  - [M5Stack V2 PSRAM](https://shop.m5stack.com/collections/m5-cameras)
-
-- **MICROPY_CAMERA_MODEL_M5STACK_WIDE**
-  - [M5Stack Wide](https://shop.m5stack.com/collections/m5-cameras)
-
-- **MICROPY_CAMERA_MODEL_M5STACK_ESP32CAM**
-  - [M5Stack ESP32CAM](https://shop.m5stack.com/collections/m5-cameras)
-
-- **MICROPY_CAMERA_MODEL_M5STACK_CAMS3_UNIT**
-  - [M5Stack CAMS3 Unit](https://shop.m5stack.com/collections/m5-cameras)
-
-- **MICROPY_CAMERA_MODEL_AI_THINKER**
-  - [AI-Thinker ESP32-CAM](https://www.ai-thinker.com/product/esp32-cam)
-
-- **MICROPY_CAMERA_MODEL_XIAO_ESP32S3**
-  - [XIAO ESP32S3](https://www.seeedstudio.com/xiao-series-page)
-
-- **MICROPY_CAMERA_MODEL_ESP32_MP_CAMERA_BOARD**
-  - [ESP32 MP Camera Board]
-
-- **MICROPY_CAMERA_MODEL_ESP32S3_CAM_LCD**
-  - [ESP32-S3 CAM LCD]
-
-- **MICROPY_CAMERA_MODEL_ESP32S3_EYE**
-  - [ESP32-S3 EYE](https://www.espressif.com/en/products/devkits/esp32-s3-eye/overview)
-
-- **MICROPY_CAMERA_MODEL_FREENOVE_ESP32S3_CAM**
-  - [Freenove ESP32-S3 CAM](https://store.freenove.com/products/fnk0085)
-
-- **MICROPY_CAMERA_MODEL_DFRobot_ESP32S3**
-  - [DFRobot ESP32-S3](https://www.dfrobot.com/)
-
-- **MICROPY_CAMERA_MODEL_TTGO_T_JOURNAL**
-  - [TTGO T-Journal](https://www.lilygo.cc/products/)
-
-- **MICROPY_CAMERA_MODEL_TTGO_T_CAMERA_PLUS**
-  - [TTGO T-Camera Plus](https://www.lilygo.cc/products/)
-
-- **MICROPY_CAMERA_MODEL_NEW_ESPS3_RE1_0**
-  - [New ESP32-S3 RE:1.0]
-
-- **MICROPY_CAMERA_MODEL_XENOIONEX**
-  - [Xenoionex]
+- MICROPY_CAMERA_MODEL_WROVER_KIT - [ESP32-WROVER-KIT](https://www.espressif.com/en/products/devkits/esp32-wrover-kit/overview)
+- MICROPY_CAMERA_MODEL_ESP_EYE - [ESP-EYE](https://www.espressif.com/en/products/devkits/esp-eye/overview)
+- MICROPY_CAMERA_MODEL_M5STACK_PSRAM - [M5Stack PSRAM](https://shop.m5stack.com/collections/m5-cameras)
+- MICROPY_CAMERA_MODEL_M5STACK_UNITCAM - [M5Stack UnitCam](https://shop.m5stack.com/collections/m5-cameras)
+- MICROPY_CAMERA_MODEL_M5STACK_V2_PSRAM - [M5Stack V2 PSRAM](https://shop.m5stack.com/collections/m5-cameras)
+- MICROPY_CAMERA_MODEL_M5STACK_WIDE - [M5Stack Wide](https://shop.m5stack.com/collections/m5-cameras)
+- MICROPY_CAMERA_MODEL_M5STACK_ESP32CAM - [M5Stack ESP32CAM](https://shop.m5stack.com/collections/m5-cameras)
+- MICROPY_CAMERA_MODEL_M5STACK_CAMS3_UNIT - [M5Stack CAMS3 Unit](https://shop.m5stack.com/collections/m5-cameras)
+- MICROPY_CAMERA_MODEL_AI_THINKER - [AI-Thinker ESP32-CAM](https://www.ai-thinker.com/product/esp32-cam)
+- MICROPY_CAMERA_MODEL_XIAO_ESP32S3 - [XIAO ESP32S3](https://www.seeedstudio.com/xiao-series-page)
+- MICROPY_CAMERA_MODEL_ESP32_MP_CAMERA_BOARD - [ESP32 MP Camera Board]
+- MICROPY_CAMERA_MODEL_ESP32S3_CAM_LCD - [ESP32-S3 CAM LCD]
+- MICROPY_CAMERA_MODEL_ESP32S3_EYE - [ESP32-S3 EYE](https://www.espressif.com/en/products/devkits/esp32-s3-eye/overview)
+- MICROPY_CAMERA_MODEL_FREENOVE_ESP32S3_CAM - [Freenove ESP32-S3 CAM](https://store.freenove.com/products/fnk0085)
+- MICROPY_CAMERA_MODEL_DFRobot_ESP32S3 - [DFRobot ESP32-S3](https://www.dfrobot.com/)
+- MICROPY_CAMERA_MODEL_TTGO_T_JOURNAL - [TTGO T-Journal](https://www.lilygo.cc/products/)
+- MICROPY_CAMERA_MODEL_TTGO_T_CAMERA_PLUS - [TTGO T-Camera Plus](https://www.lilygo.cc/products/)
+- MICROPY_CAMERA_MODEL_NEW_ESPS3_RE1_0 - [New ESP32-S3 RE:1.0]
+- MICROPY_CAMERA_MODEL_XENOIONEX - [Xenoionex]
 
 #### For unsupported camera models
 
