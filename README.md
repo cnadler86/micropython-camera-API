@@ -83,7 +83,7 @@ To build the project, follow the following instructions:
 
 Alternatively, you can clone the <https://github.com/espressif/esp32-camera> repository inside the esp-idf/components folder instead of altering the idf_component.yml file.
 
-### Add camera configurations to your board (Optional, but recommended)
+### Add camera configurations to your board (optional, but recommended)
 
 #### Supported Camera Models
 
@@ -105,7 +105,7 @@ Below is a list of the possible definitions for `MICROPY_CAMERA_MODEL_xxx`:
 - MICROPY_CAMERA_MODEL_M5STACK_WIDE - [M5Stack Wide](https://shop.m5stack.com/collections/m5-cameras)
 - MICROPY_CAMERA_MODEL_M5STACK_ESP32CAM - [M5Stack ESP32CAM](https://shop.m5stack.com/collections/m5-cameras)
 - MICROPY_CAMERA_MODEL_M5STACK_CAMS3_UNIT - [M5Stack CAMS3 Unit](https://shop.m5stack.com/collections/m5-cameras)
-- MICROPY_CAMERA_MODEL_AI_THINKER - [AI-Thinker ESP32-CAM](https://www.ai-thinker.com/product/esp32-cam)
+- MICROPY_CAMERA_MODEL_AI_THINKER - [AI-Thinker ESP32-CAM]
 - MICROPY_CAMERA_MODEL_XIAO_ESP32S3 - [XIAO ESP32S3](https://www.seeedstudio.com/xiao-series-page)
 - MICROPY_CAMERA_MODEL_ESP32_MP_CAMERA_BOARD - [ESP32 MP Camera Board]
 - MICROPY_CAMERA_MODEL_ESP32S3_CAM_LCD - [ESP32-S3 CAM LCD]
