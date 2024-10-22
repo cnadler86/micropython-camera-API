@@ -25,9 +25,10 @@
             background-color: #ffffff;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             margin-top: 20px;
+            width: 300px;
         }
         .setting {
-            margin-bottom: 14px;
+            margin-bottom: 10px;
         }
         .video-container {
             display: flex;
@@ -68,7 +69,7 @@
                 .then(value => {
                     const element = document.getElementById(method);
                     if (type === 'checkbox') {
-                        element.checked = value === "1";
+                        element.checked = value === "True";
                     } else {
                         element.value = value;
                     }
@@ -96,7 +97,6 @@
             });
         }
 
-        // New function to populate the frame size dropdown based on max frame size
         function populateFrameSizeDropdown() {
             const frameSizes = [
                 "R96x96", "QQVGA", "CIF", "HQVGA", "R240x240", "QVGA", 
@@ -126,9 +126,23 @@
                 });
         }
 
+        function checkSensorFeatures() {
+            fetch('/get_sensor_name')
+                .then(response => response.text())
+                .then(sensorName => {
+                    const showSharpnessAndDenoise = (sensorName === 'OV3640' || sensorName === 'OV5640');
+                    document.getElementById('sharpness-container').classList.toggle('hidden', !showSharpnessAndDenoise);
+                    document.getElementById('denoise-container').classList.toggle('hidden', !showSharpnessAndDenoise);
+                })
+                .catch(error => {
+                    console.error('Error fetching sensor name:', error);
+                });
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
+            populateFrameSizeDropdown();
             setupEventListeners();
-            populateFrameSizeDropdown();  // Call this to populate the frame size options dynamically
+            checkSensorFeatures();
         });
     </script>
 </head>
@@ -166,8 +180,48 @@
                   </select>
             </div>
             <div class="setting">
-                <label for="quality">JPEG quality:</label>
+                <label for="quality" title="Quality above 90% may lead to freezing the camera at high resolutions.">JPEG quality:</label>
                 <input type="range" id="quality" min="0" max="100">
+            </div>
+            <div class="setting">
+                <label for="contrast">Contrast:</label>
+                <input type="range" id="contrast" min="-2" max="2">
+            </div>
+            <div class="setting">
+                <label for="brightness">Brightness:</label>
+                <input type="range" id="brightness" min="-2" max="2">
+            </div>
+            <div class="setting">
+                <label for="saturation">Saturation:</label>
+                <input type="range" id="saturation" min="-2" max="2">
+            </div>
+            <div class="setting">
+                <label for="aec_value">Exposure Value:</label>
+                <input type="range" id="aec_value" min="0" max="1200">
+            </div>
+            <div class="setting">
+                <label for="agc_gain">Gain Level:</label>
+                <input type="range" id="agc_gain" min="0" max="30">
+            </div>
+            <div id="sharpness-container" class="setting hidden">
+                <label for="sharpness">Sharpness:</label>
+                <input type="range" id="sharpness" min="-2" max="2">
+            </div>
+            <div id="denoise-container" class="setting hidden">
+                <label for="denoise">Denoise:</label>
+                <input type="range" id="denoise" min="0" max="10">
+            </div>
+            <div class="setting">
+                <label for="gainceiling">Gain Ceiling:</label>
+                <select id="gainceiling">
+                    <option value="0">2X</option>
+                    <option value="1">4x</option>
+                    <option value="2">8x</option>
+                    <option value="3">16x</option>
+                    <option value="4">32x</option>
+                    <option value="5">64x</option>
+                    <option value="6">128x</option>
+                </select>
             </div>
             <div class="setting">
                 <label for="wb_mode">White Balance Mode:</label>
@@ -180,51 +234,56 @@
                 </select>
             </div>
             <div class="setting">
-                <label for="contrast" title="Regelt den Kontrast des Sensors. Positive Werte erhöhen den Kontrast, negative verringern ihn. Bereich: -2 bis +2.">Contrast:</label>
-                <input type="range" id="contrast" min="-2" max="2">
-            </div>
-            <div class="setting">
-                <label for="brightness" title="Regelt die Helligkeit des Sensors. Positive Werte erhöhen die Helligkeit, negative verringern sie. Bereich: -2 bis +2.">Brightness:</label>
-                <input type="range" id="brightness" min="-2" max="2">
-            </div>
-            <div class="setting">
-                <label for="saturation" title="Regelt die Sättigung des Sensors. Positive Werte erhöhen die Farbintensität, negative verringern sie. Bereich: -2 bis +2.">Saturation:</label>
-                <input type="range" id="saturation" min="-2" max="2">
-            </div>
-            <div class="setting">
-                <label for="sharpness" title="Regelt die Schärfe des Sensors. Positive Werte erhöhen die Schärfe, negative verringern sie. Bereich: -2 bis +2.">Sharpness:</label>
-                <input type="range" id="sharpness" min="-2" max="2">
-            </div>
-            <div class="setting">
-                <label for="whitebal" title="Automatische Weißabgleich-Kontrolle aktivieren.">Auto White Balance:</label>
+                <label for="whitebal" title="When False, the White Balance Mode setting is used instead.">Auto White Balance:</label>
                 <input type="checkbox" id="whitebal">
             </div>
             <div class="setting">
-                <label for="gain_ctrl" title="Automatische Verstärkungsregelung aktivieren.">Auto Gain Control:</label>
-                <input type="checkbox" id="gain_ctrl">
-            </div>
-            <div class="setting">
-                <label for="exposure_ctrl" title="Automatische Belichtungsregelung aktivieren.">Auto Exposure Control:</label>
-                <input type="checkbox" id="exposure_ctrl">
-            </div>
-            <div class="setting">
-                <label for="hmirror" title="Horizontales Spiegeln des Bildes aktivieren.">Horizontal Mirror:</label>
-                <input type="checkbox" id="hmirror">
-            </div>
-            <div class="setting">
-                <label for="vflip" title="Vertikales Spiegeln des Bildes aktivieren.">Vertical Flip:</label>
-                <input type="checkbox" id="vflip">
-            </div>
-            <div class="setting">
-                <label for="aec2" title="Nachtmodus aktivieren (verlängert den Regelbereich der automatischen Verstärkungsregelung).">Night Mode:</label>
-                <input type="checkbox" id="aec2">
-            </div>
-            <div class="setting">
-                <label for="awb_gain" title="Automatische Weißabgleichs-Verstärkung aktivieren.">AWB Gain:</label>
+                <label for="awb_gain">Auto White Balance Gain:</label>
                 <input type="checkbox" id="awb_gain">
             </div>
             <div class="setting">
-                <label for="special_effect" title="Wählen Sie einen speziellen Effekt für das Bild.">Special Effect:</label>
+                <label for="gain_ctrl" title="When False, the gain level setting is used instead.">Auto Gain Control:</label>
+                <input type="checkbox" id="gain_ctrl">
+            </div>
+            <div class="setting">
+                <label for="exposure_ctrl" title="When False, the exposure value setting is used instead.">Auto Exposure Control:</label>
+                <input type="checkbox" id="exposure_ctrl">
+            </div>
+            <div class="setting">
+                <label for="hmirror">Horizontal Mirror:</label>
+                <input type="checkbox" id="hmirror">
+            </div>
+            <div class="setting">
+                <label for="vflip">Vertical Flip:</label>
+                <input type="checkbox" id="vflip">
+            </div>
+            <div class="setting">
+                <label for="lenc" title="This can help compensate for light fall-off at the edge of the sensor area.">Lens Correction:</label>
+                <input type="checkbox" id="lenc">
+            </div>
+            <div class="setting">
+                <label for="aec2" title="Extends the range of automatic gain control.">Night Mode:</label>
+                <input type="checkbox" id="aec2">
+            </div>
+            <div class="setting">
+                <label for="dcw" title="When True an advanced white balance mode is selected.">DCW Mode:</label>
+                <input type="checkbox" id="dcw">
+            </div>
+            <div class="setting">
+                <label for="bpc">Black Point Compensation:</label>
+                <input type="checkbox" id="bpc">
+            </div>
+            <div class="setting">
+                <label for="wpc">White Point Compensation:</label>
+                <input type="checkbox" id="wpc">
+            </div>
+            <div class="setting">
+                <label for="raw_gma">Raw Gamma Mode:</label>
+                <input type="checkbox" id="raw_gma">
+            </div>
+
+            <div class="setting">
+                <label for="special_effect">Special Effect:</label>
                 <select id="special_effect">
                     <option value="0">No effect</option>
                     <option value="1">Negative</option>
