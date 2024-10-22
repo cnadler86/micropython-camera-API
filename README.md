@@ -73,8 +73,8 @@ The default values of the following keyword arguments are:
 To build the project, follow the following instructions:
 
 - [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.2.3/esp32/get-started/index.html): I used version 5.2.3, but it might work with other versions (see notes).
-- Clone the micropython repo and this repo in a folder, e.g. "MyESPCam". I used the actual micropython master branch (between v1.23 and before 1.24).
-- You will have to add the ESP32-Camera driver (I used v2.0.12). To do this, add the following to the respective idf_component.yml file  (e.g. in micropython/ports/esp32/main_esp32s3/idf_component.yml):
+- Clone the micropython repo and this repo in a folder, e.g. "MyESPCam". Micropython >=1.24 is required (al least >= commit 92484d8).
+- You will have to add the ESP32-Camera driver (I used v2.0.13). To do this, add the following to the respective idf_component.yml file  (e.g. in micropython/ports/esp32/main_esp32s3/idf_component.yml):
 
 ```yml
   espressif/esp32-camera:
@@ -85,7 +85,78 @@ Alternatively, you can clone the <https://github.com/espressif/esp32-camera> rep
 
 ### Add camera configurations to your board (Optional, but recommended)
 
-To make things easier, add the following lines to your board config-file "mpconfigboard.h" with the respective pins and camera parameters. Otherwise, you will need to pass all parameters during construction.
+#### Supported Camera Models
+
+This project supports various camera models out of the box. So, you basicalls only need to add only one line to your board config-file ("mpconfigboard.h).
+Example (don't forget to add the empty line at the bottom):
+
+```c
+#define MICROPY_CAMERA_MODEL_WROVER_KIT       1
+
+```
+
+Below is a list of the possible definitions for `MICROPY_CAMERA_MODEL_xxx` and links to the corresponding boards:
+
+- **MICROPY_CAMERA_MODEL_WROVER_KIT**
+  - [ESP32-WROVER-KIT](https://www.espressif.com/en/products/devkits/esp32-wrover-kit/overview)
+
+- **MICROPY_CAMERA_MODEL_ESP_EYE**
+  - [ESP-EYE](https://www.espressif.com/en/products/devkits/esp-eye/overview)
+
+- **MICROPY_CAMERA_MODEL_M5STACK_PSRAM**
+  - [M5Stack PSRAM](https://shop.m5stack.com/collections/m5-cameras)
+
+- **MICROPY_CAMERA_MODEL_M5STACK_UNITCAM**
+  - [M5Stack UnitCam](https://shop.m5stack.com/collections/m5-cameras)
+
+- **MICROPY_CAMERA_MODEL_M5STACK_V2_PSRAM**
+  - [M5Stack V2 PSRAM](https://shop.m5stack.com/collections/m5-cameras)
+
+- **MICROPY_CAMERA_MODEL_M5STACK_WIDE**
+  - [M5Stack Wide](https://shop.m5stack.com/collections/m5-cameras)
+
+- **MICROPY_CAMERA_MODEL_M5STACK_ESP32CAM**
+  - [M5Stack ESP32CAM](https://shop.m5stack.com/collections/m5-cameras)
+
+- **MICROPY_CAMERA_MODEL_M5STACK_CAMS3_UNIT**
+  - [M5Stack CAMS3 Unit](https://shop.m5stack.com/collections/m5-cameras)
+
+- **MICROPY_CAMERA_MODEL_AI_THINKER**
+  - [AI-Thinker ESP32-CAM](https://www.ai-thinker.com/product/esp32-cam)
+
+- **MICROPY_CAMERA_MODEL_XIAO_ESP32S3**
+  - [XIAO ESP32S3](https://www.seeedstudio.com/xiao-series-page)
+
+- **MICROPY_CAMERA_MODEL_ESP32_MP_CAMERA_BOARD**
+  - [ESP32 MP Camera Board]
+
+- **MICROPY_CAMERA_MODEL_ESP32S3_CAM_LCD**
+  - [ESP32-S3 CAM LCD]
+
+- **MICROPY_CAMERA_MODEL_ESP32S3_EYE**
+  - [ESP32-S3 EYE](https://www.espressif.com/en/products/devkits/esp32-s3-eye/overview)
+
+- **MICROPY_CAMERA_MODEL_FREENOVE_ESP32S3_CAM**
+  - [Freenove ESP32-S3 CAM](https://store.freenove.com/products/fnk0085)
+
+- **MICROPY_CAMERA_MODEL_DFRobot_ESP32S3**
+  - [DFRobot ESP32-S3](https://www.dfrobot.com/)
+
+- **MICROPY_CAMERA_MODEL_TTGO_T_JOURNAL**
+  - [TTGO T-Journal](https://www.lilygo.cc/products/)
+
+- **MICROPY_CAMERA_MODEL_TTGO_T_CAMERA_PLUS**
+  - [TTGO T-Camera Plus](https://www.lilygo.cc/products/)
+
+- **MICROPY_CAMERA_MODEL_NEW_ESPS3_RE1_0**
+  - [New ESP32-S3 RE:1.0]
+
+- **MICROPY_CAMERA_MODEL_XENOIONEX**
+  - [Xenoionex]
+
+#### For unsupported camera models
+
+If the board is not supported yet, add the following lines to your board config-file "mpconfigboard.h" with the respective pins and camera parameters. Otherwise, you will need to pass all parameters during construction.
 Don't forget the empty line at the bottom.
 Example for Xiao sense:
 
@@ -135,8 +206,6 @@ If you experience problems, visit [MicroPython external C modules](https://docs.
 
 ## Plans for the future
 
-- [ ] implement structure in repo to include other boards like xiao sense
-- [ ] harmonize properties to standard ones at API level, e.g. jpeg quality to the range 100=very good, 1/0= very bad
 - [ ] edge case: enable usage of pins such as i2c for other applications
 - [ ] provide examples in binary image with lfs-merge
 - [ ] include camera driver version in API
