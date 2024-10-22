@@ -247,7 +247,7 @@ CREATE_GETTER(fb_count, mp_obj_new_int);
 CREATE_GETTER(pixel_width, mp_obj_new_int);
 CREATE_GETTER(pixel_height, mp_obj_new_int);
 CREATE_GETTER(max_frame_size, mp_obj_new_int);
-CREATE_GETTER(sensor_name, mp_obj_new_str);
+CREATE_GETTER(sensor_name, mp_obj_new_str_from_cstr);
 CREATE_GETSET_FUNCTIONS(contrast, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
 CREATE_GETSET_FUNCTIONS(brightness, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
 CREATE_GETSET_FUNCTIONS(saturation, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
