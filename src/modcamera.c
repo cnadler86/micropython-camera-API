@@ -79,6 +79,10 @@ static int map(int value, int fromLow, int fromHigh, int toLow, int toHigh) {
     return (int)((int32_t)(value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow) + toLow);
 }
 
+static int get_mapped_jpeg_quality(int8_t quality) {
+    return map(quality, 0, 100, 63, 0);
+}
+
 // Camera HAL Funcitons
 void mp_camera_hal_construct(
     mp_camera_obj_t *self,
@@ -153,7 +157,7 @@ void mp_camera_hal_init(mp_camera_obj_t *self) {
     camera_config_t temp_config = self->camera_config;
     temp_config.frame_size = FRAMESIZE_QVGA;        //use values supported by all cameras
     temp_config.pixel_format = PIXFORMAT_RGB565;    //use values supported by all cameras
-    temp_config.jpeg_quality = (int8_t)map(self->camera_config.jpeg_quality,0,100,63,0);
+    temp_config.jpeg_quality = get_mapped_jpeg_quality(self->camera_config.jpeg_quality);
     esp_err_t err = esp_camera_init(&temp_config);
     if (err != ESP_OK) {
         self->initialized = false;
@@ -223,7 +227,7 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
 
         // Correct the quality before it is passed to esp32 driver and then "undo" the correction in the camera_config
         int8_t api_jpeg_quality = self->camera_config.jpeg_quality;
-        self->camera_config.jpeg_quality = (int8_t)map(api_jpeg_quality,0,100,63,0);
+        self->camera_config.jpeg_quality = get_mapped_jpeg_quality(api_jpeg_quality);
         esp_err_t err = esp_camera_init(&self->camera_config);
         self->camera_config.jpeg_quality = api_jpeg_quality;
 
@@ -433,7 +437,7 @@ void mp_camera_hal_set_quality(mp_camera_obj_t * self, int value) {
     if (!sensor->set_quality) {
         mp_raise_ValueError(MP_ERROR_TEXT("No attribute quality"));
     }
-    if (sensor->set_quality(sensor, map(value,0,100,63,0)) < 0) {
+    if (sensor->set_quality(sensor, get_mapped_jpeg_quality(value)) < 0) {
         mp_raise_ValueError(MP_ERROR_TEXT("Invalid setting for quality"));
     } else {
         self->camera_config.jpeg_quality = value;

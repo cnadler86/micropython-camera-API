@@ -5,8 +5,8 @@ from camera import Camera, FrameSize, PixelFormat
 
 cam = Camera(frame_size=FrameSize.VGA, pixel_format=PixelFormat.JPEG, jpeg_quality=85, init=False)
 # WLAN config
-ssid = 'Zopilote'
-password = '2018@Ihringen'
+ssid = '<yourSSID>'
+password = '<yourPW>'
 
 station = network.WLAN(network.STA_IF)
 station.active(True)
@@ -87,16 +87,15 @@ async def handle_client(reader, writer):
         writer.close()
         await writer.wait_closed()
 
-# Funktion zum Starten des Servers
 async def start_server():
     server = await asyncio.start_server(handle_client, "0.0.0.0", 80)
     print(f'Server is running on {station.ifconfig()[0]}:80')
     while True:
-        await asyncio.sleep(3600)  # Server läuft kontinuierlich; wir blockieren die Schleife
+        await asyncio.sleep(3600)
 
-# Starte den asyncio-Loop
 try:
     asyncio.run(start_server())
 except KeyboardInterrupt:
+    cam.deinit()
     print("Server stopped")
 
