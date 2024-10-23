@@ -6,6 +6,7 @@ add_library(usermod_mp_camera INTERFACE)
 target_sources(usermod_mp_camera INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/modcamera.c
     ${CMAKE_CURRENT_LIST_DIR}/modcamera_api.c
+    ${CMAKE_CURRENT_LIST_DIR}/mod_img_convertes.c
 )
 
 target_include_directories(usermod_mp_camera INTERFACE
