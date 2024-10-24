@@ -150,8 +150,8 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
 // Main methods
 static mp_obj_t camera_capture(size_t n_args, const mp_obj_t *args){
     mp_camera_obj_t *self = MP_OBJ_TO_PTR(args[0]);
-    mp_float_t timeout = n_args < 2 ? MICROPY_FLOAT_CONST(0.25) : mp_obj_get_float(args[1]);
-    return mp_camera_hal_capture(self, timeout);
+    uint8_t out_format = n_args < 2 ? MP_ROM_NONE : mp_obj_get_int(args[1]);
+    return mp_camera_hal_capture(self, out_format);
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(camera_capture_obj, 1, 2, camera_capture);
 
@@ -211,8 +211,8 @@ static mp_obj_t mp_camera_obj___exit__(size_t n_args, const mp_obj_t *args) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_camera___exit___obj, 4, 4, mp_camera_obj___exit__);
 
-// Camera propertiy functions
-// Camera sensor propertiy functions
+// Camera property functions
+// Camera sensor property functions
 #define CREATE_GETTER(property, get_function) \
     static mp_obj_t camera_get_##property(const mp_obj_t self_in) { \
         mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in); \
