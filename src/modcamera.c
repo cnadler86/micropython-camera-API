@@ -28,6 +28,7 @@
 #include "modcamera.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "img_converters.h"
 
 #define TAG "ESP32_MPY_CAMERA"
 
@@ -246,8 +247,7 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
     }
 }
 
-mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms) {
-    // Timeout not used at the moment
+mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, mp_camera_pixformat_t out_format) {
     if (!self->initialized) {
         mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture image: Camera not initialized"));
     }
@@ -258,20 +258,44 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms) {
     ESP_LOGI(TAG, "Capturing image");
     self->captured_buffer = esp_camera_fb_get();
     if (self->captured_buffer) {
-        if (self->camera_config.pixel_format == PIXFORMAT_JPEG) {
-            ESP_LOGI(TAG, "Captured image in JPEG format");
-            return mp_obj_new_memoryview('b', self->captured_buffer->len, self->captured_buffer->buf);
-        } else {
-            ESP_LOGI(TAG, "Captured image in raw format");
-            return mp_obj_new_memoryview('b', self->captured_buffer->len, self->captured_buffer->buf);
-            // TODO: Stub at the moment in order to return raw data, but it sould be implemented to return a Bitmap, see following circuitpython example:
-            //
-            // int width = common_hal_espcamera_camera_get_width(self);
-            // int height = common_hal_espcamera_camera_get_height(self);
-            // displayio_bitmap_t *bitmap = m_new_obj(displayio_bitmap_t);
-            // bitmap->base.type = &displayio_bitmap_type;
-            // common_hal_displayio_bitmap_construct_from_buffer(bitmap, width, height, (format == PIXFORMAT_RGB565) ? 16 : 8, (uint32_t *)(void *)result->buf, true);
-            // return bitmap;
+        switch (out_format) {
+            case PIXFORMAT_JPEG:
+                return mp_const_none;
+
+            case PIXFORMAT_RGB888:
+                size_t out_len = self->captured_buffer->width * self->captured_buffer->height * 3;
+                uint8_t *out_buf = (uint8_t *)malloc(out_len);
+                if (!out_buf) {
+                    ESP_LOGE(TAG, "out_buf malloc failed");
+                    return mp_const_none;
+                }
+                if (fmt2rgb888(self->captured_buffer->buf, self->captured_buffer->len, self->captured_buffer->format, out_buf)){
+                    esp_camera_fb_return(self->captured_buffer);
+                    mp_obj_t result = mp_obj_new_bytes(out_buf, out_len);
+                    free(out_buf);
+                    return result;
+                } else {
+                    free(out_buf);
+                    return mp_const_none;
+                }
+                
+            default:
+                if (self->camera_config.pixel_format == PIXFORMAT_JPEG) {
+                    ESP_LOGI(TAG, "Captured image in JPEG format");
+                    return mp_obj_new_memoryview('b', self->captured_buffer->len, self->captured_buffer->buf);
+                } else {
+                    ESP_LOGI(TAG, "Returning image as bitmap");
+                    uint8_t *out = NULL;
+                    size_t out_len = 0;
+                    if (frame2bmp(self->captured_buffer, &out, &out_len)) {
+                        esp_camera_fb_return(self->captured_buffer);
+                        mp_obj_t result = mp_obj_new_bytes(out, out_len);
+                        free(out);
+                        return result;
+                    } else {
+                        return mp_const_none;
+                    }
+                }
         }
     } else {
         esp_camera_fb_return(self->captured_buffer);
@@ -289,6 +313,7 @@ const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[] = {
     { MP_ROM_QSTR(MP_QSTR_YUV422),          MP_ROM_INT(PIXFORMAT_YUV422) },
     { MP_ROM_QSTR(MP_QSTR_GRAYSCALE),       MP_ROM_INT(PIXFORMAT_GRAYSCALE) },
     { MP_ROM_QSTR(MP_QSTR_RGB565),          MP_ROM_INT(PIXFORMAT_RGB565) },
+    { MP_ROM_QSTR(MP_QSTR_RGB888),          MP_ROM_INT(PIXFORMAT_RGB888) },
 };
 
 const mp_rom_map_elem_t mp_camera_hal_frame_size_table[] = {
