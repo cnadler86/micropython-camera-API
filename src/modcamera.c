@@ -35,6 +35,12 @@
 #error Camera only works on boards configured with spiram
 #endif
 
+#if MP_TASK_COREID == 0
+    #define CONFIG_CAMERA_CORE0 1
+#elif MP_TASK_COREID == 1
+    #define CONFIG_CAMERA_CORE1 1
+#endif
+
 // Supporting functions
 void raise_micropython_error_from_esp_err(esp_err_t err) {
     switch (err) {
