@@ -134,7 +134,7 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
 
     mp_camera_hal_init(self);
 
-    if (mp_camera_hal_capture(self, 100) == mp_const_none){
+    if (mp_camera_hal_capture(self, -1) == mp_const_none){
         mp_camera_hal_deinit(self);
         mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture initial frame. \
         Run reconfigure method or construct a new object with appropriate configuration (e.g. FrameSize)."));
@@ -150,7 +150,7 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
 // Main methods
 static mp_obj_t camera_capture(size_t n_args, const mp_obj_t *args){
     mp_camera_obj_t *self = MP_OBJ_TO_PTR(args[0]);
-    uint8_t out_format = n_args < 2 ? MP_ROM_NONE : mp_obj_get_int(args[1]);
+    int8_t out_format = n_args < 2 ? -1 : mp_obj_get_int(args[1]);
     return mp_camera_hal_capture(self, out_format);
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(camera_capture_obj, 1, 2, camera_capture);

@@ -197,7 +197,7 @@ extern void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize
  * @param out_format Output pixelformat format.
  * @return Captured image as micropython object.
  */
-extern mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, hal_camera_pixformat_t out_format);
+extern mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format);
 
 /**
  * @brief Table mapping pixel formats API to their corresponding values at HAL.
