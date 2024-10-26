@@ -140,6 +140,16 @@
                 .catch(error => {
                     console.error('Error fetching sensor name:', error);
                 });
+
+            fetch('/get_pixel_format')
+                .then(response => response.text())
+                .then(pixelFormat => {
+                    const showJpegQuality = (pixelFormat === '4');
+                    document.getElementById('quality').parentElement.classList.toggle('hidden', !showJpegQuality);
+                })
+                .catch(error => {
+                    console.error('Error fetching pixel format:', error);
+                });
         }
 
         document.addEventListener("DOMContentLoaded", () => {
