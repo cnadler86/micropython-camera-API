@@ -247,7 +247,7 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
     }
 }
 
-mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format) {
+mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, mp_camera_pixformat_t out_format) {
     if (!self->initialized) {
         mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture image: Camera not initialized"));
     }
@@ -271,7 +271,7 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format) {
         return mp_const_none;
     }
     
-    if (out_format >= 0 && (mp_camera_pixformat_t)out_format != self->camera_config.pixel_format) {
+    if (out_format != self->camera_config.pixel_format) {
         switch (out_format) {
             case PIXFORMAT_JPEG:
                 if (frame2jpg(self->captured_buffer, self->camera_config.jpeg_quality, &out_buf, &out_len)) {
@@ -297,20 +297,29 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format) {
                     return mp_const_none;
                 }
 
-            default:
-                ESP_LOGI(TAG, "Returning image as bitmap");
-                if (frame2bmp(self->captured_buffer, &out_buf, &out_len)) {
-                    esp_camera_fb_return(self->captured_buffer);
-                    mp_obj_t result = mp_obj_new_memoryview('b', out_len, out_buf);
-                    return result;
+            case PIXFORMAT_RGB565:
+                if(self->camera_config.pixel_format == PIXFORMAT_JPEG){
+                    if (jpg2rgb565(self->captured_buffer->buf, self->captured_buffer->len, out_buf, JPG_SCALE_NONE)) {
+                        esp_camera_fb_return(self->captured_buffer);
+                        mp_obj_t result = mp_obj_new_memoryview('b', out_len, out_buf);
+                        return result;
+                    } else {
+                        return mp_const_none;
+                    }
                 } else {
+                    mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Can only convert JPEG to RGB565"));
                     return mp_const_none;
                 }
+
+            default:
+                mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Unsupported pixel format for conversion"));
+                return mp_const_none;
+
         }
     }
 
-    if (self->camera_config.pixel_format == PIXFORMAT_JPEG) {
-        ESP_LOGI(TAG, "Captured image in JPEG format");
+    if (self->bmp_out == false) {
+        ESP_LOGI(TAG, "Returning imgae without conversion");
         return mp_obj_new_memoryview('b', self->captured_buffer->len, self->captured_buffer->buf);
     } else {
         ESP_LOGI(TAG, "Returning image as bitmap");
@@ -319,6 +328,7 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format) {
             mp_obj_t result = mp_obj_new_memoryview('b', out_len, out_buf);
             return result;
         } else {
+            mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to convert image to BMP"));
             return mp_const_none;
         }
     }
