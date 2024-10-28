@@ -90,6 +90,10 @@ static inline int get_mapped_jpeg_quality(int8_t quality) {
     return map(quality, 0, 100, 63, 0);
 }
 
+// static bool validate_pixel_format(mp_camera_obj_t *self, mp_camera_pixformat_t pixel_format) {
+
+// }
+
 // Camera HAL Funcitons
 void mp_camera_hal_construct(
     mp_camera_obj_t *self,
@@ -247,7 +251,7 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
     }
 }
 
-mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, mp_camera_pixformat_t out_format) {
+mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format) {
     if (!self->initialized) {
         mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture image: Camera not initialized"));
     }
@@ -271,7 +275,7 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, mp_camera_pixformat_t out_
         return mp_const_none;
     }
     
-    if (out_format != self->camera_config.pixel_format) {
+    if (out_format >= 0 && (mp_camera_pixformat_t)out_format != self->camera_config.pixel_format) {
         switch (out_format) {
             case PIXFORMAT_JPEG:
                 if (frame2jpg(self->captured_buffer, self->camera_config.jpeg_quality, &out_buf, &out_len)) {
@@ -473,10 +477,17 @@ void mp_camera_hal_set_frame_size(mp_camera_obj_t * self, framesize_t value) {
     if (!self->initialized) {
         mp_raise_ValueError(MP_ERROR_TEXT("Camera not initialized"));
     }
+
     sensor_t *sensor = esp_camera_sensor_get();
     if (!sensor->set_framesize) {
         mp_raise_ValueError(MP_ERROR_TEXT("No attribute frame_size"));
     }
+
+    if (self->captured_buffer) {
+        esp_camera_return_all();
+        self->captured_buffer = NULL;
+    }
+
     if (sensor->set_framesize(sensor, value) < 0) {
         mp_raise_ValueError(MP_ERROR_TEXT("Invalid setting for frame_size"));
     } else {
