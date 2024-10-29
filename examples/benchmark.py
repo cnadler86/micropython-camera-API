@@ -1,6 +1,7 @@
 from camera import Camera, FrameSize, PixelFormat
 import time
 import gc
+import os
 gc.enable()
 
 def measure_fps(duration=2):
@@ -19,8 +20,9 @@ def measure_fps(duration=2):
     fps = frame_count / (end_time - start_time)
     return fps
 
-def print_summary_table(results):
-    print("\nSummary Table (FPS values):")
+def print_summary_table(results, cam):
+    (_,_,_,_,target) = os.uname()
+    print(f"\nBenchmark {target} with {cam.get_sensor_name()}, fb_count: {cam.get_fb_count()}, GrabMode: {cam.get_grab_mode()}:")
     
     pixel_formats = list(results.keys())
     print(f"{'Frame Size':<15}", end="")
