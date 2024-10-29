@@ -140,6 +140,16 @@
                 .catch(error => {
                     console.error('Error fetching sensor name:', error);
                 });
+
+            fetch('/get_pixel_format')
+                .then(response => response.text())
+                .then(pixelFormat => {
+                    const showJpegQuality = (pixelFormat === '4');
+                    document.getElementById('quality').parentElement.classList.toggle('hidden', !showJpegQuality);
+                })
+                .catch(error => {
+                    console.error('Error fetching pixel format:', error);
+                });
         }
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -151,7 +161,7 @@
 </head>
 <body>
     <div class="title-container">
-        <h1>ESP32 Camera Stream</h1>
+        <h1>Micropython Camera Stream</h1>
     </div>
     <div class="container">
         <div class="settings-container">
@@ -299,7 +309,7 @@
             </div>
         </div>
         <div class="video-container">
-            <img src="/stream">
+            <img src="/stream" alt="Loading stream...">
         </div>
     </div>
 </body>

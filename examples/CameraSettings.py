@@ -17,12 +17,14 @@ while not station.isconnected():
 
 print(f'Connected! IP: {station.ifconfig()[0]}. Open this IP in your browser')
 
-with open("ESP32cam.html", 'r') as file:
+with open("CameraSettings.html", 'r') as file:
     html = file.read()
 
 async def stream_camera(writer):
     try:
         cam.init()
+        if not cam.get_bmp_out() and cam.get_pixel_format() != PixelFormat.JPEG:
+            cam.set_bmp_out(True)
 
         writer.write(b'HTTP/1.1 200 OK\r\nContent-Type: multipart/x-mixed-replace; boundary=frame\r\n\r\n')
         await writer.drain()
@@ -30,7 +32,10 @@ async def stream_camera(writer):
         while True:
             frame = cam.capture()
             if frame:
-                writer.write(b'--frame\r\nContent-Type: image/jpeg\r\n\r\n')
+                if cam.get_pixel_format() == PixelFormat.JPEG:
+                    writer.write(b'--frame\r\nContent-Type: image/jpeg\r\n\r\n')
+                else:
+                    writer.write(b'--frame\r\nContent-Type: image/bmp\r\n\r\n')
                 writer.write(frame)
                 await writer.drain()
                 

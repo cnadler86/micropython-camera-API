@@ -28,6 +28,7 @@
 #include "modcamera.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "img_converters.h"
 
 #define TAG "ESP32_MPY_CAMERA"
 
@@ -42,7 +43,7 @@
 #endif
 
 // Supporting functions
-void raise_micropython_error_from_esp_err(esp_err_t err) {
+static void raise_micropython_error_from_esp_err(esp_err_t err) {
     switch (err) {
         case ESP_OK:
             return;
@@ -72,8 +73,8 @@ void raise_micropython_error_from_esp_err(esp_err_t err) {
             break;
 
         default:
-            mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error 0x%04x"), err);
-            // mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error"));
+            // mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error 0x%04x"), err);
+            mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error"));
             break;
     }
 }
@@ -85,7 +86,7 @@ static int map(int value, int fromLow, int fromHigh, int toLow, int toHigh) {
     return (int)((int32_t)(value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow) + toLow);
 }
 
-static int get_mapped_jpeg_quality(int8_t quality) {
+static inline int get_mapped_jpeg_quality(int8_t quality) {
     return map(quality, 0, 100, 63, 0);
 }
 
@@ -246,8 +247,7 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
     }
 }
 
-mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms) {
-    // Timeout not used at the moment
+mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format) {
     if (!self->initialized) {
         mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture image: Camera not initialized"));
     }
@@ -255,28 +255,82 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms) {
         esp_camera_fb_return(self->captured_buffer);
         self->captured_buffer = NULL;
     }
+    
+    static size_t out_len = 0;
+    static uint8_t *out_buf = NULL;
+    if (out_len>0 || out_buf) {
+        free(out_buf);
+        out_len = 0;
+        out_buf = NULL;
+    }
+
     ESP_LOGI(TAG, "Capturing image");
     self->captured_buffer = esp_camera_fb_get();
-    if (self->captured_buffer) {
-        if (self->camera_config.pixel_format == PIXFORMAT_JPEG) {
-            ESP_LOGI(TAG, "Captured image in JPEG format");
-            return mp_obj_new_memoryview('b', self->captured_buffer->len, self->captured_buffer->buf);
-        } else {
-            ESP_LOGI(TAG, "Captured image in raw format");
-            return mp_obj_new_memoryview('b', self->captured_buffer->len, self->captured_buffer->buf);
-            // TODO: Stub at the moment in order to return raw data, but it sould be implemented to return a Bitmap, see following circuitpython example:
-            //
-            // int width = common_hal_espcamera_camera_get_width(self);
-            // int height = common_hal_espcamera_camera_get_height(self);
-            // displayio_bitmap_t *bitmap = m_new_obj(displayio_bitmap_t);
-            // bitmap->base.type = &displayio_bitmap_type;
-            // common_hal_displayio_bitmap_construct_from_buffer(bitmap, width, height, (format == PIXFORMAT_RGB565) ? 16 : 8, (uint32_t *)(void *)result->buf, true);
-            // return bitmap;
-        }
-    } else {
-        esp_camera_fb_return(self->captured_buffer);
-        self->captured_buffer = NULL;
+    if (!self->captured_buffer) {
+        ESP_LOGE(TAG, "Failed to capture image");
         return mp_const_none;
+    }
+    
+    if (out_format >= 0 && (mp_camera_pixformat_t)out_format != self->camera_config.pixel_format) {
+        switch (out_format) {
+            case PIXFORMAT_JPEG:
+                if (frame2jpg(self->captured_buffer, self->camera_config.jpeg_quality, &out_buf, &out_len)) {
+                    esp_camera_fb_return(self->captured_buffer);
+                    mp_obj_t result = mp_obj_new_memoryview('b', out_len, out_buf);
+                    return result;
+                } else {
+                    return mp_const_none;
+                }
+
+            case PIXFORMAT_RGB888:
+                out_len = self->captured_buffer->width * self->captured_buffer->height * 3;
+                out_buf = (uint8_t *)malloc(out_len);
+                if (!out_buf) {
+                    ESP_LOGE(TAG, "out_buf malloc failed");
+                    return mp_const_none;
+                }
+                if (fmt2rgb888(self->captured_buffer->buf, self->captured_buffer->len, self->captured_buffer->format, out_buf)) {
+                    esp_camera_fb_return(self->captured_buffer);
+                    mp_obj_t result = mp_obj_new_memoryview('b', out_len, out_buf);
+                    return result;
+                } else {
+                    return mp_const_none;
+                }
+
+            case PIXFORMAT_RGB565:
+                if(self->camera_config.pixel_format == PIXFORMAT_JPEG){
+                    if (jpg2rgb565(self->captured_buffer->buf, self->captured_buffer->len, out_buf, JPG_SCALE_NONE)) {
+                        esp_camera_fb_return(self->captured_buffer);
+                        mp_obj_t result = mp_obj_new_memoryview('b', out_len, out_buf);
+                        return result;
+                    } else {
+                        return mp_const_none;
+                    }
+                } else {
+                    mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Can only convert JPEG to RGB565"));
+                    return mp_const_none;
+                }
+
+            default:
+                mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Unsupported pixel format for conversion"));
+                return mp_const_none;
+
+        }
+    }
+
+    if (self->bmp_out == false) {
+        ESP_LOGI(TAG, "Returning imgae without conversion");
+        return mp_obj_new_memoryview('b', self->captured_buffer->len, self->captured_buffer->buf);
+    } else {
+        ESP_LOGI(TAG, "Returning image as bitmap");
+        if (frame2bmp(self->captured_buffer, &out_buf, &out_len)) {
+            esp_camera_fb_return(self->captured_buffer);
+            mp_obj_t result = mp_obj_new_memoryview('b', out_len, out_buf);
+            return result;
+        } else {
+            mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to convert image to BMP"));
+            return mp_const_none;
+        }
     }
 }
 
@@ -289,6 +343,7 @@ const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[] = {
     { MP_ROM_QSTR(MP_QSTR_YUV422),          MP_ROM_INT(PIXFORMAT_YUV422) },
     { MP_ROM_QSTR(MP_QSTR_GRAYSCALE),       MP_ROM_INT(PIXFORMAT_GRAYSCALE) },
     { MP_ROM_QSTR(MP_QSTR_RGB565),          MP_ROM_INT(PIXFORMAT_RGB565) },
+    { MP_ROM_QSTR(MP_QSTR_RGB888),          MP_ROM_INT(PIXFORMAT_RGB888) },
 };
 
 const mp_rom_map_elem_t mp_camera_hal_frame_size_table[] = {
@@ -418,16 +473,24 @@ void mp_camera_hal_set_frame_size(mp_camera_obj_t * self, framesize_t value) {
     if (!self->initialized) {
         mp_raise_ValueError(MP_ERROR_TEXT("Camera not initialized"));
     }
+
     sensor_t *sensor = esp_camera_sensor_get();
     if (!sensor->set_framesize) {
         mp_raise_ValueError(MP_ERROR_TEXT("No attribute frame_size"));
     }
+
+    if (self->captured_buffer) {
+        esp_camera_return_all();
+        self->captured_buffer = NULL;
+    }
+
     if (sensor->set_framesize(sensor, value) < 0) {
         mp_raise_ValueError(MP_ERROR_TEXT("Invalid setting for frame_size"));
     } else {
         self->camera_config.frame_size = value;
     }
 }
+
 int mp_camera_hal_get_quality(mp_camera_obj_t * self) {
     if (!self->initialized) {
         mp_raise_ValueError(MP_ERROR_TEXT("Camera not initialized"));
