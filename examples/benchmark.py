@@ -21,8 +21,7 @@ def measure_fps(duration=2):
     return fps
 
 def print_summary_table(results, cam):
-    (_,_,_,_,target) = os.uname()
-    print(f"\nBenchmark {target} with {cam.get_sensor_name()}, fb_count: {cam.get_fb_count()}, GrabMode: {cam.get_grab_mode()}:")
+    print(f"\nBenchmark {os.uname().machine} with {cam.get_sensor_name()}, fb_count: {cam.get_fb_count()}, GrabMode: {cam.get_grab_mode()}:")
     
     pixel_formats = list(results.keys())
     print(f"{'Frame Size':<15}", end="")
@@ -93,6 +92,5 @@ if __name__ == "__main__":
         print("\nScript interrupted by user.")
 
     finally:
+        print_summary_table(results,cam)  # Tabelle am Ende ausgeben
         cam.deinit()
-        print_summary_table(results)  # Tabelle am Ende ausgeben
-
