@@ -73,8 +73,8 @@ static void raise_micropython_error_from_esp_err(esp_err_t err) {
             break;
 
         default:
-            mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error 0x%04x"), err);
-            // mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error"));
+            // mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error 0x%04x"), err);
+            mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error"));
             break;
     }
 }
@@ -90,9 +90,13 @@ static inline int get_mapped_jpeg_quality(int8_t quality) {
     return map(quality, 0, 100, 63, 0);
 }
 
-// static bool validate_pixel_format(mp_camera_obj_t *self, mp_camera_pixformat_t pixel_format) {
-
-// }
+static bool validate_pixel_format(mp_camera_obj_t *self, mp_camera_pixformat_t pixel_format) {
+    const char *Name = mp_camera_hal_get_sensor_name(self)
+    if (strcmp(Name, "OV2640")) {
+        if (self->camera_config.pixel_format != PIXFORMAT_RGB565) /
+        && self->camera_config.pixel_format
+    }
+}
 
 // Camera HAL Funcitons
 void mp_camera_hal_construct(
