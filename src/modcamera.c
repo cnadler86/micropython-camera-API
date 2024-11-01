@@ -30,7 +30,7 @@
 #include "esp_log.h"
 #include "img_converters.h"
 
-#define TAG "ESP32_MPY_CAMERA"
+#define TAG "mp_camera"
 
 #if !CONFIG_SPIRAM
 #error Camera only works on boards configured with spiram
@@ -65,7 +65,7 @@ static void raise_micropython_error_from_esp_err(esp_err_t err) {
             break;
 
         case ESP_ERR_NOT_SUPPORTED:
-            mp_raise_NotImplementedError(MP_ERROR_TEXT("Operation/Function not supported/implemented"));
+            mp_raise_NotImplementedError(MP_ERROR_TEXT("Operation, function or argument not supported or implemented"));
             break;
 
         case ESP_ERR_TIMEOUT:
@@ -90,6 +90,20 @@ static inline int get_mapped_jpeg_quality(int8_t quality) {
     return map(quality, 0, 100, 63, 0);
 }
 
+int mpcamera_log_writer(const char *format, va_list args) {
+        mp_vprintf(&mp_plat_print, format, args);
+        mp_hal_delay_ms(1);
+    return 0;
+}
+
+void set_debug_level(esp_log_level_t logLevel) {
+    logLevel = ESP_LOG_INFO;
+    esp_log_level_set(TAG,logLevel);
+    if (logLevel > ESP_LOG_NONE) {
+        esp_log_set_vprintf(mpcamera_log_writer);
+    }
+}
+
 // Camera HAL Funcitons
 void mp_camera_hal_construct(
     mp_camera_obj_t *self,
@@ -108,6 +122,8 @@ void mp_camera_hal_construct(
     int8_t jpeg_quality,
     int8_t fb_count,
     mp_camera_grabmode_t grab_mode) {
+        set_debug_level(ESP_LOG_INFO);
+        ESP_LOGI(TAG, "Constructing camera object");
         // configure camera based on arguments
         self->camera_config.pixel_format = pixel_format;
         self->camera_config.frame_size = frame_size;        
@@ -154,6 +170,7 @@ void mp_camera_hal_construct(
 
         self->initialized = false;
         self->captured_buffer = NULL;
+        ESP_LOGI(TAG, "Construction finish");
     }
 
 void mp_camera_hal_init(mp_camera_obj_t *self) {
@@ -319,7 +336,7 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format) {
     }
 
     if (self->bmp_out == false) {
-        ESP_LOGI(TAG, "Returning imgae without conversion");
+        ESP_LOGI(TAG, "Returning image without conversion");
         return mp_obj_new_memoryview('b', self->captured_buffer->len, self->captured_buffer->buf);
     } else {
         ESP_LOGI(TAG, "Returning image as bitmap");
