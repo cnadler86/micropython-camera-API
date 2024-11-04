@@ -49,31 +49,24 @@ static void raise_micropython_error_from_esp_err(esp_err_t err) {
     switch (err) {
         case ESP_OK:
             return;
-
         case ESP_ERR_NO_MEM:
             mp_raise_msg(&mp_type_MemoryError, MP_ERROR_TEXT("Out of memory"));
             break;
-
         case ESP_ERR_INVALID_ARG:
             mp_raise_ValueError(MP_ERROR_TEXT("Invalid argument"));
             break;
-
         case ESP_ERR_INVALID_STATE:
             mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Invalid state"));
             break;
-
         case ESP_ERR_NOT_FOUND:
             mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Camera not found"));
             break;
-
         case ESP_ERR_NOT_SUPPORTED:
             mp_raise_NotImplementedError(MP_ERROR_TEXT("Operation/Function not supported/implemented"));
             break;
-
         case ESP_ERR_TIMEOUT:
             mp_raise_OSError(MP_ETIMEDOUT);
             break;
-
         default:
             mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error 0x%04x"), err);
             // mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error"));
@@ -224,9 +217,9 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
             self->camera_config.grab_mode = grab_mode;
         }
         
-        if (fb_count > 2) {
-            self->camera_config.fb_count = 2;
-            mp_warning(NULL, "Frame buffer size limited to 2");
+        if (fb_count > 3) {
+            self->camera_config.fb_count = 3;
+            mp_warning(NULL, "Frame buffer size limited to 3");
         } else if (fb_count < 1) {
             self->camera_config.fb_count = 1;
             mp_warning(NULL, "Set to min frame buffer size of 1");
@@ -263,7 +256,7 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format) {
     
     static size_t out_len = 0;
     static uint8_t *out_buf = NULL;
-    if (out_len>0 || out_buf) {
+    if (out_len > 0 || out_buf) {
         free(out_buf);
         out_len = 0;
         out_buf = NULL;

@@ -2,25 +2,35 @@
 
 [![ESP32 Port](https://github.com/cnadler86/micropython-camera-API/actions/workflows/ESP32.yml/badge.svg)](https://github.com/cnadler86/micropython-camera-API/actions/workflows/ESP32.yml)
 
-This project aims to support cameras in different ports in micropython, starting with the ESP32-Port and omnivision (OV2640 & OV5640) cameras. The project implements a general API for cameras in micropython (such as circuitpython have done).
+This project aims to support various cameras on different MicroPython ports, starting with the ESP32 port and Omnivision (OV2640 & OV5640) cameras. The project implements a general API for cameras in micropython (such as circuitpython have done).
 At the moment, this is a micropython user module, but it might get in the micropython repo in the future.
 The API is stable, but it might change without previous announce.
 
 ## Precomiled FW (the easy way)
 
-If you are not familiar with building a custom firmware, you can go to the [releases](https://github.com/cnadler86/micropython-camera-API/releases) page and download the firmwares that suits your board.
+If you are not familiar with building custom firmware, visit the [releases](https://github.com/cnadler86/micropython-camera-API/releases) page to download firmware that suits your board. There are over 20 precompiled board images with the latest micropython!
 
 ## Using the API
 
+### Importing the Camera Module
+
 ```python
 from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
+```
 
-#Camera construction using defaults (if you are using a non-generic precompiled firmware or if you specified them in mpconfigboard.h during your build)
-camera = Camera()
+### Creating a Camera Object
 
-# Camera construction needs some keyword arguments, if using a generic precompiled firmware
-# These pins are just examples and if you use them just like that will get a watchdog error. Adapt them to your board!
-camera = Camera(
+Camera construction using defaults. This is the case if you are using a non-generic precompiled firmware or if you specified the pins in mpconfigboard.h during your build. Then you can just call the construction without any keyword arguments.
+
+```python
+cam = Camera()
+```
+
+Camera construction requires specific keyword arguments when using a generic precompiled firmware or if you don't specified the pins.
+These pins are just examples and if used as-is, a error will occur. Adapt them to your board!
+
+```python
+cam = Camera(
     data_pins=[1,2,3,4,5,6,7,8],
     vsync_pin=9,
     href_pin=10,
@@ -35,24 +45,35 @@ camera = Camera(
     frame_size=FrameSize.QVGA,
     jpeg_quality=85,
     fb_count=1,
-    grab_mode=GrabMode.WHEN_EMPTY
+    grab_mode=GrabMode.WHEN_EMPTY,
+    init=True,
+    bmp_out=False
 )
-
-# Capture image
-img = camera.capture()
-
-# Camera reconfiguration 
-camera.reconfigure(pixel_format=PixelFormat.JPEG,frame_size=FrameSize.QVGA,grab_mode=GrabMode.LATEST, fb_count=2)
-camera.set_quality(90)  # The quality goes from 0% to 100%, meaning 100% is the highest but has probably no compression
 ```
 
-You can get and set sensor properties by the respective methods (e.g. camera.get_brightness() or camera.set_vflip(True). See autocompletions in Thonny in order to see the list of methods.
-If you want more insides in the methods and what they actually do, you can find a very good documentation [here](https://docs.circuitpython.org/en/latest/shared-bindings/espcamera/index.html).
-Notice that for the methods in here you need to prefix a get/set, depending on what you want to do.
+**Keyword arguments for construction:**
 
-## Default values
+- data_pins: List of data pins
+- pclk_pin: Pixel clock pin
+ -vsync_pin: VSYNC pin
+- href_pin: HREF pin
+- sda_pin: SDA pin
+- scl_pin: SCL pin
+- xclk_pin: XCLK pin
+- xclk_freq: XCLK frequency in Hz
+- powerdown_pin: Powerdown pin (default: -1, meaning not used)
+- reset_pin: Reset pin (default: -1, meaning not used)
+- pixel_format: Pixel format as PixelFormat
+- frame_size: Frame size as FrameSize
+- jpeg_quality: JPEG quality
+- fb_count: Frame buffer count
+- grab_mode: Grab mode as GrabMode
+- init: Initialize camera with construction (default: True)
+- bmp_out: Output in BMP format while capturing image (default: False)
 
-The default values of the following keyword arguments are:
+**Default values:**
+
+The following keyword arguments have default values:
 
 - xclk_freq: 20MHz    // Frequencies are normally either 10 MHz or 20 MHz
 - frame_size: QQVGA
@@ -66,14 +87,58 @@ The default values of the following keyword arguments are:
   - LATEST for ESP32S3 boards
   - WHEN_EMPTY for all other
 
+### Initializing the Camera
+
+```python
+cam.init()
+```
+
+### Capture image
+
+```python
+img = cam.capture()
+```
+
+Keyword Arguments for Capture Method
+
+- out_format: Output format as PixelFormat (optional)
+
+### Camera reconfiguration
+
+```python
+cam.reconfigure(pixel_format=PixelFormat.JPEG,frame_size=FrameSize.QVGA,grab_mode=GrabMode.LATEST, fb_count=2)
+```
+
+Keyword Arguments for Reconfigure Method
+
+- frame_size: Frame size as FrameSize (optional)
+- pixel_format: Pixel format as PixelFormat(optional)
+- grab_mode: Grab mode as GrabMode (optional)
+- fb_count: Frame buffer count (optional)
+
+### Additional methods
+
+Here are just a few examples:
+
+```python
+cam.set_quality(90)  # The quality goes from 0% to 100%, meaning 100% is the highest but has probably no compression
+cam.set_bmp_out(True) # Enables convertion to bmp when capturing image
+camera.get_brightness()
+camera.set_vflip(True) #Enable vertical flip
+```
+
+See autocompletions in Thonny in order to see the list of methods.
+If you want more insides in the methods and what they actually do, you can find a very good documentation [here](https://docs.circuitpython.org/en/latest/shared-bindings/espcamera/index.html).
+Note that each method requires a "get_" or "set_" prefix, depending on the desired action.
+
 ## Build your custom FW
 
-### Setup build environment (the DIY way)
+### Setting up the build environment (DIY method)
 
-To build the project, follow the following instructions:
+To build the project, follow these instructions:
 
 - [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.2.3/esp32/get-started/index.html): I used version 5.2.3, but it might work with other versions (see notes).
-- Clone the micropython repo and this repo in a folder, e.g. "MyESPCam". Micropython >=1.24 is required (al least >= commit 92484d8).
+- Clone the micropython repo and this repo in a folder, e.g. "MyESPCam". MicroPython version 1.24 or higher is required (at least commit 92484d8).
 - You will have to add the ESP32-Camera driver (I used v2.0.13). To do this, add the following to the respective idf_component.yml file  (e.g. in micropython/ports/esp32/main_esp32s3/idf_component.yml):
 
 ```yml
@@ -87,7 +152,7 @@ Alternatively, you can clone the <https://github.com/espressif/esp32-camera> rep
 
 #### Supported Camera Models
 
-This project supports various camera models out of the box. So, you basicalls only need to add only one line to your board config-file ("mpconfigboard.h).
+This project supports various camera models out of the box. You typically only need to add a single line to your board config file ("mpconfigboard.h).
 Example (don't forget to add the empty line at the bottom):
 
 ```c
@@ -95,7 +160,7 @@ Example (don't forget to add the empty line at the bottom):
 
 ```
 
-Below is a list of the possible definitions for `MICROPY_CAMERA_MODEL_xxx`:
+Below is a list of supported `MICROPY_CAMERA_MODEL_xxx` definitions:
 
 - MICROPY_CAMERA_MODEL_WROVER_KIT - [ESP32-WROVER-KIT](https://www.espressif.com/en/products/devkits/esp32-wrover-kit/overview)
 - MICROPY_CAMERA_MODEL_ESP_EYE - [ESP-EYE](https://www.espressif.com/en/products/devkits/esp-eye/overview)
@@ -119,7 +184,7 @@ Below is a list of the possible definitions for `MICROPY_CAMERA_MODEL_xxx`:
 
 #### For unsupported camera models
 
-If the board is not supported yet, add the following lines to your board config-file "mpconfigboard.h" with the respective pins and camera parameters. Otherwise, you will need to pass all parameters during construction.
+If your board is not yet supported, add the following lines to your board config-file "mpconfigboard.h" with the respective pins and camera parameters. Otherwise, you will need to pass all parameters during construction.
 Don't forget the empty line at the bottom.
 Example for Xiao sense:
 
@@ -163,12 +228,14 @@ If you experience problems, visit [MicroPython external C modules](https://docs.
 
 ## Notes
 
-- For ESP32, do not use sizes above QVGA when not JPEG. The performance of the ESP32-S series has improved a lot, but JPEG mode always gives better frame rates.
+- For ESP32, do not use sizes above QVGA when not JPEG. The performance of the ESP32-S series has significantly improved, but JPEG mode always gives better frame rates.
 - The OV5640 pinout is compatible with boards designed for the OV2640 but the voltage supply is too high for the internal 1.5V regulator, so the camera overheats unless a heat sink is applied. For recording purposes the OV5640 should only be used with an ESP32S3 board. Frame sizes above FHD framesize should only be used for still images due to memory limitations.
 - If your target board is a ESP32, I recommend using IDF >= 5.2, since older versions may lead to IRAM overflow during build. Alternatively you can modify your sdkconfig-file (see [issue #1](https://github.com/cnadler86/micropython-camera-API/issues/1)).
+- The driver requires PSRAM to be installed and activated.
+- Most of the precompiled firmware images are untested, but the only difference between them are the target architecture and pin definitions, so they should work out of the box. If not, please raise an issue.
 
-## Plans for the future
+## Future Plans
 
-- [ ] edge case: enable usage of pins such as i2c for other applications
-- [ ] provide examples in binary image with lfs-merge
-- [ ] include camera driver version in API
+- Edge case: enable usage of pins such as i2c for other applications
+- Provide examples in binary image
+- Include camera driver version in API
