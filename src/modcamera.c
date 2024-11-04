@@ -36,11 +36,13 @@
 #error Camera only works on boards configured with spiram
 #endif
 
-#if MP_TASK_COREID == 0
-    #define CONFIG_CAMERA_CORE0 1
-#elif MP_TASK_COREID == 1
-    #define CONFIG_CAMERA_CORE1 1
-#endif
+// #if !defined(CONFIG_CAMERA_CORE0) && !defined(CONFIG_CAMERA_CORE1)
+// #if MP_TASK_COREID == 0
+//     #define CONFIG_CAMERA_CORE0 1
+// #elif MP_TASK_COREID == 1
+//     #define CONFIG_CAMERA_CORE1 1
+// #endif
+// #endif // CONFIG_CAMERA_COREx
 
 // Supporting functions
 static void raise_micropython_error_from_esp_err(esp_err_t err) {
@@ -161,7 +163,11 @@ void mp_camera_hal_init(mp_camera_obj_t *self) {
         return;
     }
     ESP_LOGI(TAG, "Initializing camera");
+    // Correct the quality before it is passed to esp32 driver and then "undo" the correction in the camera_config
+    int8_t api_jpeg_quality = self->camera_config.jpeg_quality;
+    self->camera_config.jpeg_quality = get_mapped_jpeg_quality(api_jpeg_quality);
     esp_err_t err = esp_camera_init(&self->camera_config);
+    self->camera_config.jpeg_quality = api_jpeg_quality;
     if (err != ESP_OK) {
         self->initialized = false;
         raise_micropython_error_from_esp_err(err);
