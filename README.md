@@ -8,7 +8,7 @@ The API is stable, but it might change without previous announce.
 
 ## Precomiled FW (the easy way)
 
-If you are not familiar with building custom firmware, visit the [releases](https://github.com/cnadler86/micropython-camera-API/releases) page to download firmware that suits your board. There are over 20 precompiled board images with the latest micropython!
+If you are not familiar with building custom firmware, visit the [releases](https://github.com/cnadler86/micropython-camera-API/releases) page to download firmware that suits your board. **There are over 20 precompiled board images with the latest micropython!**
 
 ## Using the API
 
@@ -20,13 +20,23 @@ from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
 
 ### Creating a Camera Object
 
-Camera construction using defaults. This is the case if you are using a non-generic precompiled firmware or if you specified the pins in mpconfigboard.h during your build. Then you can just call the construction without any keyword arguments.
+Camera construction using defaults. This is the case if you are using a **non-generic** precompiled firmware or if you specified the camera model or pins in mpconfigboard.h during your build. Then you can just call the construction without any keyword arguments.
 
 ```python
 cam = Camera()
 ```
 
-Camera construction requires specific keyword arguments when using a generic precompiled firmware or if you don't specified the pins.
+or with relevant keyword arguments:
+
+```python
+cam = Camera(pixel_format=PixelFormat.JPEG,
+    frame_size=FrameSize.QVGA,
+    jpeg_quality=90,
+    fb_count=2,
+    grab_mode=GrabMode.WHEN_EMPTY,)
+```
+
+When using a **generic** precompiled firmware, the camera constructor requires specific keyword arguments (namely the camera pins to be used).
 These pins are just examples and if used as-is, a error will occur. Adapt them to your board!
 
 ```python
@@ -41,13 +51,6 @@ cam = Camera(
     xclk_freq=20000000,
     powerdown_pin=-1,
     reset_pin=-1,
-    pixel_format=PixelFormat.RGB565,
-    frame_size=FrameSize.QVGA,
-    jpeg_quality=85,
-    fb_count=1,
-    grab_mode=GrabMode.WHEN_EMPTY,
-    init=True,
-    bmp_out=False
 )
 ```
 
@@ -68,8 +71,8 @@ cam = Camera(
 - jpeg_quality: JPEG quality
 - fb_count: Frame buffer count
 - grab_mode: Grab mode as GrabMode
-- init: Initialize camera with construction (default: True)
-- bmp_out: Output in BMP format while capturing image (default: False)
+- init: Initialize camera at construction time (default: True)
+- bmp_out: Image capture output converted to bitmap (default: False)
 
 **Default values:**
 
@@ -99,7 +102,7 @@ cam.init()
 img = cam.capture()
 ```
 
-Keyword Arguments for Capture Method
+Keyword arguments for capture
 
 - out_format: Output format as PixelFormat (optional)
 
@@ -109,7 +112,7 @@ Keyword Arguments for Capture Method
 cam.reconfigure(pixel_format=PixelFormat.JPEG,frame_size=FrameSize.QVGA,grab_mode=GrabMode.LATEST, fb_count=2)
 ```
 
-Keyword Arguments for Reconfigure Method
+Keyword arguments for reconfigure
 
 - frame_size: Frame size as FrameSize (optional)
 - pixel_format: Pixel format as PixelFormat(optional)
