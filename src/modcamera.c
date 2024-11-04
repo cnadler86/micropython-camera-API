@@ -73,8 +73,8 @@ static void raise_micropython_error_from_esp_err(esp_err_t err) {
             break;
 
         default:
-            // mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error 0x%04x"), err);
-            mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error"));
+            mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error 0x%04x"), err);
+            // mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error"));
             break;
     }
 }
@@ -161,26 +161,21 @@ void mp_camera_hal_init(mp_camera_obj_t *self) {
         return;
     }
     ESP_LOGI(TAG, "Initializing camera");
-    camera_config_t temp_config = self->camera_config;
-    temp_config.frame_size = FRAMESIZE_QVGA;        //use values supported by all cameras
-    temp_config.pixel_format = PIXFORMAT_RGB565;    //use values supported by all cameras
-    temp_config.jpeg_quality = get_mapped_jpeg_quality(self->camera_config.jpeg_quality);
-    esp_err_t err = esp_camera_init(&temp_config);
+    esp_err_t err = esp_camera_init(&self->camera_config);
     if (err != ESP_OK) {
         self->initialized = false;
         raise_micropython_error_from_esp_err(err);
-    } else {
-        self->initialized = true;
+        return;
     }
-    mp_camera_hal_reconfigure(self, self->camera_config.frame_size, self->camera_config.pixel_format, 
-        self->camera_config.grab_mode, self->camera_config.fb_count);
+    self->initialized = true;
     ESP_LOGI(TAG, "Camera initialized successfully");
+    return;
 }
 
 void mp_camera_hal_deinit(mp_camera_obj_t *self) {
     if (self->initialized) {
         if (self->captured_buffer) {
-            esp_camera_fb_return(self->captured_buffer);
+            esp_camera_return_all();
             self->captured_buffer = NULL;
         }
         esp_err_t err = esp_camera_deinit();
@@ -272,7 +267,7 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format) {
     }
     
     if (out_format >= 0 && (mp_camera_pixformat_t)out_format != self->camera_config.pixel_format) {
-        switch (out_format) {
+        switch ((mp_camera_pixformat_t)out_format) {
             case PIXFORMAT_JPEG:
                 if (frame2jpg(self->captured_buffer, self->camera_config.jpeg_quality, &out_buf, &out_len)) {
                     esp_camera_fb_return(self->captured_buffer);
@@ -328,6 +323,9 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format) {
             mp_obj_t result = mp_obj_new_memoryview('b', out_len, out_buf);
             return result;
         } else {
+            free(out_buf);
+            out_buf = NULL;
+            out_len = 0;
             mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to convert image to BMP"));
             return mp_const_none;
         }
