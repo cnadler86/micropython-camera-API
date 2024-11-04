@@ -137,9 +137,9 @@ void mp_camera_hal_construct(
             self->camera_config.xclk_freq_hz = xclk_freq_hz;
         }
 
-        if (fb_count > 2) {
-            self->camera_config.fb_count = 2;
-            mp_warning(NULL, "Frame buffer size limited to 2");
+        if (fb_count > 3) {
+            self->camera_config.fb_count = 3;
+            mp_warning(NULL, "Frame buffer size limited to 3");
         } else if (fb_count < 1) {
             self->camera_config.fb_count = 1;
             mp_warning(NULL, "Frame buffer size must be >0. Setting it to 1");
@@ -162,6 +162,10 @@ void mp_camera_hal_init(mp_camera_obj_t *self) {
     if (self->initialized) {
         return;
     }
+    if (self->camera_config.fb_count > 1 && self->camera_config.pixel_format != PIXFORMAT_JPEG) {
+        mp_warning(NULL, "It is recomended to use a frame buffer size of 1 for non-JPEG pixel format");
+    }
+
     ESP_LOGI(TAG, "Initializing camera");
     // Correct the quality before it is passed to esp32 driver and then "undo" the correction in the camera_config
     int8_t api_jpeg_quality = self->camera_config.jpeg_quality;

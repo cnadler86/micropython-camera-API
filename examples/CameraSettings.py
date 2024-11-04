@@ -17,9 +17,12 @@ while not station.isconnected():
 
 print(f'Connected! IP: {station.ifconfig()[0]}. Open this IP in your browser')
 
-with open("CameraSettings.html", 'r') as file:
-    html = file.read()
-
+try:
+    with open("CameraSettings.html", 'r') as file:
+        html = file.read()
+except Exception as e:
+    print("Error reading CameraSettings.html file. You might forgot to copy it from the examples folder.")
+    raise e
 async def stream_camera(writer):
     try:
         cam.init()
