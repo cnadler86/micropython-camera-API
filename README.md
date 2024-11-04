@@ -33,7 +33,7 @@ cam = Camera(pixel_format=PixelFormat.JPEG,
     frame_size=FrameSize.QVGA,
     jpeg_quality=90,
     fb_count=2,
-    grab_mode=GrabMode.WHEN_EMPTY,)
+    grab_mode=GrabMode.WHEN_EMPTY)
 ```
 
 When using a **generic** precompiled firmware, the camera constructor requires specific keyword arguments (namely the camera pins to be used).
