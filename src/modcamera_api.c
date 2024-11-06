@@ -138,8 +138,7 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
 
     if (mp_camera_hal_capture(self, -1) == mp_const_none){
         mp_camera_hal_deinit(self);
-        mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture initial frame. \
-        Run reconfigure method or construct a new object with appropriate configuration (e.g. FrameSize)."));
+        mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture initial frame. Construct a new object with appropriate configuration."));
         return MP_OBJ_FROM_PTR(self);
     } else {
         if ( !args[ARG_init].u_bool ){

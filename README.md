@@ -237,6 +237,28 @@ If you experience problems, visit [MicroPython external C modules](https://docs.
 - The driver requires PSRAM to be installed and activated.
 - Most of the precompiled firmware images are untested, but the only difference between them are the target architecture and pin definitions, so they should work out of the box. If not, please raise an issue.
 
+## Benchmark
+
+I didn't use a calibrated osziloscope, but here is a benchmark with my ESP32S3 (GrabMode=LATEST).
+Using fb_count = 2 doubles the FPS for JPEG. This might also aplly for other PixelFormats.
+
+| Frame Size | GRAYSCALE | RGB565 | YUV422 | JPEG   | JPEG (fb = 2) |
+|------------|-----------|--------|--------|--------|---------------|
+| R96X96     | 12.5      | 12.5   | 12.5   | No img | No img        |
+| QQVGA      | 12.5      | 12.5   | 12.5   | 25     | 50            |
+| QCIF       | 11        | 11     | 11.5   | 25     | 50            |
+| HQVGA      | 12.5      | 12.5   | 12.5   | 25     | 50            |
+| R240X240   | 12        | 12.5   | 11.5   | 25     | 50            |
+| QVGA       | 12        | 11     | 12     | 25     | 50            |
+| CIF        | 12.5      | No img | No img | 6      | 12.5          |
+| HVGA       | 2.5       | 3      | 2.5    | 12.5   | 25            |
+| VGA        | 3         | 3      | 3      | 12.5   | 25            |
+| SVGA       | 3         | 3      | 3      | 12.5   | 25            |
+| XGA        | No img    | No img | No img | 6      | 12.5          |
+| HD         | No img    | No img | No img | 6      | 12.5          |
+| SXGA       | 2         | 2      | 2      | 6      | 12.5          |
+| UXGA       | No img    | No img | No img | 6      | 12.5          |
+
 ## Future Plans
 
 - Edge case: enable usage of pins such as i2c for other applications
