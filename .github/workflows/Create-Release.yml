@@ -1,0 +1,36 @@
+name: Create-Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+  create_release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up GitHub CLI
+        uses: actions/setup-gh-cli@v2
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-*
+          path: ./artifacts
+
+      - name: Create Draft Release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: "Release ${{ github.ref_name }}"
+          draft: true
+          prerelease: false
+          body: "Draft release for ${{ github.ref_name }}"
+
+      - name: Upload Release Assets
+        run: |
+          for file in ./artifacts/*; do
+            gh release upload ${{ github.ref_name }} "$file" --clobber
+          done
