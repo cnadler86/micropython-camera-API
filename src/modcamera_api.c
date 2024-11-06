@@ -40,7 +40,7 @@ const mp_obj_type_t camera_type;
 
 //Constructor
 static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
-    enum { ARG_data_pins, ARG_pixel_clock_pin, ARG_vsync_pin, ARG_href_pin, ARG_sda_pin, ARG_scl_pin, ARG_xclock_pin, ARG_xclock_frequency, ARG_powerdown_pin, ARG_reset_pin, ARG_pixel_format, ARG_frame_size, ARG_jpeg_quality, ARG_fb_count, ARG_grab_mode, NUM_ARGS };
+    enum { ARG_data_pins, ARG_pixel_clock_pin, ARG_vsync_pin, ARG_href_pin, ARG_sda_pin, ARG_scl_pin, ARG_xclock_pin, ARG_xclock_frequency, ARG_powerdown_pin, ARG_reset_pin, ARG_pixel_format, ARG_frame_size, ARG_jpeg_quality, ARG_fb_count, ARG_grab_mode, ARG_init, ARG_bmp_out, NUM_ARGS };
     static const mp_arg_t allowed_args[] = {
         #ifdef MICROPY_CAMERA_ALL_REQ_PINS_DEFINED
             { MP_QSTR_data_pins, MP_ARG_OBJ | MP_ARG_KW_ONLY , { .u_obj = MP_ROM_NONE } },
@@ -67,6 +67,8 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
         { MP_QSTR_jpeg_quality, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_JPEG_QUALITY } },
         { MP_QSTR_fb_count, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_FB_COUNT } },
         { MP_QSTR_grab_mode, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_GRAB_MODE } },
+        { MP_QSTR_init, MP_ARG_BOOL | MP_ARG_KW_ONLY, { .u_bool = true } },
+        { MP_QSTR_bmp_out, MP_ARG_BOOL | MP_ARG_KW_ONLY, { .u_bool = false } },
     };
 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -119,23 +121,29 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
     mp_camera_pixformat_t pixel_format = args[ARG_pixel_format].u_int;
     mp_camera_framesize_t frame_size = args[ARG_frame_size].u_int;
     int8_t jpeg_quality = args[ARG_jpeg_quality].u_int;
+    if ((jpeg_quality < 0) || (jpeg_quality > 100)) {
+        mp_raise_ValueError(MP_ERROR_TEXT("jpeg quality must be in range 0-100"));
+    }
     int8_t fb_count = args[ARG_fb_count].u_int;
     mp_camera_grabmode_t grab_mode = args[ARG_grab_mode].u_int;
     
     mp_camera_obj_t *self = mp_obj_malloc_with_finaliser(mp_camera_obj_t, &camera_type);
     self->base.type = &camera_type;
+    self->bmp_out = args[ARG_bmp_out].u_bool;
 
     mp_camera_hal_construct(self, data_pins, xclock_pin, pixel_clock_pin, vsync_pin, href_pin, powerdown_pin, reset_pin, 
         sda_pin, scl_pin, xclock_frequency, pixel_format, frame_size, jpeg_quality, fb_count, grab_mode);
 
     mp_camera_hal_init(self);
 
-    if (mp_camera_hal_capture(self, 100) == mp_const_none){
+    if (mp_camera_hal_capture(self, -1) == mp_const_none){
         mp_camera_hal_deinit(self);
-        mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture initial frame. \
-        Run reconfigure method or construct a new object with appropriate configuration (e.g. FrameSize)."));
+        mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture initial frame. Construct a new object with appropriate configuration."));
         return MP_OBJ_FROM_PTR(self);
     } else {
+        if ( !args[ARG_init].u_bool ){
+            mp_camera_hal_deinit(self);
+        }
         return MP_OBJ_FROM_PTR(self);
     }
 }
@@ -143,8 +151,8 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
 // Main methods
 static mp_obj_t camera_capture(size_t n_args, const mp_obj_t *args){
     mp_camera_obj_t *self = MP_OBJ_TO_PTR(args[0]);
-    mp_float_t timeout = n_args < 2 ? MICROPY_FLOAT_CONST(0.25) : mp_obj_get_float(args[1]);
-    return mp_camera_hal_capture(self, timeout);
+    int8_t out_format = n_args < 2 ? -1 : mp_obj_get_int(args[1]);
+    return mp_camera_hal_capture(self, out_format);
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(camera_capture_obj, 1, 2, camera_capture);
 
@@ -198,14 +206,28 @@ static mp_obj_t mp_camera_deinit(mp_obj_t self_in) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(mp_camera_deinit_obj, mp_camera_deinit);
 
+static mp_obj_t camera_get_bmp_out(mp_obj_t self_in) {
+    mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    return mp_obj_new_bool(self->bmp_out);
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(camera_get_bmp_out_obj, camera_get_bmp_out);
+
+static mp_obj_t camera_set_bmp_out(mp_obj_t self_in, mp_obj_t arg) {
+    mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    self->bmp_out = mp_obj_is_true(arg);
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(camera_set_bmp_out_obj, camera_set_bmp_out);
+
+// Destructor
 static mp_obj_t mp_camera_obj___exit__(size_t n_args, const mp_obj_t *args) {
     (void)n_args;
     return mp_camera_deinit(args[0]);
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_camera___exit___obj, 4, 4, mp_camera_obj___exit__);
 
-// Camera propertiy functions
-// Camera sensor propertiy functions
+// Camera property functions
+// Camera sensor property functions
 #define CREATE_GETTER(property, get_function) \
     static mp_obj_t camera_get_##property(const mp_obj_t self_in) { \
         mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in); \
@@ -233,12 +255,14 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_camera___exit___obj, 4, 4, mp_came
     { MP_ROM_QSTR(MP_QSTR_get_##property), MP_ROM_PTR(&camera_get_##property##_obj) }, \
     { MP_ROM_QSTR(MP_QSTR_set_##property), MP_ROM_PTR(&camera_set_##property##_obj) }
 
-CREATE_GETTER(frame_size, mp_obj_new_int)
-CREATE_GETTER(pixel_format, mp_obj_new_int)
-CREATE_GETTER(grab_mode, mp_obj_new_int)
-CREATE_GETTER(fb_count, mp_obj_new_int)
-CREATE_GETTER(pixel_width, mp_obj_new_int)
-CREATE_GETTER(pixel_height, mp_obj_new_int)
+CREATE_GETSET_FUNCTIONS(frame_size, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
+CREATE_GETTER(pixel_format, mp_obj_new_int);
+CREATE_GETTER(grab_mode, mp_obj_new_int);
+CREATE_GETTER(fb_count, mp_obj_new_int);
+CREATE_GETTER(pixel_width, mp_obj_new_int);
+CREATE_GETTER(pixel_height, mp_obj_new_int);
+CREATE_GETTER(max_frame_size, mp_obj_new_int);
+CREATE_GETTER(sensor_name, mp_obj_new_str_from_cstr);
 CREATE_GETSET_FUNCTIONS(contrast, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
 CREATE_GETSET_FUNCTIONS(brightness, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
 CREATE_GETSET_FUNCTIONS(saturation, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
@@ -274,12 +298,14 @@ static const mp_rom_map_elem_t camera_camera_locals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&mp_camera_deinit_obj) },
     { MP_ROM_QSTR(MP_QSTR___enter__), MP_ROM_PTR(&mp_identity_obj) },
     { MP_ROM_QSTR(MP_QSTR___exit__), MP_ROM_PTR(&mp_camera___exit___obj) },
-    { MP_ROM_QSTR(MP_QSTR_get_framesize), MP_ROM_PTR(&camera_get_frame_size_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_pixel_format), MP_ROM_PTR(&camera_get_pixel_format_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_grab_mode), MP_ROM_PTR(&camera_get_grab_mode_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_fb_count), MP_ROM_PTR(&camera_get_fb_count_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_pixel_width), MP_ROM_PTR(&camera_get_pixel_width_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_pixel_height), MP_ROM_PTR(&camera_get_pixel_height_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_max_frame_size), MP_ROM_PTR(&camera_get_max_frame_size_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_sensor_name), MP_ROM_PTR(&camera_get_sensor_name_obj) },
+    ADD_PROPERTY_TO_TABLE(frame_size),
     ADD_PROPERTY_TO_TABLE(contrast),
     ADD_PROPERTY_TO_TABLE(brightness),
     ADD_PROPERTY_TO_TABLE(saturation),
@@ -305,6 +331,7 @@ static const mp_rom_map_elem_t camera_camera_locals_table[] = {
     ADD_PROPERTY_TO_TABLE(wpc),
     ADD_PROPERTY_TO_TABLE(raw_gma),
     ADD_PROPERTY_TO_TABLE(lenc),
+    ADD_PROPERTY_TO_TABLE(bmp_out),
 };
 static MP_DEFINE_CONST_DICT(camera_camera_locals_dict, camera_camera_locals_table);
 

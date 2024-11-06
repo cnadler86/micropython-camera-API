@@ -4,7 +4,7 @@ import time
 
 from camera import Camera, FrameSize, PixelFormat
 # Cam Config
-cam = Camera(frame_size = FrameSize.VGA,pixel_format=PixelFormat.JPEG)
+cam = Camera(frame_size = FrameSize.VGA,pixel_format=PixelFormat.JPEG,init=False)
 
 # WLAN config
 ssid = '<yourSSID>'

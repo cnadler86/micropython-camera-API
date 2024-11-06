@@ -42,10 +42,11 @@
 
 #include "esp_camera.h"
 #include "sensor.h"
+#include "camera_pins.h"
 
-#if defined(MICROPY_CAMERA_PIN_SIOD) && defined(MICROPY_CAMERA_PIN_SIOC) && defined(MICROPY_CAMERA_PIN_D0) && defined(MICROPY_CAMERA_PIN_D1) && defined(MICROPY_CAMERA_PIN_D2) && \
-defined(MICROPY_CAMERA_PIN_D3) && defined(MICROPY_CAMERA_PIN_D4) && defined(MICROPY_CAMERA_PIN_D5) && defined(MICROPY_CAMERA_PIN_D6) && defined(MICROPY_CAMERA_PIN_D7) && \
-defined(MICROPY_CAMERA_PIN_PCLK) && defined(MICROPY_CAMERA_PIN_VSYNC) && defined(MICROPY_CAMERA_PIN_HREF) &&  defined(MICROPY_CAMERA_PIN_XCLK)
+#if defined (MICROPY_CAMERA_PIN_SIOD) && defined (MICROPY_CAMERA_PIN_SIOC) && defined (MICROPY_CAMERA_PIN_D0) && defined (MICROPY_CAMERA_PIN_D1) && defined (MICROPY_CAMERA_PIN_D2) && \
+defined (MICROPY_CAMERA_PIN_D3) && defined (MICROPY_CAMERA_PIN_D4) && defined (MICROPY_CAMERA_PIN_D5) && defined (MICROPY_CAMERA_PIN_D6) && defined (MICROPY_CAMERA_PIN_D7) && \
+defined (MICROPY_CAMERA_PIN_PCLK) && defined (MICROPY_CAMERA_PIN_VSYNC) && defined (MICROPY_CAMERA_PIN_HREF) &&  defined (MICROPY_CAMERA_PIN_XCLK)
 #define MICROPY_CAMERA_ALL_REQ_PINS_DEFINED (1)
 #endif
 
@@ -58,7 +59,19 @@ defined(MICROPY_CAMERA_PIN_PCLK) && defined(MICROPY_CAMERA_PIN_VSYNC) && defined
 #endif
 
 #ifndef MICROPY_CAMERA_XCLK_FREQ
-#define MICROPY_CAMERA_XCLK_FREQ     (10)
+#define MICROPY_CAMERA_XCLK_FREQ   (20)
+#endif
+
+#if !defined (MICROPY_CAMERA_GRAB_MODE) && defined (CONFIG_IDF_TARGET_ESP32S3)
+#define MICROPY_CAMERA_GRAB_MODE     CAMERA_GRAB_LATEST
+#elif !defined(MICROPY_CAMERA_GRAB_MODE)
+#define MICROPY_CAMERA_GRAB_MODE     CAMERA_GRAB_WHEN_EMPTY
+#endif
+
+#if !defined (MICROPY_CAMERA_FB_COUNT) && defined (CONFIG_IDF_TARGET_ESP32S3)
+#define MICROPY_CAMERA_FB_COUNT     (2)
+#elif !defined(MICROPY_CAMERA_FB_COUNT)
+#define MICROPY_CAMERA_FB_COUNT     (1)
 #endif
 
 #ifndef MICROPY_CAMERA_DEFAULT_FRAME_SIZE
@@ -69,16 +82,8 @@ defined(MICROPY_CAMERA_PIN_PCLK) && defined(MICROPY_CAMERA_PIN_VSYNC) && defined
 #define MICROPY_CAMERA_DEFAULT_PIXEL_FORMAT PIXFORMAT_RGB565
 #endif
 
-#ifndef MICROPY_CAMERA_GRAB_MODE
-#define MICROPY_CAMERA_GRAB_MODE CAMERA_GRAB_WHEN_EMPTY
-#endif
-
-#ifndef MICROPY_CAMERA_FB_COUNT
-#define MICROPY_CAMERA_FB_COUNT (1)
-#endif
-
 #ifndef MICROPY_CAMERA_JPEG_QUALITY
-#define MICROPY_CAMERA_JPEG_QUALITY (15)
+#define MICROPY_CAMERA_JPEG_QUALITY (85)
 #endif
 
 //Supported Camera sensors
@@ -101,6 +106,7 @@ typedef struct hal_camera_obj {
     camera_config_t     camera_config;
     bool                initialized;
     camera_fb_t         *captured_buffer;
+    bool                bmp_out;
 } hal_camera_obj_t;
 
 #endif // CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
@@ -189,16 +195,16 @@ extern void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize
  * @brief Captures an image and returns it as mp_obj_t (e.g. mp_obj_new_memoryview).
  * 
  * @param self Pointer to the camera object.
- * @param timeout_ms Timeout in milliseconds.
+ * @param out_format Output pixelformat format.
  * @return Captured image as micropython object.
  */
-extern mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms);
+extern mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format);
 
 /**
  * @brief Table mapping pixel formats API to their corresponding values at HAL.
  * @details Needs to be defined in the port-specific implementation.
  */
-extern const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[4];
+extern const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[5];
 
 /**
  * @brief Table mapping frame sizes API to their corresponding values at HAL.
@@ -262,7 +268,7 @@ DECLARE_CAMERA_HAL_GETSET(bool, wpc)
 
 DECLARE_CAMERA_HAL_GET(int, address)
 DECLARE_CAMERA_HAL_GET(int, fb_count)
-DECLARE_CAMERA_HAL_GET(mp_camera_framesize_t, frame_size)
+DECLARE_CAMERA_HAL_GETSET(mp_camera_framesize_t, frame_size)
 DECLARE_CAMERA_HAL_GET(camera_grab_mode_t, grab_mode)
 DECLARE_CAMERA_HAL_GET(mp_camera_framesize_t, max_frame_size)
 DECLARE_CAMERA_HAL_GET(mp_camera_pixformat_t, pixel_format)

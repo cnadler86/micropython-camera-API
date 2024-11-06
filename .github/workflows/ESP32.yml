@@ -5,9 +5,13 @@ on:
   push:
     paths:
       - 'src/**'
+      - '.github/workflows/*.yml'
   pull_request:
     branches:
       - master
+    paths:
+      - 'src/**'
+      - '.github/workflows/*.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -68,13 +72,13 @@ jobs:
         if: steps.cache_esp_idf.outputs.cache-hit != 'true'
         run: |
           cd ~
-          git clone --depth 1 --branch release/v5.2 https://github.com/espressif/esp-idf.git
-          # git clone --depth 1 --branch ${{ env.IDF_VER }} https://github.com/espressif/esp-idf.git
+          # git clone --depth 1 --branch release/v5.2 https://github.com/espressif/esp-idf.git
+          git clone --depth 1 --branch ${{ env.IDF_VER }} https://github.com/espressif/esp-idf.git
           git -C esp-idf submodule update --init --recursive --filter=tree:0
           cd esp-idf
           ./install.sh all
           cd components
-          git clone https://github.com/espressif/esp32-camera
+          git clone https://github.com/cnadler86/esp32-camera
           cd ~/esp-idf/
           source ./export.sh
 
@@ -85,12 +89,30 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        board: 
+        board:
           - ESP32_GENERIC-SPIRAM
           - ESP32_GENERIC_S2
           - ESP32_GENERIC_S3
           - ESP32_GENERIC_S3-SPIRAM_OCT
           - ESP32_GENERIC_S3-FLASH_4M
+          - ESP32_GENERIC-SPIRAM@WROVER_KIT
+          - ESP32_GENERIC-SPIRAM@ESP_EYE
+          - ESP32_GENERIC-SPIRAM@M5STACK_PSRAM
+          - ESP32_GENERIC-SPIRAM@M5STACK_V2_PSRAM
+          - ESP32_GENERIC-SPIRAM@M5STACK_WIDE
+          - ESP32_GENERIC-SPIRAM@M5STACK_ESP32CAM
+          - ESP32_GENERIC-SPIRAM@M5STACK_UNITCAM
+          - ESP32_GENERIC-SPIRAM@AI_THINKER
+          - ESP32_GENERIC-SPIRAM@TTGO_T_JOURNAL
+          - ESP32_GENERIC-SPIRAM@TTGO_T_CAMERA_PLUS
+          - ESP32_GENERIC_S3-SPIRAM_OCT@M5STACK_CAMS3_UNIT
+          - ESP32_GENERIC_S3-SPIRAM_OCT@XIAO_ESP32S3
+          - ESP32_GENERIC_S3-SPIRAM_OCT@ESP32S3_CAM_LCD
+          - ESP32_GENERIC_S3-SPIRAM_OCT@ESP32S3_EYE
+          - ESP32_GENERIC_S3-SPIRAM_OCT@FREENOVE_ESP32S3_CAM
+          - ESP32_GENERIC_S3-SPIRAM_OCT@DFRobot_ESP32S3
+          - ESP32_GENERIC_S3-SPIRAM_OCT@NEW_ESPS3_RE1_0
+          - ESP32_GENERIC_S3-SPIRAM_OCT@XENOIONEX
 
     steps:
      # Get the latest MicroPython release
@@ -126,18 +148,33 @@ jobs:
           cd ~/micropython/ports/esp32
           source ~/esp-idf/export.sh
 
-          # Check if a variant is defined and adjust the make command
-          IFS='-' read -r BOARD_NAME BOARD_VARIANT <<< "${{ matrix.board }}"
+          # Check if a variant is defined and adjust the idf.py command
+          IFS='@' read -r BUILD_TARGET CAMERA_MODEL <<< "${{ matrix.board }}"
+          IFS='-' read -r BOARD_NAME BOARD_VARIANT <<< "${BUILD_TARGET}"
+          
           if [ -n "${BOARD_VARIANT}" ]; then
-            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=$BOARD_NAME BOARD_VARIANT=$BOARD_VARIANT all
+            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -D MICROPY_BOARD_VARIANT=$BOARD_VARIANT -B build-$BUILD_TARGET"
           else
-            make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=$BOARD_NAME all
+            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -B build-$BUILD_TARGET"
           fi
-          mv ~/micropython/ports/esp32/build-${{ matrix.board }}/firmware.bin ~/${{ matrix.board }}.bin
+          if [ -n "${CAMERA_MODEL}" ]; then
+            echo "FW_NAME=${CAMERA_MODEL}" >> $GITHUB_ENV
+            FINAL_CMD="${IDF_CMD} -D MICROPY_CAMERA_MODEL=${CAMERA_MODEL} build"
+          else
+            echo "FW_NAME=${BUILD_TARGET}" >> $GITHUB_ENV
+            FINAL_CMD="${IDF_CMD} build"
+          fi
+          make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=$BOARD_NAME submodules
+          echo "Running command: $FINAL_CMD"
+          eval $FINAL_CMD
+          cd ~/micropython/ports/esp32/build-${BUILD_TARGET}
+          python ../makeimg.py sdkconfig bootloader/bootloader.bin partition_table/partition-table.bin micropython.bin firmware.bin micropython.uf2
+          mkdir -p ~/artifacts
+          mv ~/micropython/ports/esp32/build-${BUILD_TARGET}/firmware.bin ~/artifacts/firmware.bin
 
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
         with:
-          name: firmware-${{ matrix.board }}
-          path: ~/${{ matrix.board }}.bin
-          retention-days: 90
+          name: firmware-${{ env.FW_NAME }}
+          path: ~/artifacts/**
+          retention-days: 5

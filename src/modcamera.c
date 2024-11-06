@@ -28,6 +28,7 @@
 #include "modcamera.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "img_converters.h"
 
 #define TAG "ESP32_MPY_CAMERA"
 
@@ -35,35 +36,37 @@
 #error Camera only works on boards configured with spiram
 #endif
 
-void raise_micropython_error_from_esp_err(esp_err_t err) {
+// #if !defined(CONFIG_CAMERA_CORE0) && !defined(CONFIG_CAMERA_CORE1)
+// #if MP_TASK_COREID == 0
+//     #define CONFIG_CAMERA_CORE0 1
+// #elif MP_TASK_COREID == 1
+//     #define CONFIG_CAMERA_CORE1 1
+// #endif
+// #endif // CONFIG_CAMERA_COREx
+
+// Supporting functions
+static void raise_micropython_error_from_esp_err(esp_err_t err) {
     switch (err) {
         case ESP_OK:
             return;
-
         case ESP_ERR_NO_MEM:
             mp_raise_msg(&mp_type_MemoryError, MP_ERROR_TEXT("Out of memory"));
             break;
-
         case ESP_ERR_INVALID_ARG:
             mp_raise_ValueError(MP_ERROR_TEXT("Invalid argument"));
             break;
-
         case ESP_ERR_INVALID_STATE:
             mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Invalid state"));
             break;
-
         case ESP_ERR_NOT_FOUND:
             mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Camera not found"));
             break;
-
         case ESP_ERR_NOT_SUPPORTED:
             mp_raise_NotImplementedError(MP_ERROR_TEXT("Operation/Function not supported/implemented"));
             break;
-
         case ESP_ERR_TIMEOUT:
             mp_raise_OSError(MP_ETIMEDOUT);
             break;
-
         default:
             mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error 0x%04x"), err);
             // mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error"));
@@ -71,6 +74,18 @@ void raise_micropython_error_from_esp_err(esp_err_t err) {
     }
 }
 
+static int map(int value, int fromLow, int fromHigh, int toLow, int toHigh) {
+    if (fromHigh == fromLow) {
+        mp_raise_ValueError(MP_ERROR_TEXT("fromLow und fromHigh shall not be equal"));
+    }
+    return (int)((int32_t)(value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow) + toLow);
+}
+
+static inline int get_mapped_jpeg_quality(int8_t quality) {
+    return map(quality, 0, 100, 63, 0);
+}
+
+// Camera HAL Funcitons
 void mp_camera_hal_construct(
     mp_camera_obj_t *self,
     int8_t data_pins[8],
@@ -91,7 +106,8 @@ void mp_camera_hal_construct(
         // configure camera based on arguments
         self->camera_config.pixel_format = pixel_format;
         self->camera_config.frame_size = frame_size;        
-        self->camera_config.jpeg_quality = jpeg_quality;    //0-63 lower number means higher quality. TODO: Harmonization in API and Validation
+        // self->camera_config.jpeg_quality = (int8_t)map(jpeg_quality,0,100,63,0);    //0-63 lower number means higher quality.
+        self->camera_config.jpeg_quality = jpeg_quality;    //save value in here, but will be corrected (with map) before passing it to the esp32-driver
         self->camera_config.pin_d0 = data_pins[0];
         self->camera_config.pin_d1 = data_pins[1];
         self->camera_config.pin_d2 = data_pins[2];
@@ -108,8 +124,22 @@ void mp_camera_hal_construct(
         self->camera_config.pin_xclk = external_clock_pin;
         self->camera_config.pin_sscb_sda = sccb_sda_pin;
         self->camera_config.pin_sscb_scl = sccb_scl_pin;
-        self->camera_config.xclk_freq_hz = xclk_freq_hz;
-        self->camera_config.fb_count = fb_count;      //if more than one, i2s runs in continuous mode. TODO: Test with others than JPEG
+        if ( xclk_freq_hz > 20000000) {
+            mp_raise_ValueError(MP_ERROR_TEXT("xclk frequency cannot be grather than 20MHz"));
+        } else {
+            self->camera_config.xclk_freq_hz = xclk_freq_hz;
+        }
+
+        if (fb_count > 3) {
+            self->camera_config.fb_count = 3;
+            mp_warning(NULL, "Frame buffer size limited to 3");
+        } else if (fb_count < 1) {
+            self->camera_config.fb_count = 1;
+            mp_warning(NULL, "Frame buffer size must be >0. Setting it to 1");
+        }
+        else {
+            self->camera_config.fb_count = fb_count;          //if more than one, i2s runs in continuous mode. TODO: Test with others than JPEG
+        }
         self->camera_config.grab_mode = grab_mode;
 
         // defaul parameters
@@ -125,26 +155,31 @@ void mp_camera_hal_init(mp_camera_obj_t *self) {
     if (self->initialized) {
         return;
     }
+    #ifndef CONFIG_IDF_TARGET_ESP32S3
+        if (self->camera_config.fb_count > 1 && self->camera_config.pixel_format != PIXFORMAT_JPEG) {
+            mp_warning(NULL, "It is recomended to use a frame buffer size of 1 for non-JPEG pixel format");
+        }
+    #endif
     ESP_LOGI(TAG, "Initializing camera");
-    camera_config_t temp_config = self->camera_config;
-    temp_config.frame_size = FRAMESIZE_QVGA;        //use values supported by all cameras
-    temp_config.pixel_format = PIXFORMAT_RGB565;    //use values supported by all cameras
-    esp_err_t err = esp_camera_init(&temp_config);
+    // Correct the quality before it is passed to esp32 driver and then "undo" the correction in the camera_config
+    int8_t api_jpeg_quality = self->camera_config.jpeg_quality;
+    self->camera_config.jpeg_quality = get_mapped_jpeg_quality(api_jpeg_quality);
+    esp_err_t err = esp_camera_init(&self->camera_config);
+    self->camera_config.jpeg_quality = api_jpeg_quality;
     if (err != ESP_OK) {
         self->initialized = false;
         raise_micropython_error_from_esp_err(err);
-    } else {
-        self->initialized = true;
+        return;
     }
-    mp_camera_hal_reconfigure(self, self->camera_config.frame_size, self->camera_config.pixel_format, 
-        self->camera_config.grab_mode, self->camera_config.fb_count);
+    self->initialized = true;
     ESP_LOGI(TAG, "Camera initialized successfully");
+    return;
 }
 
 void mp_camera_hal_deinit(mp_camera_obj_t *self) {
     if (self->initialized) {
         if (self->captured_buffer) {
-            esp_camera_fb_return(self->captured_buffer);
+            esp_camera_return_all();
             self->captured_buffer = NULL;
         }
         esp_err_t err = esp_camera_deinit();
@@ -186,16 +221,22 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
         if (fb_count > 2) {
             self->camera_config.fb_count = 2;
             mp_warning(NULL, "Frame buffer size limited to 2");
-        } else {
+        } else if (fb_count < 1) {
+            self->camera_config.fb_count = 1;
+            mp_warning(NULL, "Set to min frame buffer size of 1");
+        }
+        else {
             self->camera_config.fb_count = fb_count;
         }
         
         raise_micropython_error_from_esp_err(esp_camera_deinit());
 
-        // sensor->set_pixformat(sensor, self->camera_config.pixel_format);    //seems to be needed because of some bug?
-        // sensor->set_framesize(sensor, self->camera_config.frame_size);      //seems to be needed because of some bug?
-
+        // Correct the quality before it is passed to esp32 driver and then "undo" the correction in the camera_config
+        int8_t api_jpeg_quality = self->camera_config.jpeg_quality;
+        self->camera_config.jpeg_quality = get_mapped_jpeg_quality(api_jpeg_quality);
         esp_err_t err = esp_camera_init(&self->camera_config);
+        self->camera_config.jpeg_quality = api_jpeg_quality;
+
         if (err != ESP_OK) {
             self->initialized = false;
             raise_micropython_error_from_esp_err(err);
@@ -205,8 +246,7 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
     }
 }
 
-mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms) {
-    // Timeout not used at the moment
+mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format) {
     if (!self->initialized) {
         mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture image: Camera not initialized"));
     }
@@ -214,28 +254,85 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int timeout_ms) {
         esp_camera_fb_return(self->captured_buffer);
         self->captured_buffer = NULL;
     }
+    
+    static size_t out_len = 0;
+    static uint8_t *out_buf = NULL;
+    if (out_len > 0 || out_buf) {
+        free(out_buf);
+        out_len = 0;
+        out_buf = NULL;
+    }
+
     ESP_LOGI(TAG, "Capturing image");
     self->captured_buffer = esp_camera_fb_get();
-    if (self->captured_buffer) {
-        if (self->camera_config.pixel_format == PIXFORMAT_JPEG) {
-            ESP_LOGI(TAG, "Captured image in JPEG format");
-            return mp_obj_new_memoryview('b', self->captured_buffer->len, self->captured_buffer->buf);
-        } else {
-            ESP_LOGI(TAG, "Captured image in raw format");
-            return mp_obj_new_memoryview('b', self->captured_buffer->len, self->captured_buffer->buf);
-            // TODO: Stub at the moment in order to return raw data, but it sould be implemented to return a Bitmap, see following circuitpython example:
-            //
-            // int width = common_hal_espcamera_camera_get_width(self);
-            // int height = common_hal_espcamera_camera_get_height(self);
-            // displayio_bitmap_t *bitmap = m_new_obj(displayio_bitmap_t);
-            // bitmap->base.type = &displayio_bitmap_type;
-            // common_hal_displayio_bitmap_construct_from_buffer(bitmap, width, height, (format == PIXFORMAT_RGB565) ? 16 : 8, (uint32_t *)(void *)result->buf, true);
-            // return bitmap;
-        }
-    } else {
-        esp_camera_fb_return(self->captured_buffer);
-        self->captured_buffer = NULL;
+    if (!self->captured_buffer) {
+        ESP_LOGE(TAG, "Failed to capture image");
         return mp_const_none;
+    }
+    
+    if (out_format >= 0 && (mp_camera_pixformat_t)out_format != self->camera_config.pixel_format) {
+        switch ((mp_camera_pixformat_t)out_format) {
+            case PIXFORMAT_JPEG:
+                if (frame2jpg(self->captured_buffer, self->camera_config.jpeg_quality, &out_buf, &out_len)) {
+                    esp_camera_fb_return(self->captured_buffer);
+                    mp_obj_t result = mp_obj_new_memoryview('b', out_len, out_buf);
+                    return result;
+                } else {
+                    return mp_const_none;
+                }
+
+            case PIXFORMAT_RGB888:
+                out_len = self->captured_buffer->width * self->captured_buffer->height * 3;
+                out_buf = (uint8_t *)malloc(out_len);
+                if (!out_buf) {
+                    ESP_LOGE(TAG, "out_buf malloc failed");
+                    return mp_const_none;
+                }
+                if (fmt2rgb888(self->captured_buffer->buf, self->captured_buffer->len, self->captured_buffer->format, out_buf)) {
+                    esp_camera_fb_return(self->captured_buffer);
+                    mp_obj_t result = mp_obj_new_memoryview('b', out_len, out_buf);
+                    return result;
+                } else {
+                    return mp_const_none;
+                }
+
+            case PIXFORMAT_RGB565:
+                if(self->camera_config.pixel_format == PIXFORMAT_JPEG){
+                    if (jpg2rgb565(self->captured_buffer->buf, self->captured_buffer->len, out_buf, JPG_SCALE_NONE)) {
+                        esp_camera_fb_return(self->captured_buffer);
+                        mp_obj_t result = mp_obj_new_memoryview('b', out_len, out_buf);
+                        return result;
+                    } else {
+                        return mp_const_none;
+                    }
+                } else {
+                    mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Can only convert JPEG to RGB565"));
+                    return mp_const_none;
+                }
+
+            default:
+                mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Unsupported pixel format for conversion"));
+                return mp_const_none;
+
+        }
+    }
+
+    if (self->bmp_out == false) {
+        ESP_LOGI(TAG, "Returning imgae without conversion");
+        return mp_obj_new_memoryview('b', self->captured_buffer->len, self->captured_buffer->buf);
+    } else {
+        ESP_LOGI(TAG, "Returning image as bitmap");
+        if (frame2bmp(self->captured_buffer, &out_buf, &out_len)) {
+            esp_camera_fb_return(self->captured_buffer);
+            mp_obj_t result = mp_obj_new_memoryview('b', out_len, out_buf);
+            return result;
+        } else {
+            free(out_buf);
+            out_buf = NULL;
+            out_len = 0;
+            mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to convert image to BMP"));
+            return mp_const_none;
+        }
     }
 }
 
@@ -248,6 +345,7 @@ const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[] = {
     { MP_ROM_QSTR(MP_QSTR_YUV422),          MP_ROM_INT(PIXFORMAT_YUV422) },
     { MP_ROM_QSTR(MP_QSTR_GRAYSCALE),       MP_ROM_INT(PIXFORMAT_GRAYSCALE) },
     { MP_ROM_QSTR(MP_QSTR_RGB565),          MP_ROM_INT(PIXFORMAT_RGB565) },
+    { MP_ROM_QSTR(MP_QSTR_RGB888),          MP_ROM_INT(PIXFORMAT_RGB888) },
 };
 
 const mp_rom_map_elem_t mp_camera_hal_frame_size_table[] = {
@@ -290,14 +388,6 @@ const mp_rom_map_elem_t mp_camera_hal_gainceiling_table[] = {
     { MP_ROM_QSTR(MP_QSTR_128X),    MP_ROM_INT(GAINCEILING_128X) },
 };
 
-// Supporting functions
-static int map(int value, int fromLow, int fromHigh, int toLow, int toHigh) {
-    if (fromHigh == fromLow) {
-        mp_raise_ValueError(MP_ERROR_TEXT("fromLow und fromHigh shall not be equal"));
-    }
-    return (int)((int32_t)(value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow) + toLow);
-}
-
 //TODO: Makros with convertion function, since the API will use standarized values.
 // Helper functions to get and set camera and sensor information
 #define SENSOR_STATUS_GETSET_IN_RANGE(type, name, status_field_name, setter_function_name, min_val, max_val) \
@@ -308,22 +398,19 @@ static int map(int value, int fromLow, int fromHigh, int toLow, int toHigh) {
 
 // For subsequent modules using this as example, you will probably only need the makros below.
 #define SENSOR_GETSET(type, name, field_name, setter_function_name) \
-    SENSOR_GET(type, name, field_name, setter_function_name) \
+    SENSOR_GET(type, name, field_name) \
     SENSOR_SET(type, name, setter_function_name)
 
 #define SENSOR_GETSET_IN_RANGE(type, name, field_name, setter_function_name, min_val, max_val) \
-    SENSOR_GET(type, name, field_name, setter_function_name) \
+    SENSOR_GET(type, name, field_name) \
     SENSOR_SET_IN_RANGE(type, name, setter_function_name, min_val, max_val)
 
-#define SENSOR_GET(type, name, status_field_name, getter_function_name) \
+#define SENSOR_GET(type, name, status_field_name) \
     type mp_camera_hal_get_##name(mp_camera_obj_t * self) { \
         if (!self->initialized) { \
             mp_raise_ValueError(MP_ERROR_TEXT("Camera not initialized")); \
         } \
         sensor_t *sensor = esp_camera_sensor_get(); \
-        if (!sensor->getter_function_name) { \
-            mp_raise_ValueError(MP_ERROR_TEXT("No attribute " #name)); \
-        } \
         return sensor->status_field_name; \
     }
 
@@ -358,13 +445,13 @@ static int map(int value, int fromLow, int fromHigh, int toLow, int toHigh) {
         } \
     }
 
+SENSOR_GET(framesize_t, frame_size, status.framesize);
 SENSOR_STATUS_GETSET_IN_RANGE(int, contrast, contrast, set_contrast, -2, 2);
 SENSOR_STATUS_GETSET_IN_RANGE(int, brightness, brightness, set_brightness, -2, 2);
 SENSOR_STATUS_GETSET_IN_RANGE(int, saturation, saturation, set_saturation, -2, 2);
 SENSOR_STATUS_GETSET_IN_RANGE(int, sharpness, sharpness, set_sharpness, -2, 2);
 SENSOR_STATUS_GETSET(int, denoise, denoise, set_denoise);
 SENSOR_STATUS_GETSET(mp_camera_gainceiling_t, gainceiling, gainceiling, set_gainceiling);
-SENSOR_STATUS_GETSET(int, quality, quality, set_quality); //in_Range not needed since driver limits value
 SENSOR_STATUS_GETSET(bool, colorbar, colorbar, set_colorbar);
 SENSOR_STATUS_GETSET(bool, whitebal, awb, set_whitebal);
 SENSOR_STATUS_GETSET(bool, gain_ctrl, agc, set_gain_ctrl);
@@ -384,12 +471,52 @@ SENSOR_STATUS_GETSET(bool, wpc, wpc, set_wpc);
 SENSOR_STATUS_GETSET(bool, raw_gma, raw_gma, set_raw_gma);
 SENSOR_STATUS_GETSET(bool, lenc, lenc, set_lenc);
 
-mp_camera_pixformat_t mp_camera_hal_get_pixel_format(mp_camera_obj_t *self) {
-    return self->camera_config.pixel_format;
+void mp_camera_hal_set_frame_size(mp_camera_obj_t * self, framesize_t value) {
+    if (!self->initialized) {
+        mp_raise_ValueError(MP_ERROR_TEXT("Camera not initialized"));
+    }
+
+    sensor_t *sensor = esp_camera_sensor_get();
+    if (!sensor->set_framesize) {
+        mp_raise_ValueError(MP_ERROR_TEXT("No attribute frame_size"));
+    }
+
+    if (self->captured_buffer) {
+        esp_camera_return_all();
+        self->captured_buffer = NULL;
+    }
+
+    if (sensor->set_framesize(sensor, value) < 0) {
+        mp_raise_ValueError(MP_ERROR_TEXT("Invalid setting for frame_size"));
+    } else {
+        self->camera_config.frame_size = value;
+    }
 }
 
-mp_camera_framesize_t mp_camera_hal_get_frame_size(mp_camera_obj_t *self) {
-    return self->camera_config.frame_size;
+int mp_camera_hal_get_quality(mp_camera_obj_t * self) {
+    if (!self->initialized) {
+        mp_raise_ValueError(MP_ERROR_TEXT("Camera not initialized"));
+    }
+    return self->camera_config.jpeg_quality;
+}
+
+void mp_camera_hal_set_quality(mp_camera_obj_t * self, int value) {
+    if (!self->initialized) {
+        mp_raise_ValueError(MP_ERROR_TEXT("Camera not initialized"));
+    }
+    sensor_t *sensor = esp_camera_sensor_get();
+    if (!sensor->set_quality) {
+        mp_raise_ValueError(MP_ERROR_TEXT("No attribute quality"));
+    }
+    if (sensor->set_quality(sensor, get_mapped_jpeg_quality(value)) < 0) {
+        mp_raise_ValueError(MP_ERROR_TEXT("Invalid setting for quality"));
+    } else {
+        self->camera_config.jpeg_quality = value;
+    }
+}
+
+mp_camera_pixformat_t mp_camera_hal_get_pixel_format(mp_camera_obj_t *self) {
+    return self->camera_config.pixel_format;
 }
 
 camera_grab_mode_t mp_camera_hal_get_grab_mode(mp_camera_obj_t *self) {

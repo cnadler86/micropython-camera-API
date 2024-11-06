@@ -1,27 +1,27 @@
 from camera import Camera, FrameSize, PixelFormat
 
 def test_property_get_frame_size():
-    camera = Camera()
+    cam = Camera()
     Frame_Size = FrameSize.VGA
-    camera.reconfigure(frame_size=Frame_Size.VGA)
-    assert camera.get_frame_size == Frame_Size
-    assert camera.get_pixel_width == 640
-    assert camera.get_pixel_height == 480
+    cam.reconfigure(frame_size=Frame_Size.VGA)
+    assert cam.get_frame_size == Frame_Size
+    assert cam.get_pixel_width == 640
+    assert cam.get_pixel_height == 480
 
 def test_property_get_pixel_format():
-    camera = Camera()
+    cam = Camera()
     Pixel_Format = PixelFormat.RGB565
-    camera.reconfigure(pixel_format=PixelFormat.RGB)
-    assert camera.get_pixel_format == Pixel_Format
+    cam.reconfigure(pixel_format=PixelFormat.RGB)
+    assert cam.get_pixel_format == Pixel_Format
 
 def test_camera_properties():
-    camera = Camera()
-    for name in dir(camera):
+    cam = Camera()
+    for name in dir(cam):
         if name.startswith('get_'):
             prop_name = name[4:]
             set_method_name = f'set_{prop_name}'
-            if hasattr(camera, set_method_name):
-                set_method = getattr(camera, set_method_name)
-                get_method = getattr(camera, name)
+            if hasattr(cam, set_method_name):
+                set_method = getattr(cam, set_method_name)
+                get_method = getattr(cam, name)
                 set_method(1)
                 assert get_method() == 1, f"Failed for property {prop_name}"

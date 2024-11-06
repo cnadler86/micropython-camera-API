@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Micropython Camera Stream</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            display: flex;
+            flex-direction: row;
+            height: 100%;
+            width: 100%;
+        }
+        .settings-container {
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            width: 300px;
+        }
+        .setting {
+            margin-bottom: 10px;
+        }
+        .hidden {
+            display: none;
+        }
+        .video-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            padding: 20px;
+        }
+        img {
+            width: auto;
+            height: 100%;
+        }
+        .title-container {
+            width: 100%;
+            text-align: center;
+            background-color: #ffffff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+    <script>
+        function updateValue(method, value) {
+            console.log(`Updating ${method} to ${value}`);
+            fetch(`/set_${method}?value=${value}`)
+                .then(response => {
+                    if (!response.ok) {
+                        console.error(`Error setting ${method}`);
+                    }
+                })
+                .catch(error => {
+                    console.error(`Fetch error: `, error);
+                });
+        }
+
+        function fetchValue(method, type = 'range') {
+            console.log(`Fetching ${method}`);
+            fetch(`/get_${method}`)
+                .then(response => response.text())
+                .then(value => {
+                    const element = document.getElementById(method);
+                    if (type === 'checkbox') {
+                        element.checked = value === "True";
+                    } else {
+                        element.value = value;
+                    }
+                })
+                .catch(error => {
+                    console.error(`Fetch error: `, error);
+                });
+        }
+
+        function setupEventListeners() {
+            const inputs = document.querySelectorAll('input');
+            inputs.forEach(input => {
+                const type = input.type === 'checkbox' ? 'checkbox' : 'range';
+                input.addEventListener(type === 'checkbox' ? 'change' : 'input', () => {
+                    const value = type === 'checkbox' ? (input.checked ? 1 : 0) : input.value;
+                    updateValue(input.id, value);
+                });
+                fetchValue(input.id, type);
+            });
+
+            const selects = document.querySelectorAll('select');
+            selects.forEach(select => {
+                select.addEventListener('change', () => updateValue(select.id, select.value));
+                fetchValue(select.id, 'select');
+            });
+        }
+
+        function populateFrameSizeDropdown() {
+            const frameSizes = [
+                "R96x96", "QQVGA", "CIF", "HQVGA", "R240x240", "QVGA", 
+                "CIF", "HVGA", "VGA", "SVGA", "XGA", "HD", "SXGA", 
+                "UXGA", "FHD", "P_HD", "P_3MP", "QXGA", "QHD", "WQXGA", "P_FHD", "QSXGA"
+            ];
+
+            const frameSizeDropdown = document.getElementById('frame_size');
+
+            fetch('/get_max_frame_size')
+                .then(response => response.text())
+                .then(maxFrameSize => {
+                    const maxSizeIndex = parseInt(maxFrameSize, 10);
+                    frameSizeDropdown.innerHTML = '';
+
+                    frameSizes.forEach((size, index) => {
+                        if (index <= maxSizeIndex) {
+                            const option = document.createElement('option');
+                            option.value = index;
+                            option.textContent = size;
+                            frameSizeDropdown.appendChild(option);
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching max frame size:', error);
+                });
+        }
+
+        function checkSensorFeatures() {
+            fetch('/get_sensor_name')
+                .then(response => response.text())
+                .then(sensorName => {
+                    const showSharpnessAndDenoise = (sensorName === 'OV3640' || sensorName === 'OV5640');
+                    document.getElementById('sharpness-container').classList.toggle('hidden', !showSharpnessAndDenoise);
+                    document.getElementById('denoise-container').classList.toggle('hidden', !showSharpnessAndDenoise);
+                })
+                .catch(error => {
+                    console.error('Error fetching sensor name:', error);
+                });
+
+            fetch('/get_pixel_format')
+                .then(response => response.text())
+                .then(pixelFormat => {
+                    const showJpegQuality = (pixelFormat === '4');
+                    document.getElementById('quality').parentElement.classList.toggle('hidden', !showJpegQuality);
+                })
+                .catch(error => {
+                    console.error('Error fetching pixel format:', error);
+                });
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            populateFrameSizeDropdown();
+            setupEventListeners();
+            checkSensorFeatures();
+        });
+    </script>
+</head>
+<body>
+    <div class="title-container">
+        <h1>Micropython Camera Stream</h1>
+    </div>
+    <div class="container">
+        <div class="settings-container">
+            <div class="setting">
+                <label for="frame_size">Frame Size:</label>
+                <select id="frame_size">
+                    <option value="0">R96x96</option>
+                    <option value="1">QQVGA</option>
+                    <option value="2">CIF</option>
+                    <option value="3">HQVGA</option>
+                    <option value="4">R240x240</option>
+                    <option value="5">QVGA</option>
+                    <option value="6">CIF</option>
+                    <option value="7">HVGA</option>
+                    <option value="8">VGA</option>
+                    <option value="9">SVGA</option>
+                    <option value="10">XGA</option>
+                    <option value="11">HD</option>
+                    <option value="12">SXGA</option>
+                    <option value="13">UXGA</option>
+                    <option value="14">FHD</option>
+                    <option value="15">P_HD</option>
+                    <option value="16">P_3MP</option>
+                    <option value="17">QXGA</option>
+                    <option value="18">QHD</option>
+                    <option value="19">WQXGA</option>
+                    <option value="20">P_FHD</option>
+                    <option value="21">QSXGA</option>
+                  </select>
+            </div>
+            <div class="setting">
+                <label for="quality" title="Quality above 90% may lead to freezing the camera at high resolutions.">JPEG quality:</label>
+                <input type="range" id="quality" min="0" max="100">
+            </div>
+            <div class="setting">
+                <label for="contrast">Contrast:</label>
+                <input type="range" id="contrast" min="-2" max="2">
+            </div>
+            <div class="setting">
+                <label for="brightness">Brightness:</label>
+                <input type="range" id="brightness" min="-2" max="2">
+            </div>
+            <div class="setting">
+                <label for="saturation">Saturation:</label>
+                <input type="range" id="saturation" min="-2" max="2">
+            </div>
+            <div class="setting">
+                <label for="aec_value">Exposure Value:</label>
+                <input type="range" id="aec_value" min="0" max="1200">
+            </div>
+            <div class="setting">
+                <label for="agc_gain">Gain Level:</label>
+                <input type="range" id="agc_gain" min="0" max="30">
+            </div>
+            <div id="sharpness-container" class="setting hidden">
+                <label for="sharpness">Sharpness:</label>
+                <input type="range" id="sharpness" min="-2" max="2">
+            </div>
+            <div id="denoise-container" class="setting hidden">
+                <label for="denoise">Denoise:</label>
+                <input type="range" id="denoise" min="0" max="10">
+            </div>
+            <div class="setting">
+                <label for="gainceiling">Gain Ceiling:</label>
+                <select id="gainceiling">
+                    <option value="0">2X</option>
+                    <option value="1">4x</option>
+                    <option value="2">8x</option>
+                    <option value="3">16x</option>
+                    <option value="4">32x</option>
+                    <option value="5">64x</option>
+                    <option value="6">128x</option>
+                </select>
+            </div>
+            <div class="setting">
+                <label for="wb_mode">White Balance Mode:</label>
+                <select id="wb_mode">
+                    <option value="0">Auto</option>
+                    <option value="1">Sunny</option>
+                    <option value="2">Cloudy</option>
+                    <option value="3">Office</option>
+                    <option value="4">Home</option>
+                </select>
+            </div>
+            <div class="setting">
+                <label for="whitebal" title="When False, the White Balance Mode setting is used instead.">Auto White Balance:</label>
+                <input type="checkbox" id="whitebal">
+            </div>
+            <div class="setting">
+                <label for="awb_gain">Auto White Balance Gain:</label>
+                <input type="checkbox" id="awb_gain">
+            </div>
+            <div class="setting">
+                <label for="gain_ctrl" title="When False, the gain level setting is used instead.">Auto Gain Control:</label>
+                <input type="checkbox" id="gain_ctrl">
+            </div>
+            <div class="setting">
+                <label for="exposure_ctrl" title="When False, the exposure value setting is used instead.">Auto Exposure Control:</label>
+                <input type="checkbox" id="exposure_ctrl">
+            </div>
+            <div class="setting">
+                <label for="hmirror">Horizontal Mirror:</label>
+                <input type="checkbox" id="hmirror">
+            </div>
+            <div class="setting">
+                <label for="vflip">Vertical Flip:</label>
+                <input type="checkbox" id="vflip">
+            </div>
+            <div class="setting">
+                <label for="lenc" title="This can help compensate for light fall-off at the edge of the sensor area.">Lens Correction:</label>
+                <input type="checkbox" id="lenc">
+            </div>
+            <div class="setting">
+                <label for="aec2" title="Extends the range of automatic gain control.">Night Mode:</label>
+                <input type="checkbox" id="aec2">
+            </div>
+            <div class="setting">
+                <label for="dcw" title="When True an advanced white balance mode is selected.">DCW Mode:</label>
+                <input type="checkbox" id="dcw">
+            </div>
+            <div class="setting">
+                <label for="bpc">Black Point Compensation:</label>
+                <input type="checkbox" id="bpc">
+            </div>
+            <div class="setting">
+                <label for="wpc">White Point Compensation:</label>
+                <input type="checkbox" id="wpc">
+            </div>
+            <div class="setting">
+                <label for="raw_gma">Raw Gamma Mode:</label>
+                <input type="checkbox" id="raw_gma">
+            </div>
+
+            <div class="setting">
+                <label for="special_effect">Special Effect:</label>
+                <select id="special_effect">
+                    <option value="0">No effect</option>
+                    <option value="1">Negative</option>
+                    <option value="2">Black and White</option>
+                    <option value="3">Reddish</option>
+                    <option value="4">Greenish</option>
+                    <option value="5">Blue</option>
+                    <option value="6">Retro</option>
+                </select>
+            </div>
+        </div>
+        <div class="video-container">
+            <img src="/stream" alt="Loading stream...">
+        </div>
+    </div>
+</body>
+</html>
