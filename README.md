@@ -58,7 +58,7 @@ cam = Camera(
 
 - data_pins: List of data pins
 - pclk_pin: Pixel clock pin
- -vsync_pin: VSYNC pin
+- vsync_pin: VSYNC pin
 - href_pin: HREF pin
 - sda_pin: SDA pin
 - scl_pin: SCL pin
@@ -72,7 +72,7 @@ cam = Camera(
 - fb_count: Frame buffer count
 - grab_mode: Grab mode as GrabMode
 - init: Initialize camera at construction time (default: True)
-- bmp_out: Image capture output converted to bitmap (default: False)
+- bmp_out: Image captured output converted to bitmap (default: False)
 
 **Default values:**
 
