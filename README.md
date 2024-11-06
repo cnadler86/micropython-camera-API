@@ -142,14 +142,14 @@ To build the project, follow these instructions:
 
 - [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.2.3/esp32/get-started/index.html): I used version 5.2.3, but it might work with other versions (see notes).
 - Clone the micropython repo and this repo in a folder, e.g. "MyESPCam". MicroPython version 1.24 or higher is required (at least commit 92484d8).
-- You will have to add the ESP32-Camera driver (I used v2.0.13). To do this, add the following to the respective idf_component.yml file  (e.g. in micropython/ports/esp32/main_esp32s3/idf_component.yml):
+- You will have to add the ESP32-Camera driver (I used v2.0.13). To do this, add the following to the respective idf_component.yml file (e.g. in micropython/ports/esp32/main_esp32s3/idf_component.yml):
 
 ```yml
   espressif/esp32-camera:
-    git: https://github.com/espressif/esp32-camera
+    git: https://github.com/cnadler86/esp32-camera  #At the moment I maintain a fork because of some unsolved bugs and conveniance.
 ```
 
-Alternatively, you can clone the <https://github.com/espressif/esp32-camera> repository inside the esp-idf/components folder instead of altering the idf_component.yml file.
+Alternatively, you can clone the <https://github.com/cnadler86/esp32-camera> repository inside the esp-idf/components folder instead of altering the idf_component.yml file.
 
 ### Add camera configurations to your board (optional, but recommended)
 

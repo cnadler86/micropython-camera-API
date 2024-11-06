@@ -78,7 +78,7 @@ jobs:
           cd esp-idf
           ./install.sh all
           cd components
-          git clone https://github.com/espressif/esp32-camera
+          git clone https://github.com/cnadler86/esp32-camera
           cd ~/esp-idf/
           source ./export.sh
 
