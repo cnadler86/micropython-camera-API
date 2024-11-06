@@ -237,10 +237,10 @@ If you experience problems, visit [MicroPython external C modules](https://docs.
 - The driver requires PSRAM to be installed and activated.
 - Most of the precompiled firmware images are untested, but the only difference between them are the target architecture and pin definitions, so they should work out of the box. If not, please raise an issue.
 
-## Benchmark
+## FPS benchmark
 
 I didn't use a calibrated osziloscope, but here is a benchmark with my ESP32S3 (GrabMode=LATEST).
-Using fb_count = 2 doubles the FPS for JPEG. This might also aplly for other PixelFormats.
+Using fb_count=2 doubles the FPS for JPEG. This might also aplly for other PixelFormats.
 
 | Frame Size | GRAYSCALE | RGB565 | YUV422 | JPEG   | JPEG (fb = 2) |
 |------------|-----------|--------|--------|--------|---------------|
