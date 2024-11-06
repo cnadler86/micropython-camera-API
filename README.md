@@ -64,8 +64,8 @@ cam = Camera(
 - scl_pin: SCL pin
 - xclk_pin: XCLK pin
 - xclk_freq: XCLK frequency in Hz
-- powerdown_pin: Powerdown pin (default: -1, meaning not used)
-- reset_pin: Reset pin (default: -1, meaning not used)
+- powerdown_pin: Powerdown pin
+- reset_pin: Reset pin
 - pixel_format: Pixel format as PixelFormat
 - frame_size: Frame size as FrameSize
 - jpeg_quality: JPEG quality
@@ -82,7 +82,7 @@ The following keyword arguments have default values:
 - frame_size: QQVGA
 - pixel_format: RGB565
 - jpeg_quality: 85    // Quality of JPEG output in percent. Higher means higher quality.
-- powerdown_pin and reset_pin: -1 (not used/available/needed)
+- powerdown_pin and reset_pin: -1 ( = not used/available/needed)
 - fb_count:
   - 2 for ESP32S3 boards
   - 1 for all other
