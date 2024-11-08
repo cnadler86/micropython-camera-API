@@ -29,8 +29,9 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "img_converters.h"
+#include "mphalport.h"
 
-#define TAG "ESP32_MPY_CAMERA"
+#define TAG "MPY_CAMERA"
 
 #if !CONFIG_SPIRAM
 #error Camera only works on boards configured with spiram
@@ -44,36 +45,7 @@
 // #endif
 // #endif // CONFIG_CAMERA_COREx
 
-// Supporting functions
-static void raise_micropython_error_from_esp_err(esp_err_t err) {
-    switch (err) {
-        case ESP_OK:
-            return;
-        case ESP_ERR_NO_MEM:
-            mp_raise_msg(&mp_type_MemoryError, MP_ERROR_TEXT("Out of memory"));
-            break;
-        case ESP_ERR_INVALID_ARG:
-            mp_raise_ValueError(MP_ERROR_TEXT("Invalid argument"));
-            break;
-        case ESP_ERR_INVALID_STATE:
-            mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Invalid state"));
-            break;
-        case ESP_ERR_NOT_FOUND:
-            mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Camera not found"));
-            break;
-        case ESP_ERR_NOT_SUPPORTED:
-            mp_raise_NotImplementedError(MP_ERROR_TEXT("Operation/Function not supported/implemented"));
-            break;
-        case ESP_ERR_TIMEOUT:
-            mp_raise_OSError(MP_ETIMEDOUT);
-            break;
-        default:
-            mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error 0x%04x"), err);
-            // mp_raise_msg_varg(&mp_type_RuntimeError, MP_ERROR_TEXT("Unknown error"));
-            break;
-    }
-}
-
+// Helper functions
 static int map(int value, int fromLow, int fromHigh, int toLow, int toHigh) {
     if (fromHigh == fromLow) {
         mp_raise_ValueError(MP_ERROR_TEXT("fromLow und fromHigh shall not be equal"));
@@ -168,7 +140,7 @@ void mp_camera_hal_init(mp_camera_obj_t *self) {
     self->camera_config.jpeg_quality = api_jpeg_quality;
     if (err != ESP_OK) {
         self->initialized = false;
-        raise_micropython_error_from_esp_err(err);
+        check_esp_err_(err);
         return;
     }
     self->initialized = true;
@@ -183,7 +155,7 @@ void mp_camera_hal_deinit(mp_camera_obj_t *self) {
             self->captured_buffer = NULL;
         }
         esp_err_t err = esp_camera_deinit();
-        raise_micropython_error_from_esp_err(err);
+        check_esp_err_(err);
         self->initialized = false;
         ESP_LOGI(TAG, "Camera deinitialized");
     }
@@ -229,7 +201,7 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
             self->camera_config.fb_count = fb_count;
         }
         
-        raise_micropython_error_from_esp_err(esp_camera_deinit());
+        check_esp_err_(esp_camera_deinit());
 
         // Correct the quality before it is passed to esp32 driver and then "undo" the correction in the camera_config
         int8_t api_jpeg_quality = self->camera_config.jpeg_quality;
@@ -239,7 +211,7 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
 
         if (err != ESP_OK) {
             self->initialized = false;
-            raise_micropython_error_from_esp_err(err);
+            check_esp_err_(err);
         } else {
             ESP_LOGI(TAG, "Camera reconfigured successfully");
         }
