@@ -146,7 +146,7 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
         }
         return MP_OBJ_FROM_PTR(self);
     }
-}
+} // camera_construct
 
 // Main methods
 static mp_obj_t camera_capture(size_t n_args, const mp_obj_t *args){

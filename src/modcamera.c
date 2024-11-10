@@ -57,6 +57,59 @@ static inline int get_mapped_jpeg_quality(int8_t quality) {
     return map(quality, 0, 100, 63, 0);
 }
 
+static inline void check_init(mp_camera_obj_t *self) {
+    if (!self->initialized) {
+        mp_raise_OSError(ENOENT);
+    }
+}
+
+static void set_check_xclk_freq(mp_camera_obj_t *self, int32_t xclk_freq_hz) {
+    if ( xclk_freq_hz > 20000000) {
+        mp_raise_ValueError(MP_ERROR_TEXT("xclk frequency cannot be grather than 20MHz"));
+    } else {
+        self->camera_config.xclk_freq_hz = xclk_freq_hz;
+    }
+}
+
+static void set_check_fb_count(mp_camera_obj_t *self, int fb_count) {
+    if (fb_count > 2) {
+        self->camera_config.fb_count = 2;
+        mp_warning(NULL, "Frame buffer size limited to 2");
+    } else if (fb_count < 1) {
+        self->camera_config.fb_count = 1;
+        mp_warning(NULL, "Frame buffer size must be >0. Setting it to 1");
+    }
+    else {
+        self->camera_config.fb_count = fb_count;
+    }
+}
+
+static void set_check_grab_mode(mp_camera_obj_t *self, mp_camera_grabmode_t grab_mode) {
+        if (grab_mode != CAMERA_GRAB_WHEN_EMPTY && grab_mode != CAMERA_GRAB_LATEST) {
+        mp_raise_ValueError(MP_ERROR_TEXT("Invalid grab_mode"));
+    } else {
+        self->camera_config.grab_mode = grab_mode;
+    }
+}
+
+static void set_check_pixel_format(mp_camera_obj_t *self, mp_camera_pixformat_t pixel_format) {
+    if ( pixel_format > PIXFORMAT_RGB555) { //Maximal enum value, but validation should be better since wrong pixelformat leads to reboot.
+        mp_raise_ValueError(MP_ERROR_TEXT("Invalid pixel_format"));
+    } else {
+        self->camera_config.pixel_format = pixel_format;
+    }
+}
+
+static bool init_camera(mp_camera_obj_t *self) {
+    // Correct the quality before it is passed to esp32 driver and then "undo" the correction in the camera_config
+    int8_t api_jpeg_quality = self->camera_config.jpeg_quality;
+    self->camera_config.jpeg_quality = get_mapped_jpeg_quality(api_jpeg_quality);
+    esp_err_t err = esp_camera_init(&self->camera_config);
+    self->camera_config.jpeg_quality = api_jpeg_quality;
+    check_esp_err_(err);
+    return true;
+}
+
 // Camera HAL Funcitons
 void mp_camera_hal_construct(
     mp_camera_obj_t *self,
@@ -76,10 +129,6 @@ void mp_camera_hal_construct(
     int8_t fb_count,
     mp_camera_grabmode_t grab_mode) {
         // configure camera based on arguments
-        self->camera_config.pixel_format = pixel_format;
-        self->camera_config.frame_size = frame_size;        
-        // self->camera_config.jpeg_quality = (int8_t)map(jpeg_quality,0,100,63,0);    //0-63 lower number means higher quality.
-        self->camera_config.jpeg_quality = jpeg_quality;    //save value in here, but will be corrected (with map) before passing it to the esp32-driver
         self->camera_config.pin_d0 = data_pins[0];
         self->camera_config.pin_d1 = data_pins[1];
         self->camera_config.pin_d2 = data_pins[2];
@@ -96,23 +145,14 @@ void mp_camera_hal_construct(
         self->camera_config.pin_xclk = external_clock_pin;
         self->camera_config.pin_sscb_sda = sccb_sda_pin;
         self->camera_config.pin_sscb_scl = sccb_scl_pin;
-        if ( xclk_freq_hz > 20000000) {
-            mp_raise_ValueError(MP_ERROR_TEXT("xclk frequency cannot be grather than 20MHz"));
-        } else {
-            self->camera_config.xclk_freq_hz = xclk_freq_hz;
-        }
 
-        if (fb_count > 3) {
-            self->camera_config.fb_count = 3;
-            mp_warning(NULL, "Frame buffer size limited to 3");
-        } else if (fb_count < 1) {
-            self->camera_config.fb_count = 1;
-            mp_warning(NULL, "Frame buffer size must be >0. Setting it to 1");
-        }
-        else {
-            self->camera_config.fb_count = fb_count;          //if more than one, i2s runs in continuous mode. TODO: Test with others than JPEG
-        }
-        self->camera_config.grab_mode = grab_mode;
+        self->camera_config.frame_size = frame_size;        
+        self->camera_config.jpeg_quality = jpeg_quality;    //save value in here, but will be corrected (with map) before passing it to the esp32-driver
+
+        set_check_pixel_format(self, pixel_format);
+        set_check_xclk_freq(self, xclk_freq_hz);
+        set_check_fb_count(self, fb_count);
+        set_check_grab_mode(self, grab_mode);
 
         // defaul parameters
         self->camera_config.fb_location = CAMERA_FB_IN_PSRAM;
@@ -133,19 +173,8 @@ void mp_camera_hal_init(mp_camera_obj_t *self) {
         }
     #endif
     ESP_LOGI(TAG, "Initializing camera");
-    // Correct the quality before it is passed to esp32 driver and then "undo" the correction in the camera_config
-    int8_t api_jpeg_quality = self->camera_config.jpeg_quality;
-    self->camera_config.jpeg_quality = get_mapped_jpeg_quality(api_jpeg_quality);
-    esp_err_t err = esp_camera_init(&self->camera_config);
-    self->camera_config.jpeg_quality = api_jpeg_quality;
-    if (err != ESP_OK) {
-        self->initialized = false;
-        check_esp_err_(err);
-        return;
-    }
-    self->initialized = true;
+    self->initialized = init_camera(self);
     ESP_LOGI(TAG, "Camera initialized successfully");
-    return;
 }
 
 void mp_camera_hal_deinit(mp_camera_obj_t *self) {
@@ -162,66 +191,30 @@ void mp_camera_hal_deinit(mp_camera_obj_t *self) {
 }
 
 void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t frame_size, mp_camera_pixformat_t pixel_format, mp_camera_grabmode_t grab_mode, mp_int_t fb_count) {
-    if (self->initialized) {
-        ESP_LOGI(TAG, "Reconfiguring camera");
-        sensor_t *sensor = esp_camera_sensor_get();
-        camera_sensor_info_t *sensor_info = esp_camera_sensor_get_info(&sensor->id);
-
-        if (PIXFORMAT_JPEG == self->camera_config.pixel_format && (!sensor_info->support_jpeg)) {
-            mp_raise_NotImplementedError(MP_ERROR_TEXT("Sensor does not support JPEG"));
-        }
-
-        if (frame_size > sensor_info->max_size) {
-            mp_warning(NULL, "Frame size will be scaled down to maximal frame size supported by the camera sensor");
-            self->camera_config.frame_size = sensor_info->max_size;
-        } else {
-            self->camera_config.frame_size = frame_size;
-        }
-
-        if ( pixel_format > PIXFORMAT_RGB555) { //Maximal enum value, but validation should be better since wrong pixelformat leads to reboot.
-            mp_raise_ValueError(MP_ERROR_TEXT("Invalid pixel_format"));
-        } else {
-            self->camera_config.pixel_format = pixel_format;
-        }
-        
-        if (grab_mode != CAMERA_GRAB_WHEN_EMPTY && grab_mode != CAMERA_GRAB_LATEST) {
-            mp_raise_ValueError(MP_ERROR_TEXT("Invalid grab_mode"));
-        } else {
-            self->camera_config.grab_mode = grab_mode;
-        }
-        
-        if (fb_count > 2) {
-            self->camera_config.fb_count = 2;
-            mp_warning(NULL, "Frame buffer size limited to 2");
-        } else if (fb_count < 1) {
-            self->camera_config.fb_count = 1;
-            mp_warning(NULL, "Set to min frame buffer size of 1");
-        }
-        else {
-            self->camera_config.fb_count = fb_count;
-        }
-        
-        check_esp_err_(esp_camera_deinit());
-
-        // Correct the quality before it is passed to esp32 driver and then "undo" the correction in the camera_config
-        int8_t api_jpeg_quality = self->camera_config.jpeg_quality;
-        self->camera_config.jpeg_quality = get_mapped_jpeg_quality(api_jpeg_quality);
-        esp_err_t err = esp_camera_init(&self->camera_config);
-        self->camera_config.jpeg_quality = api_jpeg_quality;
-
-        if (err != ESP_OK) {
-            self->initialized = false;
-            check_esp_err_(err);
-        } else {
-            ESP_LOGI(TAG, "Camera reconfigured successfully");
-        }
+    check_init(self);
+    ESP_LOGI(TAG, "Reconfiguring camera");
+    
+    sensor_t *sensor = esp_camera_sensor_get();
+    camera_sensor_info_t *sensor_info = esp_camera_sensor_get_info(&sensor->id);
+    if (frame_size > sensor_info->max_size) {
+        mp_warning(NULL, "Frame size will be scaled down to maximal frame size supported by the camera sensor");
+        self->camera_config.frame_size = sensor_info->max_size;
+    } else {
+        self->camera_config.frame_size = frame_size;
     }
+
+    set_check_pixel_format(self, pixel_format);
+    set_check_grab_mode(self, grab_mode);
+    set_check_fb_count(self, fb_count);
+
+    check_esp_err_(esp_camera_deinit());
+    self->initialized = false;
+    self->initialized = init_camera(self);
+    ESP_LOGI(TAG, "Camera reconfigured successfully");
 }
 
 mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format) {
-    if (!self->initialized) {
-        mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture image: Camera not initialized"));
-    }
+    check_init(self);
     if (self->captured_buffer) {
         esp_camera_fb_return(self->captured_buffer);
         self->captured_buffer = NULL;
@@ -306,7 +299,7 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format) {
             return mp_const_none;
         }
     }
-}
+} // mp_camera_hal_capture
 
 bool mp_camera_hal_initialized(mp_camera_obj_t *self){
     return self->initialized;
@@ -379,18 +372,14 @@ const mp_rom_map_elem_t mp_camera_hal_gainceiling_table[] = {
 
 #define SENSOR_GET(type, name, status_field_name) \
     type mp_camera_hal_get_##name(mp_camera_obj_t * self) { \
-        if (!self->initialized) { \
-            mp_raise_ValueError(MP_ERROR_TEXT("Camera not initialized")); \
-        } \
+        check_init(self); \
         sensor_t *sensor = esp_camera_sensor_get(); \
         return sensor->status_field_name; \
     }
 
 #define SENSOR_SET(type, name, setter_function_name) \
     void mp_camera_hal_set_##name(mp_camera_obj_t * self, type value) { \
-        if (!self->initialized) { \
-            mp_raise_ValueError(MP_ERROR_TEXT("Camera not initialized")); \
-        } \
+        check_init(self); \
         sensor_t *sensor = esp_camera_sensor_get(); \
         if (!sensor->setter_function_name) { \
             mp_raise_ValueError(MP_ERROR_TEXT("No attribute " #name)); \
@@ -403,9 +392,7 @@ const mp_rom_map_elem_t mp_camera_hal_gainceiling_table[] = {
 #define SENSOR_SET_IN_RANGE(type, name, setter_function_name, min_val, max_val) \
     void mp_camera_hal_set_##name(mp_camera_obj_t * self, type value) { \
         sensor_t *sensor = esp_camera_sensor_get(); \
-        if (!self->initialized) { \
-            mp_raise_ValueError(MP_ERROR_TEXT("Camera not initialized")); \
-        } \
+        check_init(self); \
         if (value < min_val || value > max_val) { \
             mp_raise_ValueError(MP_ERROR_TEXT(#name " value must be between " #min_val " and " #max_val)); \
         } \
@@ -444,10 +431,7 @@ SENSOR_STATUS_GETSET(bool, raw_gma, raw_gma, set_raw_gma);
 SENSOR_STATUS_GETSET(bool, lenc, lenc, set_lenc);
 
 void mp_camera_hal_set_frame_size(mp_camera_obj_t * self, framesize_t value) {
-    if (!self->initialized) {
-        mp_raise_ValueError(MP_ERROR_TEXT("Camera not initialized"));
-    }
-
+    check_init(self);
     sensor_t *sensor = esp_camera_sensor_get();
     if (!sensor->set_framesize) {
         mp_raise_ValueError(MP_ERROR_TEXT("No attribute frame_size"));
@@ -466,16 +450,12 @@ void mp_camera_hal_set_frame_size(mp_camera_obj_t * self, framesize_t value) {
 }
 
 int mp_camera_hal_get_quality(mp_camera_obj_t * self) {
-    if (!self->initialized) {
-        mp_raise_ValueError(MP_ERROR_TEXT("Camera not initialized"));
-    }
+    check_init(self);
     return self->camera_config.jpeg_quality;
 }
 
 void mp_camera_hal_set_quality(mp_camera_obj_t * self, int value) {
-    if (!self->initialized) {
-        mp_raise_ValueError(MP_ERROR_TEXT("Camera not initialized"));
-    }
+    check_init(self);
     sensor_t *sensor = esp_camera_sensor_get();
     if (!sensor->set_quality) {
         mp_raise_ValueError(MP_ERROR_TEXT("No attribute quality"));
@@ -500,36 +480,42 @@ int mp_camera_hal_get_fb_count(mp_camera_obj_t *self) {
 }
 
 const char *mp_camera_hal_get_sensor_name(mp_camera_obj_t *self) {
+    check_init(self);
     sensor_t *sensor = esp_camera_sensor_get();
     camera_sensor_info_t *sensor_info = esp_camera_sensor_get_info(&sensor->id);
     return sensor_info->name;
 }
 
 bool mp_camera_hal_get_supports_jpeg(mp_camera_obj_t *self) {
+    check_init(self);
     sensor_t *sensor = esp_camera_sensor_get();
     camera_sensor_info_t *sensor_info = esp_camera_sensor_get_info(&sensor->id);
     return sensor_info->support_jpeg;
 }
 
 mp_camera_framesize_t mp_camera_hal_get_max_frame_size(mp_camera_obj_t *self) {
+    check_init(self);
     sensor_t *sensor = esp_camera_sensor_get();
     camera_sensor_info_t *sensor_info = esp_camera_sensor_get_info(&sensor->id);
     return sensor_info->max_size;
 }
 
 int mp_camera_hal_get_address(mp_camera_obj_t *self) {
+    check_init(self);
     sensor_t *sensor = esp_camera_sensor_get();
     camera_sensor_info_t *sensor_info = esp_camera_sensor_get_info(&sensor->id);
     return sensor_info->sccb_addr;
 }
 
 int mp_camera_hal_get_pixel_width(mp_camera_obj_t *self) {
+    check_init(self);
     sensor_t *sensor = esp_camera_sensor_get();
     framesize_t framesize = sensor->status.framesize;
     return resolution[framesize].width;
 }
 
 int mp_camera_hal_get_pixel_height(mp_camera_obj_t *self) {
+    check_init(self);
     sensor_t *sensor = esp_camera_sensor_get();
     framesize_t framesize = sensor->status.framesize;
     return resolution[framesize].height;
