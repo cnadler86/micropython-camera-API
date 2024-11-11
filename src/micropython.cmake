@@ -27,7 +27,7 @@ if (MICROPY_CAMERA_MODEL)
 endif()
 
 if (MP_CAMERA_DRIVER_VERSION)
-    target_compile_definitions(usermod_mp_camera INTERFACE MP_CAMERA_DRIVER_VERSION=${MP_CAMERA_DRIVER_VERSION})
+    target_compile_definitions(usermod_mp_camera INTERFACE MP_CAMERA_DRIVER_VERSION=\"${MP_CAMERA_DRIVER_VERSION}\")
 endif()
 
 target_link_libraries(usermod INTERFACE usermod_mp_camera)
