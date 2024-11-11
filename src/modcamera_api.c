@@ -364,6 +364,13 @@ MP_CREATE_CONST_TYPE(GainCeiling, mp_camera_gainceiling);
 static MP_DEFINE_CONST_DICT(mp_camera_grab_mode_locals_dict,mp_camera_hal_grab_mode_table);
 MP_CREATE_CONST_TYPE(GrabMode, mp_camera_grab_mode);
 
+#ifdef MP_CAMERA_DRIVER_VERSION
+    static mp_obj_t mp_camera_driver_version(void) {
+        return mp_obj_new_str(MP_CAMERA_DRIVER_VERSION, strlen(MP_CAMERA_DRIVER_VERSION));
+    }
+    static MP_DEFINE_CONST_FUN_OBJ_0(mp_camera_driver_version_obj, mp_camera_driver_version);
+#endif
+
 static const mp_rom_map_elem_t camera_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_camera) },
     { MP_ROM_QSTR(MP_QSTR_Camera),    MP_ROM_PTR(&camera_type) },
@@ -372,7 +379,7 @@ static const mp_rom_map_elem_t camera_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_GainCeiling), MP_ROM_PTR(&mp_camera_gainceiling_type) },
     { MP_ROM_QSTR(MP_QSTR_GrabMode), MP_ROM_PTR(&mp_camera_grab_mode_type) },
     #ifdef MP_CAMERA_DRIVER_VERSION
-        { MP_ROM_QSTR(MP_QSTR_Version), MP_ROM_QSTR(MP_CAMERA_DRIVER_VERSION) },
+        { MP_ROM_QSTR(MP_QSTR_Version), MP_ROM_PTR(&mp_camera_driver_version_obj) },
     #endif
 };
 static MP_DEFINE_CONST_DICT(camera_module_globals, camera_module_globals_table);
