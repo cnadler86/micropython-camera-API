@@ -134,6 +134,13 @@ See autocompletions in Thonny in order to see the list of methods.
 If you want more insides in the methods and what they actually do, you can find a very good documentation [here](https://docs.circuitpython.org/en/latest/shared-bindings/espcamera/index.html).
 Note that each method requires a "get_" or "set_" prefix, depending on the desired action.
 
+To get the version of the camera driver used:
+
+```python
+import camera
+vers = camera.Version()
+```
+
 ## Build your custom FW
 
 ### Setting up the build environment (DIY method)
@@ -263,4 +270,3 @@ Using fb_count=2 doubles the FPS for JPEG. This might also aplly for other Pixel
 
 - Edge case: enable usage of pins such as i2c for other applications
 - Provide examples in binary image
-- Include camera driver version in API
