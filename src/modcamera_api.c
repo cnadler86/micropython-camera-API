@@ -371,6 +371,9 @@ static const mp_rom_map_elem_t camera_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_FrameSize), MP_ROM_PTR(&mp_camera_frame_size_type) },
     { MP_ROM_QSTR(MP_QSTR_GainCeiling), MP_ROM_PTR(&mp_camera_gainceiling_type) },
     { MP_ROM_QSTR(MP_QSTR_GrabMode), MP_ROM_PTR(&mp_camera_grab_mode_type) },
+    #ifdef MP_CAMERA_DRIVER_VERSION
+        { MP_ROM_QSTR(MP_QSTR_Version), MP_ROM_QSTR(MP_CAMERA_DRIVER_VERSION) },
+    #endif
 };
 static MP_DEFINE_CONST_DICT(camera_module_globals, camera_module_globals_table);
 

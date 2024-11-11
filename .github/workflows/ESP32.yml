@@ -78,7 +78,9 @@ jobs:
           cd esp-idf
           ./install.sh all
           cd components
-          git clone https://github.com/cnadler86/esp32-camera
+          # latest_cam_driver=$(curl -s https://api.github.com/repos/espressif/esp32-camera/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+          # git clone --depth 1 --branch $latest_tag https://github.com/espressif/esp32-camera.git
+          git clone https://github.com/cnadler86/esp32-camera.git
           cd ~/esp-idf/
           source ./export.sh
 
@@ -145,6 +147,8 @@ jobs:
       # Build MicroPython for each board
       - name: Build MicroPython
         run: |
+          cd ~/esp-idf/components/esp32-camera
+          CAM_DRIVER=$(git describe --tags --always --dirty)
           cd ~/micropython/ports/esp32
           source ~/esp-idf/export.sh
 
@@ -153,9 +157,9 @@ jobs:
           IFS='-' read -r BOARD_NAME BOARD_VARIANT <<< "${BUILD_TARGET}"
           
           if [ -n "${BOARD_VARIANT}" ]; then
-            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -D MICROPY_BOARD_VARIANT=$BOARD_VARIANT -B build-$BUILD_TARGET"
+            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -D MICROPY_BOARD_VARIANT=$BOARD_VARIANT -B build-$BUILD_TARGET -D MP_CAMERA_DRIVER_VERSION=$CAM_DRIVER"
           else
-            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -B build-$BUILD_TARGET"
+            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -B build-$BUILD_TARGET -D MP_CAMERA_DRIVER_VERSION=$CAM_DRIVER"
           fi
           if [ -n "${CAMERA_MODEL}" ]; then
             echo "FW_NAME=${CAMERA_MODEL}" >> $GITHUB_ENV

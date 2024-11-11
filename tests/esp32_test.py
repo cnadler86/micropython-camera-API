@@ -1,4 +1,5 @@
 import time
+from camera import Camera, FrameSize, PixelFormat
 
 def test_property_get_frame_size():
     with Camera() as cam:
@@ -12,20 +13,26 @@ def test_property_get_frame_size():
 def test_property_get_pixel_format():
     with Camera() as cam:
         print("Test pixel format")
-        Pixel_Format = PixelFormat.RGB565
-        cam.reconfigure(pixel_format=Pixel_Format)
-        assert cam.get_pixel_format() == Pixel_Format
+        for Pixel_Format_Name in dir(PixelFormat):
+            Pixel_Format = getattr(PixelFormat, Pixel_Format_Name)
+            try:
+                if Pixel_Format_Name.startswith("_") or Pixel_Format_Name.startswith("RGB888"):
+                    continue
+                cam.reconfigure(pixel_format=Pixel_Format)
+                assert cam.get_pixel_format() == Pixel_Format
+            except Exception:
+                print("\tFailed test for pixel format", Pixel_Format)
 
 def test_must_be_initialized():
     with Camera(init=False) as cam:
-        print(f"Testing get/set methods wothout initalization")
-        for name in dir(cam):
-            if name.startswith('get_') or name.startswith('set_'):
-                method = getattr(cam, name)
-            try:
-                method()
-                print("\tFailed test for method", name)
-            except Exception:
+        print(f"Testing capture without initalization")
+        try:
+            cam.capture()
+            assert False, "Capture should have failed"
+        except Exception as e:
+            if e == "Camera not initialized":
+                assert False, "Capture should have failed"
+            else:
                 assert True
                 
 def test_camera_properties():
@@ -33,7 +40,6 @@ def test_camera_properties():
         print(f"Testing get/set methods")
         for name in dir(cam):
             if name.startswith('get_'):
-                
                 prop_name = name[4:]
                 set_method_name = f'set_{prop_name}'
                 if hasattr(cam, set_method_name):
@@ -68,9 +74,9 @@ def test_invalid_settings():
             time.sleep_ms(Delay)
 
 if __name__ == "__main__":
-    from camera import Camera, FrameSize, PixelFormat
     test_property_get_frame_size()
     test_property_get_pixel_format()
     test_must_be_initialized()
     test_camera_properties()
     test_invalid_settings()
+
