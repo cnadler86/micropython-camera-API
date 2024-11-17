@@ -5,20 +5,21 @@ import os
 gc.enable()
 
 def measure_fps(duration=2):
-    start_time = time.time()
-    while time.time() - start_time < 0.5:
+    start_time = time.ticks_ms()
+    while time.ticks_ms() - start_time < 500:
         cam.capture()
     
-    start_time = time.time()
+    start_time = time.ticks_ms()
     frame_count = 0
 
-    while time.time() - start_time < duration:
-        cam.capture()
-        frame_count += 1
+    while time.ticks_ms() - start_time < duration*1000:
+        img = cam.capture()
+        if img:
+            frame_count += 1
 
-    end_time = time.time()
-    fps = frame_count / (end_time - start_time)
-    return fps
+    end_time = time.ticks_ms()
+    fps = frame_count / (end_time - start_time) * 1000
+    return round(fps,1)
 
 def print_summary_table(results, cam):
     print(f"\nBenchmark {os.uname().machine} with {cam.get_sensor_name()}, GrabMode: {cam.get_grab_mode()}:")
@@ -78,7 +79,7 @@ if __name__ == "__main__":
                             print('Set', p, f,f'fb={fb}',':')
 
                             try:
-                                cam.reconfigure(frame_size=f_value)
+                                cam.set_frame_size(f_value)
                                 time.sleep_ms(10)
                                 img = cam.capture()
                                 
