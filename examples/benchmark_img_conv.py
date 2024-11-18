@@ -4,16 +4,16 @@ import gc
 import os
 gc.enable()
 
-def measure_fps(duration=2):
+def measure_fps(cam,out_fmt,duration=2):
     start_time = time.ticks_ms()
     while time.ticks_ms() - start_time < 500:
-        cam.capture()
+        cam.capture(out_fmt)
     
     start_time = time.ticks_ms()
     frame_count = 0
 
     while time.ticks_ms() - start_time < duration*1000:
-        img = cam.capture()
+        img = cam.capture(out_fmt)
         if img:
             frame_count += 1
 
@@ -51,7 +51,7 @@ def print_summary_table(results, cam):
         print()
 
 if __name__ == "__main__":
-    cam = Camera()
+    cam = Camera(pixel_format=PixelFormat.JPEG)
     results = {}
 
     try:
@@ -61,15 +61,14 @@ if __name__ == "__main__":
             for p in dir(PixelFormat):
                 if not p.startswith('_'):
                     p_value = getattr(PixelFormat, p)
-                    if (p_value == PixelFormat.RGB888 and cam.get_sensor_name() == "OV2640") or (p_value != PixelFormat.JPEG and fb > 1):
-                        continue
                     try:
-                        cam.reconfigure(pixel_format=p_value)
+                        if p_value == PixelFormat.JPEG:
+                            continue
+                        cam.capture(p_value)
                         results[fb][p] = {}
-                    except Exception as e:
-                        print('ERR:', e)
+                        gc.collect()
+                    except:
                         continue
-
                     for f in dir(FrameSize):
                         if not f.startswith('_'):
                             f_value = getattr(FrameSize, f)
@@ -79,13 +78,12 @@ if __name__ == "__main__":
                             print('Set', p, f,f'fb={fb}',':')
 
                             try:
-                                cam.reconfigure(frame_size=f_value) #set_frame_size fails for YUV422
+                                cam.set_frame_size(f_value)
                                 time.sleep_ms(10)
-                                img = cam.capture()
-                                
+                                img = cam.capture(p_value)
                                 if img:
                                     print('---> Image size:', len(img))
-                                    fps = measure_fps(2)
+                                    fps = measure_fps(cam,p_value,2)
                                     print(f"---> FPS: {fps}")
                                     results[fb][p][f_value] = fps
                                 else:

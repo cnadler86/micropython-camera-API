@@ -247,25 +247,27 @@ If you experience problems, visit [MicroPython external C modules](https://docs.
 ## FPS benchmark
 
 I didn't use a calibrated osziloscope, but here is a benchmark with my ESP32S3 (GrabMode=LATEST, fb_count = 1, jpeg_quality=85%).
-Using fb_count=2 doubles the FPS for JPEG. This might also aplly for other PixelFormats.
+Using fb_count=2 theoretically can double the FPS (see JPEG with fb_count=2). This might also aplly for other PixelFormats.
 
-| Frame Size | GRAYSCALE | RGB565 | YUV422 | JPEG   | JPEG -> RGB565 | JPEG -> RGB888 | JPEG (fb = 2) |
-|------------|-----------|--------|--------|--------|----------------|----------------|---------------|
-| R96X96     | 12.5      | 12.5   | 12.5   | No img | No img         | No img         | No img        |
-| QQVGA      | 12.5      | 12.5   | 12.5   | 25     | 25             | 25             | 50            |
-| QCIF       | 11        | 11     | 11.5   | 25     | 25             | 25             | 50            |
-| HQVGA      | 12.5      | 12.5   | 12.5   | 25     | 16.7           | 16.7           | 50            |
-| R240X240   | 12        | 12.5   | 11.5   | 25     | 16.7           | 12.5           | 50            |
-| QVGA       | 12        | 11     | 12     | 25     | 12.5           | 12.5           | 50            |
-| CIF        | 12.5      | No img | No img | 6      | 1.6            | 1.6            | 12.5          |
-| HVGA       | 2.5       | 3      | 2.5    | 12.5   | 6.3            | 6.3            | 25            |
-| VGA        | 3         | 3      | 3      | 12.5   | 3.6            | 3.6            | 25            |
-| SVGA       | 3         | 3      | 3      | 12.5   | 2.8            | 2.5            | 25            |
-| XGA        | No img    | No img | No img | 6      | 1.6            | 1.6            | 12.5          |
-| HD         | No img    | No img | No img | 6      | 1.4            | 1.3            | 12.5          |
-| SXGA       | 2         | 2      | 2      | 6      | 1              | 1              | 12.5          |
-| UXGA       | No img    | No img | No img | 6      | 0.7            | 0.7            | 12.5          |
+| Frame Size | GRAYSCALE | RGB565 | YUV422 | JPEG   | JPEG -> RGB565 | JPEG -> RGB888 | JPEG (fb=2) |
+|------------|-----------|--------|--------|--------|----------------|----------------|-------------|
+| R96X96     | 12.5      | 12.5   | 12.5   | No img | No img         | No img         | No img      |
+| QQVGA      | 12.5      | 12.5   | 12.5   | 25     | 25             | 25             | 50          |
+| QCIF       | 11        | 11     | 11.5   | 25     | 25             | 25             | 50          |
+| HQVGA      | 12.5      | 12.5   | 12.5   | 25     | 16.7           | 16.7           | 50          |
+| R240X240   | 12.5      | 12.5   | 11.5   | 25     | 16.7           | 12.5           | 50          |
+| QVGA       | 12        | 11     | 12     | 25     | 12.5           | 12.5           | 50          |
+| CIF        | 12.5      | No img | No img | 6.3    | 1.6            | 1.6            | 12.5        |
+| HVGA       | 3         | 3      | 2.5    | 12.5   | 6.3            | 6.3            | 25          |
+| VGA        | 3         | 3      | 3      | 12.5   | 3.6            | 3.6            | 25          |
+| SVGA       | 3         | 3      | 3      | 12.5   | 2.8            | 2.5            | 25          |
+| XGA        | No img    | No img | No img | 6.3    | 1.6            | 1.6            | 12.5        |
+| HD         | No img    | No img | No img | 6.3    | 1.4            | 1.3            | 12.5        |
+| SXGA       | 2         | 2      | 2      | 6.3    | 1              | 1              | 12.5        |
+| UXGA       | No img    | No img | No img | 6.3    | 0.7            | 0.7            | 12.5        |
 
+
+Looking at the results: image conversion make only sense for frame sized below QVGA or if capturing the image in the intended pixelformat and frame size combination fails.
 ## Future Plans
 
 - Edge case: enable usage of pins such as i2c for other applications
