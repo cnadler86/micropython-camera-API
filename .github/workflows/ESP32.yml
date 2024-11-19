@@ -78,9 +78,9 @@ jobs:
           cd esp-idf
           ./install.sh all
           cd components
-          # latest_cam_driver=$(curl -s https://api.github.com/repos/espressif/esp32-camera/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-          # git clone --depth 1 --branch $latest_tag https://github.com/espressif/esp32-camera.git
-          git clone https://github.com/cnadler86/esp32-camera.git
+          latest_cam_driver=$(curl -s https://api.github.com/repos/espressif/esp32-camera/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+          git clone --depth 1 --branch $latest_tag https://github.com/espressif/esp32-camera.git
+          # git clone https://github.com/cnadler86/esp32-camera.git
           cd ~/esp-idf/
           source ./export.sh
 

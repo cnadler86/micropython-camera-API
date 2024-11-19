@@ -28,7 +28,8 @@ async def stream_camera(writer):
         cam.init()
         if not cam.get_bmp_out() and cam.get_pixel_format() != PixelFormat.JPEG:
             cam.set_bmp_out(True)
-
+        await asyncio.sleep(1)
+        
         writer.write(b'HTTP/1.1 200 OK\r\nContent-Type: multipart/x-mixed-replace; boundary=frame\r\n\r\n')
         await writer.drain()
 
