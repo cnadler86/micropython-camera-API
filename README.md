@@ -160,7 +160,7 @@ To build the project, follow these instructions:
     git: https://github.com/espressif/esp32-camera.git
 ```
 
-Alternatively, you can clone the <https://github.com/cnadler86/esp32-camera> repository inside the esp-idf/components folder instead of altering the idf_component.yml file.
+Alternatively, you can clone the <https://github.com/espressif/esp32-camera> repository inside the esp-idf/components folder instead of altering the idf_component.yml file.
 
 ### Add camera configurations to your board (optional, but recommended)
 
