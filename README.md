@@ -166,7 +166,7 @@ Alternatively, you can clone the <https://github.com/espressif/esp32-camera> rep
 
 #### Supported Camera Models
 
-This project supports various camera models out of the box. You typically only need to add a single line to your board config file ("mpconfigboard.h).
+This project supports various boards with camera interface out of the box. You typically only need to add a single line to your board config file ("mpconfigboard.h).
 Example (don't forget to add the empty line at the bottom):
 
 ```c
@@ -199,7 +199,6 @@ Below is a list of supported `MICROPY_CAMERA_MODEL_xxx` definitions:
 #### For unsupported camera models
 
 If your board is not yet supported, add the following lines to your board config-file "mpconfigboard.h" with the respective pins and camera parameters. Otherwise, you will need to pass all parameters during construction.
-Don't forget the empty line at the bottom.
 Example for Xiao sense:
 
 ```c
