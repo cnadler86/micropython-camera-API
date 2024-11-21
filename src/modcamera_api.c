@@ -180,7 +180,7 @@ static mp_obj_t camera_reconfigure(size_t n_args, const mp_obj_t *pos_args, mp_m
         args[ARG_grab_mode].u_obj != MP_ROM_NONE
         ?  args[ARG_grab_mode].u_int
         : mp_camera_hal_get_grab_mode(self);
-    uint8_t fb_count =
+    mp_int_t fb_count =
         args[ARG_fb_count].u_obj != MP_ROM_NONE
         ?  args[ARG_fb_count].u_int
         : mp_camera_hal_get_fb_count(self);

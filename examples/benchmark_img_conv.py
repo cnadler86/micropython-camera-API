@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     try:
         for fb in [1, 2]:
-            cam.reconfigure(fb_count=fb)
+            cam.reconfigure(fb_count=fb, frame_size=FrameSize.QQVGA)
             results[fb] = {}
             for p in dir(PixelFormat):
                 if not p.startswith('_'):

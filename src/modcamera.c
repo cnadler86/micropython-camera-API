@@ -37,14 +37,6 @@
 #error Camera only works on boards configured with spiram
 #endif
 
-// #if !defined(CONFIG_CAMERA_CORE0) && !defined(CONFIG_CAMERA_CORE1)
-// #if MP_TASK_COREID == 0
-//     #define CONFIG_CAMERA_CORE0 1
-// #elif MP_TASK_COREID == 1
-//     #define CONFIG_CAMERA_CORE1 1
-// #endif
-// #endif // CONFIG_CAMERA_COREx
-
 // Helper functions
 static int map(int value, int fromLow, int fromHigh, int toLow, int toHigh) {
     if (fromHigh == fromLow) {
@@ -71,7 +63,7 @@ static void set_check_xclk_freq(mp_camera_obj_t *self, int32_t xclk_freq_hz) {
     }
 }
 
-static void set_check_fb_count(mp_camera_obj_t *self, int fb_count) {
+static void set_check_fb_count(mp_camera_obj_t *self, mp_int_t fb_count) {
     if (fb_count > 2) {
         self->camera_config.fb_count = 2;
         mp_warning(NULL, "Frame buffer size limited to 2");
@@ -192,7 +184,7 @@ void mp_camera_hal_deinit(mp_camera_obj_t *self) {
 
 void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t frame_size, mp_camera_pixformat_t pixel_format, mp_camera_grabmode_t grab_mode, mp_int_t fb_count) {
     check_init(self);
-    ESP_LOGI(TAG, "Reconfiguring camera");
+    ESP_LOGI(TAG, "Reconfiguring camera with frame size: %d, pixel format: %d, grab mode: %d, fb count: %d", (int)frame_size, (int)pixel_format, (int)grab_mode, (int)fb_count);
     
     sensor_t *sensor = esp_camera_sensor_get();
     camera_sensor_info_t *sensor_info = esp_camera_sensor_get_info(&sensor->id);
@@ -236,6 +228,7 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format) {
     }
     
     if (out_format >= 0 && (mp_camera_pixformat_t)out_format != self->camera_config.pixel_format) {
+        ESP_LOGI(TAG, "Converting image to pixel format: %d", out_format);
         switch ((mp_camera_pixformat_t)out_format) {
             case PIXFORMAT_JPEG:
                 if (frame2jpg(self->captured_buffer, self->camera_config.jpeg_quality, &out_buf, &out_len)) {
@@ -289,7 +282,7 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format) {
     }
 
     if (self->bmp_out == false) {
-        ESP_LOGI(TAG, "Returning imgae without conversion");
+        ESP_LOGI(TAG, "Returning image without conversion");
         return mp_obj_new_memoryview('b', self->captured_buffer->len, self->captured_buffer->buf);
     } else {
         ESP_LOGI(TAG, "Returning image as bitmap");
