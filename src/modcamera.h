@@ -86,15 +86,6 @@ defined (MICROPY_CAMERA_PIN_PCLK) && defined (MICROPY_CAMERA_PIN_VSYNC) && defin
 #define MICROPY_CAMERA_JPEG_QUALITY (85)
 #endif
 
-//Supported Camera sensors
-#ifndef CONFIG_OV2640_SUPPORT
-#define CONFIG_OV2640_SUPPORT 1
-#endif
-
-#if !defined(CONFIG_OV5640_SUPPORT) && defined(CONFIG_IDF_TARGET_ESP32S3)
-#define CONFIG_OV5640_SUPPORT 1
-#endif
-
 typedef pixformat_t  hal_camera_pixformat_t;
 typedef framesize_t  hal_camera_framesize_t;
 typedef camera_fb_location_t hal_camera_fb_location_t;
