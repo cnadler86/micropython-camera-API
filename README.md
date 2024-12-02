@@ -2,7 +2,7 @@
 
 [![ESP32 Port](https://github.com/cnadler86/micropython-camera-API/actions/workflows/ESP32.yml/badge.svg)](https://github.com/cnadler86/micropython-camera-API/actions/workflows/ESP32.yml)
 
-This project aims to support various cameras on different MicroPython ports, starting with the ESP32 port and Omnivision (OV2640 & OV5640) cameras. The project implements a general API for cameras in micropython (such as circuitpython have done).
+This project aims to support various cameras (e.g. OV2640, OV5640) on different MicroPython ports, starting with the ESP32 port. The project implements a general API, has precompiled FW images and supports a lot of cameras out of the box.
 At the moment, this is a micropython user module, but it might get in the micropython repo in the future.
 The API is stable, but it might change without previous announce.
 
@@ -134,6 +134,17 @@ See autocompletions in Thonny in order to see the list of methods.
 If you want more insides in the methods and what they actually do, you can find a very good documentation [here](https://docs.circuitpython.org/en/latest/shared-bindings/espcamera/index.html).
 Note that each method requires a "get_" or "set_" prefix, depending on the desired action.
 
+To get the version of the camera driver used:
+
+```python
+import camera
+vers = camera.Version()
+```
+
+### Additional information
+
+The FW images support the following cameras out of the box, but is therefore big: OV7670, OV7725, OV2640, OV3660, OV5640, NT99141, GC2145, GC032A, GC0308, BF3005, BF20A6, SC030IOT
+
 ## Build your custom FW
 
 ### Setting up the build environment (DIY method)
@@ -142,20 +153,20 @@ To build the project, follow these instructions:
 
 - [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.2.3/esp32/get-started/index.html): I used version 5.2.3, but it might work with other versions (see notes).
 - Clone the micropython repo and this repo in a folder, e.g. "MyESPCam". MicroPython version 1.24 or higher is required (at least commit 92484d8).
-- You will have to add the ESP32-Camera driver (I used v2.0.13). To do this, add the following to the respective idf_component.yml file (e.g. in micropython/ports/esp32/main_esp32s3/idf_component.yml):
+- You will have to add the ESP32-Camera driver (I used v2.0.15). To do this, add the following to the respective idf_component.yml file (e.g. in micropython/ports/esp32/main_esp32s3/idf_component.yml):
 
 ```yml
   espressif/esp32-camera:
-    git: https://github.com/cnadler86/esp32-camera  #At the moment I maintain a fork because of some unsolved bugs and conveniance.
+    git: https://github.com/espressif/esp32-camera.git
 ```
 
-Alternatively, you can clone the <https://github.com/cnadler86/esp32-camera> repository inside the esp-idf/components folder instead of altering the idf_component.yml file.
+Alternatively, you can clone the <https://github.com/espressif/esp32-camera> repository inside the esp-idf/components folder instead of altering the idf_component.yml file.
 
 ### Add camera configurations to your board (optional, but recommended)
 
 #### Supported Camera Models
 
-This project supports various camera models out of the box. You typically only need to add a single line to your board config file ("mpconfigboard.h).
+This project supports various boards with camera interface out of the box. You typically only need to add a single line to your board config file ("mpconfigboard.h).
 Example (don't forget to add the empty line at the bottom):
 
 ```c
@@ -188,7 +199,6 @@ Below is a list of supported `MICROPY_CAMERA_MODEL_xxx` definitions:
 #### For unsupported camera models
 
 If your board is not yet supported, add the following lines to your board config-file "mpconfigboard.h" with the respective pins and camera parameters. Otherwise, you will need to pass all parameters during construction.
-Don't forget the empty line at the bottom.
 Example for Xiao sense:
 
 ```c
@@ -214,6 +224,9 @@ Example for Xiao sense:
 #define MICROPY_CAMERA_GRAB_MODE    (1)   // 0=WHEN_EMPTY (might have old data, but less resources), 1=LATEST (best, but more resources)
 
 ```
+#### Customize additional camera settings
+
+If you want to customize additional camera setting or reduce the FW size by removing support for unused camera sensors, then take a look at the kconfig file of the esp32-camera driver and specify these on the sdkconfig file of your board.
 
 ### Build the API
 
@@ -239,28 +252,37 @@ If you experience problems, visit [MicroPython external C modules](https://docs.
 
 ## FPS benchmark
 
-I didn't use a calibrated osziloscope, but here is a benchmark with my ESP32S3 (GrabMode=LATEST).
-Using fb_count=2 doubles the FPS for JPEG. This might also aplly for other PixelFormats.
+I didn't use a calibrated osziloscope, but here is a benchmark with my ESP32S3 (GrabMode=LATEST, fb_count = 1, jpeg_quality=85%).
+Using fb_count=2 theoretically can double the FPS (see JPEG with fb_count=2). This might also aplly for other PixelFormats.
 
-| Frame Size | GRAYSCALE | RGB565 | YUV422 | JPEG   | JPEG (fb = 2) |
-|------------|-----------|--------|--------|--------|---------------|
-| R96X96     | 12.5      | 12.5   | 12.5   | No img | No img        |
-| QQVGA      | 12.5      | 12.5   | 12.5   | 25     | 50            |
-| QCIF       | 11        | 11     | 11.5   | 25     | 50            |
-| HQVGA      | 12.5      | 12.5   | 12.5   | 25     | 50            |
-| R240X240   | 12        | 12.5   | 11.5   | 25     | 50            |
-| QVGA       | 12        | 11     | 12     | 25     | 50            |
-| CIF        | 12.5      | No img | No img | 6      | 12.5          |
-| HVGA       | 2.5       | 3      | 2.5    | 12.5   | 25            |
-| VGA        | 3         | 3      | 3      | 12.5   | 25            |
-| SVGA       | 3         | 3      | 3      | 12.5   | 25            |
-| XGA        | No img    | No img | No img | 6      | 12.5          |
-| HD         | No img    | No img | No img | 6      | 12.5          |
-| SXGA       | 2         | 2      | 2      | 6      | 12.5          |
-| UXGA       | No img    | No img | No img | 6      | 12.5          |
+| Frame Size | GRAYSCALE | RGB565 | YUV422 | JPEG   | JPEG -> RGB565 | JPEG -> RGB888 | JPEG (fb=2) |
+|------------|-----------|--------|--------|--------|----------------|----------------|-------------|
+| R96X96     | 12.5      | 12.5   | 12.5   | No img | No img         | No img         | No img      |
+| QQVGA      | 12.5      | 12.5   | 12.5   | 25     | 25             | 25             | 50          |
+| QCIF       | 11        | 11     | 11.5   | 25     | 25             | 25             | 50          |
+| HQVGA      | 12.5      | 12.5   | 12.5   | 25     | 16.7           | 16.7           | 50          |
+| R240X240   | 12.5      | 12.5   | 11.5   | 25     | 16.7           | 12.5           | 50          |
+| QVGA       | 12        | 11     | 12     | 25     | 12.5           | 12.5           | 50          |
+| CIF        | 12.5      | No img | No img | 6.3    | 1.6            | 1.6            | 12.5        |
+| HVGA       | 3         | 3      | 2.5    | 12.5   | 6.3            | 6.3            | 25          |
+| VGA        | 3         | 3      | 3      | 12.5   | 3.6            | 3.6            | 25          |
+| SVGA       | 3         | 3      | 3      | 12.5   | 2.8            | 2.5            | 25          |
+| XGA        | No img    | No img | No img | 6.3    | 1.6            | 1.6            | 12.5        |
+| HD         | No img    | No img | No img | 6.3    | 1.4            | 1.3            | 12.5        |
+| SXGA       | 2         | 2      | 2      | 6.3    | 1              | 1              | 12.5        |
+| UXGA       | No img    | No img | No img | 6.3    | 0.7            | 0.7            | 12.5        |
+
+
+Looking at the results: image conversion make only sense for frame sized below QVGA or if capturing the image in the intended pixelformat and frame size combination fails.
+
+## Troubleshoot
+
+You can find information on the following sites:
+- [ESP-FAQ](https://docs.espressif.com/projects/esp-faq/en/latest/application-solution/camera-application.html)
+- [ChatGPT](https://chatgpt.com/)
+- [Issues in here](https://github.com/cnadler86/micropython-camera-API/issues?q=is%3Aissue)
 
 ## Future Plans
 
 - Edge case: enable usage of pins such as i2c for other applications
 - Provide examples in binary image
-- Include camera driver version in API

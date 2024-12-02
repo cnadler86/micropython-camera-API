@@ -135,18 +135,16 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
         sda_pin, scl_pin, xclock_frequency, pixel_format, frame_size, jpeg_quality, fb_count, grab_mode);
 
     mp_camera_hal_init(self);
-
     if (mp_camera_hal_capture(self, -1) == mp_const_none){
         mp_camera_hal_deinit(self);
         mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture initial frame. Construct a new object with appropriate configuration."));
-        return MP_OBJ_FROM_PTR(self);
     } else {
         if ( !args[ARG_init].u_bool ){
             mp_camera_hal_deinit(self);
         }
         return MP_OBJ_FROM_PTR(self);
     }
-}
+} // camera_construct
 
 // Main methods
 static mp_obj_t camera_capture(size_t n_args, const mp_obj_t *args){
@@ -182,7 +180,7 @@ static mp_obj_t camera_reconfigure(size_t n_args, const mp_obj_t *pos_args, mp_m
         args[ARG_grab_mode].u_obj != MP_ROM_NONE
         ?  args[ARG_grab_mode].u_int
         : mp_camera_hal_get_grab_mode(self);
-    uint8_t fb_count =
+    mp_int_t fb_count =
         args[ARG_fb_count].u_obj != MP_ROM_NONE
         ?  args[ARG_fb_count].u_int
         : mp_camera_hal_get_fb_count(self);
@@ -366,6 +364,13 @@ MP_CREATE_CONST_TYPE(GainCeiling, mp_camera_gainceiling);
 static MP_DEFINE_CONST_DICT(mp_camera_grab_mode_locals_dict,mp_camera_hal_grab_mode_table);
 MP_CREATE_CONST_TYPE(GrabMode, mp_camera_grab_mode);
 
+#ifdef MP_CAMERA_DRIVER_VERSION
+    static mp_obj_t mp_camera_driver_version(void) {
+        return mp_obj_new_str(MP_CAMERA_DRIVER_VERSION, strlen(MP_CAMERA_DRIVER_VERSION));
+    }
+    static MP_DEFINE_CONST_FUN_OBJ_0(mp_camera_driver_version_obj, mp_camera_driver_version);
+#endif
+
 static const mp_rom_map_elem_t camera_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_camera) },
     { MP_ROM_QSTR(MP_QSTR_Camera),    MP_ROM_PTR(&camera_type) },
@@ -373,6 +378,9 @@ static const mp_rom_map_elem_t camera_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_FrameSize), MP_ROM_PTR(&mp_camera_frame_size_type) },
     { MP_ROM_QSTR(MP_QSTR_GainCeiling), MP_ROM_PTR(&mp_camera_gainceiling_type) },
     { MP_ROM_QSTR(MP_QSTR_GrabMode), MP_ROM_PTR(&mp_camera_grab_mode_type) },
+    #ifdef MP_CAMERA_DRIVER_VERSION
+        { MP_ROM_QSTR(MP_QSTR_Version), MP_ROM_PTR(&mp_camera_driver_version_obj) },
+    #endif
 };
 static MP_DEFINE_CONST_DICT(camera_module_globals, camera_module_globals_table);
 
