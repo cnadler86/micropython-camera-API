@@ -5,7 +5,9 @@ on:
   push:
     paths:
       - 'src/**'
-      - '.github/workflows/*.yml'
+      - '.github/workflows/ESP32.yml'
+    tags-ignore:
+      - '**'
   pull_request:
     branches:
       - master
