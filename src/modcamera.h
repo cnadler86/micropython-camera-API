@@ -201,7 +201,7 @@ extern const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[5];
  * @brief Table mapping frame sizes API to their corresponding values at HAL.
  * @details Needs to be defined in the port-specific implementation.
  */
-extern const mp_rom_map_elem_t mp_camera_hal_frame_size_table[22];
+extern const mp_rom_map_elem_t mp_camera_hal_frame_size_table[24];
 
 /**
  * @brief Table mapping gainceiling API to their corresponding values at HAL.

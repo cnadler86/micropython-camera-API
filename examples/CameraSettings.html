@@ -102,8 +102,8 @@
 
         function populateFrameSizeDropdown() {
             const frameSizes = [
-                "R96x96", "QQVGA", "CIF", "HQVGA", "R240x240", "QVGA", 
-                "CIF", "HVGA", "VGA", "SVGA", "XGA", "HD", "SXGA", 
+                "R96x96", "QQVGA", "128X128", "CIF", "HQVGA", "R240x240", "QVGA", 
+                "320X320","CIF", "HVGA", "VGA", "SVGA", "XGA", "HD", "SXGA", 
                 "UXGA", "FHD", "P_HD", "P_3MP", "QXGA", "QHD", "WQXGA", "P_FHD", "QSXGA"
             ];
 
@@ -133,7 +133,7 @@
             fetch('/get_sensor_name')
                 .then(response => response.text())
                 .then(sensorName => {
-                    const showSharpnessAndDenoise = (sensorName === 'OV3640' || sensorName === 'OV5640');
+                    const showSharpnessAndDenoise = (sensorName === 'OV3660' || sensorName === 'OV5640');
                     document.getElementById('sharpness-container').classList.toggle('hidden', !showSharpnessAndDenoise);
                     document.getElementById('denoise-container').classList.toggle('hidden', !showSharpnessAndDenoise);
                 })
@@ -170,26 +170,29 @@
                 <select id="frame_size">
                     <option value="0">R96x96</option>
                     <option value="1">QQVGA</option>
-                    <option value="2">CIF</option>
-                    <option value="3">HQVGA</option>
-                    <option value="4">R240x240</option>
-                    <option value="5">QVGA</option>
-                    <option value="6">CIF</option>
-                    <option value="7">HVGA</option>
-                    <option value="8">VGA</option>
-                    <option value="9">SVGA</option>
-                    <option value="10">XGA</option>
-                    <option value="11">HD</option>
-                    <option value="12">SXGA</option>
-                    <option value="13">UXGA</option>
-                    <option value="14">FHD</option>
-                    <option value="15">P_HD</option>
-                    <option value="16">P_3MP</option>
-                    <option value="17">QXGA</option>
-                    <option value="18">QHD</option>
-                    <option value="19">WQXGA</option>
-                    <option value="20">P_FHD</option>
-                    <option value="21">QSXGA</option>
+                    <option value="2">128X128</option>
+                    <option value="3">QCIF</option>
+                    <option value="4">HQVGA</option>
+                    <option value="5">R240x240</option>
+                    <option value="6">QVGA</option>
+                    <option value="7">320X320</option>
+                    <option value="8">CIF</option>
+                    <option value="9">HVGA</option>
+                    <option value="10">VGA</option>
+                    <option value="11">SVGA</option>
+                    <option value="12">XGA</option>
+                    <option value="13">HD</option>
+                    <option value="14">SXGA</option>
+                    <option value="15">UXGA</option>
+                    <option value="16">FHD</option>
+                    <option value="17">P_HD</option>
+                    <option value="18">P_3MP</option>
+                    <option value="19">QXGA</option>
+                    <option value="20">QHD</option>
+                    <option value="21">WQXGA</option>
+                    <option value="22">P_FHD</option>
+                    <option value="23">QSXGA</option>
+                    <option value="24">5MP</option>
                   </select>
             </div>
             <div class="setting">
