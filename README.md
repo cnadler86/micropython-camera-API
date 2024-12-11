@@ -99,10 +99,11 @@ cam.init()
 ### Capture image
 
 ```python
-img = cam.capture()
+img = cam.capture() #capture image as configured
+img_rgb888 = cam.capture(PixelFormat.RGB888) #capture image and convert it to RGB888
 ```
 
-Keyword arguments for capture
+Arguments for capture
 
 - out_format: Output format as PixelFormat (optional)
 
