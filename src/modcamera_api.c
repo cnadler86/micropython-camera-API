@@ -154,6 +154,13 @@ static mp_obj_t camera_capture(size_t n_args, const mp_obj_t *args){
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(camera_capture_obj, 1, 2, camera_capture);
 
+static mp_obj_t camera_convert(mp_obj_t self_in, mp_obj_t arg) {
+    mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    int8_t out_format = mp_obj_get_int(arg);
+    return mp_camera_hal_convert(self, out_format);
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(camera_convert_obj, camera_convert);
+
 static mp_obj_t camera_reconfigure(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args){
     //OPEN: Validate inputs
     mp_camera_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
@@ -291,6 +298,7 @@ CREATE_GETSET_FUNCTIONS(lenc, mp_obj_new_bool, mp_obj_is_true);
 static const mp_rom_map_elem_t camera_camera_locals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_reconfigure), MP_ROM_PTR(&camera_reconfigure_obj) },
     { MP_ROM_QSTR(MP_QSTR_capture), MP_ROM_PTR(&camera_capture_obj) },
+    { MP_ROM_QSTR(MP_QSTR_convert), MP_ROM_PTR(&camera_convert_obj) },
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&camera_init_obj) },
     { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&mp_camera_deinit_obj) },
     { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&mp_camera_deinit_obj) },

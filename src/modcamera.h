@@ -98,6 +98,7 @@ typedef struct hal_camera_obj {
     bool                initialized;
     camera_fb_t         *captured_buffer;
     bool                bmp_out;
+    mp_buffer_info_t    converted_buffer;
 } hal_camera_obj_t;
 
 #endif // CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
@@ -190,6 +191,15 @@ extern void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize
  * @return Captured image as micropython object.
  */
 extern mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format);
+
+/**
+ * @brief Converts an image from one pixelformat to another.
+ * 
+ * @param self Pointer to the camera object.
+ * @param out_format Output pixelformat format.
+ * @return Converted image as micropython object.
+ */
+extern mp_obj_t mp_camera_hal_convert(mp_camera_obj_t *self, int8_t out_format);
 
 /**
  * @brief Table mapping pixel formats API to their corresponding values at HAL.

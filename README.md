@@ -99,13 +99,25 @@ cam.init()
 ### Capture image
 
 ```python
-img = cam.capture() #capture image as configured
-img_rgb888 = cam.capture(PixelFormat.RGB888) #capture image and convert it to RGB888
+img = cam.capture()
 ```
 
 Arguments for capture
 
 - out_format: Output format as PixelFormat (optional)
+
+### Convert image to another format
+
+You can either convert the image with the capture method directly passing the desired output format:
+```python
+img_rgb888 = cam.capture(PixelFormat.RGB888) #capture image as configured (e.g. JPEG), convert it to RGB888 and return the converted image
+```
+Or you can first capture the image and then convert the captured image to the desired PixelFormat with the convert method.
+Doing so you can have both, the raw and the converted image.
+```python
+img = cam.capture()
+img_rgb888 = cam.convert(PixelFormat.RGB888) #converts the last captured image to RGB888 and returns the converted image
+```
 
 ### Camera reconfiguration
 
