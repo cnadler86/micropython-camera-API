@@ -214,38 +214,45 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
     ESP_LOGI(TAG, "Camera reconfigured successfully");
 }
 
-static bool mp_camera_convert(mp_obj_t self_in, mp_camera_pixformat_t out_format) {
-    mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    ESP_LOGI(TAG, "Converting image to pixel format: %d", out_format);
+static bool ensure_buffer(mp_camera_obj_t self, size_t req_len) {
+    if (self->converted_buffer.len == req_len) {
+        return true;
+    }
 
     if (self->converted_buffer.len > 0 || self->converted_buffer.buf) {
         free(self->converted_buffer.buf);
-        self->converted_buffer.len = 0;
-        self->converted_buffer.buf = NULL;
     }
+    self->converted_buffer.buf = (uint8_t *)malloc(req_len);
+    if (!self->converted_buffer.buf) {
+        self->converted_buffer.len = 0;
+        ESP_LOGE(TAG, "converted_buffer malloc failed");
+        return false;
+    }
+    self->converted_buffer.len = req_len;
+    return true;
+}
+
+static bool mp_camera_convert(mp_camera_obj_t self, mp_camera_pixformat_t out_format) {
+    ESP_LOGI(TAG, "Converting image to pixel format: %d", out_format);
 
     switch (out_format) {
         case PIXFORMAT_JPEG:
             return frame2jpg(self->captured_buffer, self->camera_config.jpeg_quality, self->converted_buffer.buf, &self->converted_buffer.len);
 
         case PIXFORMAT_RGB888:
-            self->converted_buffer.len = self->captured_buffer->width * self->captured_buffer->height * 3;
-            self->converted_buffer.buf = (uint8_t *)malloc(self->converted_buffer.len);
-            if (!self->converted_buffer.buf) {
-                ESP_LOGE(TAG, "converted_buffer malloc failed");
+            if (ensure_buffer(self, self->captured_buffer->width * self->captured_buffer->height * 3)) {
+                return fmt2rgb888(self->captured_buffer->buf, self->captured_buffer->len, self->captured_buffer->format, self->converted_buffer.buf);
+            } else {
                 return false;
             }
-            return fmt2rgb888(self->captured_buffer->buf, self->captured_buffer->len, self->captured_buffer->format, self->converted_buffer.buf);
 
         case PIXFORMAT_RGB565:
             if (self->camera_config.pixel_format == PIXFORMAT_JPEG) {
-                self->converted_buffer.len = self->captured_buffer->width * self->captured_buffer->height * 2;
-                self->converted_buffer.buf = (uint8_t *)malloc(self->converted_buffer.len);
-                if (!self->converted_buffer.buf) {
-                    ESP_LOGE(TAG, "converted_buffer malloc failed");
+                if (ensure_buffer(self, self->captured_buffer->width * self->captured_buffer->height * 2)) {
+                    return jpg2rgb565(self->captured_buffer->buf, self->captured_buffer->len, self->converted_buffer.buf, JPG_SCALE_NONE);
+                } else {
                     return false;
                 }
-                return jpg2rgb565(self->captured_buffer->buf, self->captured_buffer->len, self->converted_buffer.buf, JPG_SCALE_NONE);
             } else {
                 mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Can only convert JPEG to RGB565"));
             }
