@@ -205,6 +205,42 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
     ESP_LOGI(TAG, "Camera reconfigured successfully");
 }
 
+bool mp_camera_convert(mp_obj_t self_in, int8_t out_format, uint8_t **out_buf, size_t *out_len) {
+    mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    check_init(self);
+    ESP_LOGI(TAG, "Converting image to pixel format: %d", out_format);
+
+    switch ((mp_camera_pixformat_t)out_format) {
+        case PIXFORMAT_JPEG:
+            return frame2jpg(self->captured_buffer, self->camera_config.jpeg_quality, out_buf, out_len);
+
+        case PIXFORMAT_RGB888:
+            *out_len = self->captured_buffer->width * self->captured_buffer->height * 3;
+            *out_buf = (uint8_t *)malloc(*out_len);
+            if (!*out_buf) {
+                ESP_LOGE(TAG, "out_buf malloc failed");
+                return false;
+            }
+            return fmt2rgb888(self->captured_buffer->buf, self->captured_buffer->len, self->captured_buffer->format, *out_buf);
+
+        case PIXFORMAT_RGB565:
+            if (self->camera_config.pixel_format == PIXFORMAT_JPEG) {
+                *out_len = self->captured_buffer->width * self->captured_buffer->height * 2;
+                *out_buf = (uint8_t *)malloc(*out_len);
+                if (!*out_buf) {
+                    ESP_LOGE(TAG, "out_buf malloc failed");
+                    return false;
+                }
+                return jpg2rgb565(self->captured_buffer->buf, self->captured_buffer->len, *out_buf, JPG_SCALE_NONE);
+            } else {
+                mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Can only convert JPEG to RGB565"));
+            }
+
+        default:
+            mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Unsupported pixel format for conversion"));
+    }
+}
+
 mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format) {
     check_init(self);
     if (self->captured_buffer) {
@@ -228,56 +264,12 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format) {
     }
     
     if (out_format >= 0 && (mp_camera_pixformat_t)out_format != self->camera_config.pixel_format) {
-        ESP_LOGI(TAG, "Converting image to pixel format: %d", out_format);
-        switch ((mp_camera_pixformat_t)out_format) {
-            case PIXFORMAT_JPEG:
-                if (frame2jpg(self->captured_buffer, self->camera_config.jpeg_quality, &out_buf, &out_len)) {
-                    esp_camera_fb_return(self->captured_buffer);
-                    mp_obj_t result = mp_obj_new_memoryview('b', out_len, out_buf);
-                    return result;
-                } else {
-                    return mp_const_none;
-                }
-
-            case PIXFORMAT_RGB888:
-                out_len = self->captured_buffer->width * self->captured_buffer->height * 3;
-                out_buf = (uint8_t *)malloc(out_len);
-                if (!out_buf) {
-                    ESP_LOGE(TAG, "out_buf malloc failed");
-                    return mp_const_none;
-                }
-                if (fmt2rgb888(self->captured_buffer->buf, self->captured_buffer->len, self->captured_buffer->format, out_buf)) {
-                    esp_camera_fb_return(self->captured_buffer);
-                    mp_obj_t result = mp_obj_new_memoryview('b', out_len, out_buf);
-                    return result;
-                } else {
-                    return mp_const_none;
-                }
-
-            case PIXFORMAT_RGB565:
-                out_len = self->captured_buffer->width * self->captured_buffer->height * 2;
-                out_buf = (uint8_t *)malloc(out_len);
-                if (!out_buf) {
-                    ESP_LOGE(TAG, "out_buf malloc failed");
-                    return mp_const_none;
-                }
-                if(self->camera_config.pixel_format == PIXFORMAT_JPEG){
-                    if (jpg2rgb565(self->captured_buffer->buf, self->captured_buffer->len, out_buf, JPG_SCALE_NONE)) {
-                        esp_camera_fb_return(self->captured_buffer);
-                        mp_obj_t result = mp_obj_new_memoryview('b', out_len, out_buf);
-                        return result;
-                    } else {
-                        return mp_const_none;
-                    }
-                } else {
-                    mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Can only convert JPEG to RGB565"));
-                    return mp_const_none;
-                }
-
-            default:
-                mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Unsupported pixel format for conversion"));
-                return mp_const_none;
-
+        if (mp_camera_convert(self, out_format, &out_buf, &out_len)) {
+            esp_camera_fb_return(self->captured_buffer);
+            mp_obj_t result = mp_obj_new_memoryview('b', out_len, out_buf);
+            return result;
+        } else {
+            return mp_const_none;
         }
     }
 
