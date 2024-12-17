@@ -214,11 +214,10 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
     ESP_LOGI(TAG, "Camera reconfigured successfully");
 }
 
-static bool ensure_buffer(mp_camera_obj_t self, size_t req_len) {
+static bool ensure_buffer(mp_camera_obj_t *self, size_t req_len) {
     if (self->converted_buffer.len == req_len) {
         return true;
     }
-
     if (self->converted_buffer.len > 0 || self->converted_buffer.buf) {
         free(self->converted_buffer.buf);
     }
@@ -232,7 +231,7 @@ static bool ensure_buffer(mp_camera_obj_t self, size_t req_len) {
     return true;
 }
 
-static bool mp_camera_convert(mp_camera_obj_t self, mp_camera_pixformat_t out_format) {
+static bool mp_camera_convert(mp_camera_obj_t *self, mp_camera_pixformat_t out_format) {
     ESP_LOGI(TAG, "Converting image to pixel format: %d", out_format);
 
     switch (out_format) {
@@ -308,7 +307,6 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format) {
             self->converted_buffer.buf = NULL;
             self->converted_buffer.len = 0;
             mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to convert image to BMP"));
-            return mp_const_none;
         }
     }
 } // mp_camera_hal_capture

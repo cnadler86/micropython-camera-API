@@ -108,16 +108,21 @@ Arguments for capture
 
 ### Convert image to another format
 
-You can either convert the image with the capture method directly passing the desired output format:
+You can either convert the image with the `capture` method directly passing the desired output format:
 ```python
 img_rgb888 = cam.capture(PixelFormat.RGB888) #capture image as configured (e.g. JPEG), convert it to RGB888 and return the converted image
 ```
-Or you can first capture the image and then convert the captured image to the desired PixelFormat with the convert method.
-Doing so you can have both, the raw and the converted image.
+Or you can first capture the image and then convert it to the desired PixelFormat with the `convert` method.
+Doing so you can have both, the captured and the converted image. Note that more memory will be used.
 ```python
 img = cam.capture()
 img_rgb888 = cam.convert(PixelFormat.RGB888) #converts the last captured image to RGB888 and returns the converted image
 ```
+
+Convertion supported 
+- from JPEG to RGB565
+- to RGB888 in general
+- to JPEG in gerenal (use the `set_quality` method to set the desired JPEG quality)
 
 ### Camera reconfiguration
 
@@ -229,12 +234,12 @@ Example for Xiao sense:
 #define MICROPY_CAMERA_PIN_XCLK     (10)
 #define MICROPY_CAMERA_PIN_PWDN     (-1)
 #define MICROPY_CAMERA_PIN_RESET    (-1)
-#define MICROPY_CAMERA_PIN_SIOD     (40)  // SDA
-#define MICROPY_CAMERA_PIN_SIOC     (39)  // SCL
+#define MICROPY_CAMERA_PIN_SIOD     (40)        // SDA
+#define MICROPY_CAMERA_PIN_SIOC     (39)        // SCL
 #define MICROPY_CAMERA_XCLK_FREQ    (20000000)  // Frequencies are normally either 10 MHz or 20 MHz
-#define MICROPY_CAMERA_FB_COUNT     (2)   // The value is between 1 (slow) and 2 (fast, but more load on CPU and more ram usage)
-#define MICROPY_CAMERA_JPEG_QUALITY (85)  // Quality of JPEG output in percent. Higher means higher quality.
-#define MICROPY_CAMERA_GRAB_MODE    (1)   // 0=WHEN_EMPTY (might have old data, but less resources), 1=LATEST (best, but more resources)
+#define MICROPY_CAMERA_FB_COUNT     (2)         // The value is between 1 (slow) and 2 (fast, but more load on CPU and more ram usage)
+#define MICROPY_CAMERA_JPEG_QUALITY (85)        // Quality of JPEG output in percent. Higher means higher quality.
+#define MICROPY_CAMERA_GRAB_MODE    (1)         // 0=WHEN_EMPTY (might have old data, but less resources), 1=LATEST (best, but more resources)
 
 ```
 #### Customize additional camera settings
@@ -265,7 +270,7 @@ If you experience problems, visit [MicroPython external C modules](https://docs.
 
 ## FPS benchmark
 
-I didn't use a calibrated osziloscope, but here is a benchmark with my ESP32S3 (GrabMode=LATEST, fb_count = 1, jpeg_quality=85%).
+I didn't use a calibrated osziloscope, but here is a benchmark with my ESP32S3 (GrabMode=LATEST, fb_count = 1, jpeg_quality=85%) and OV2640.
 Using fb_count=2 theoretically can double the FPS (see JPEG with fb_count=2). This might also aplly for other PixelFormats.
 
 | Frame Size | GRAYSCALE | RGB565 | YUV422 | JPEG   | JPEG -> RGB565 | JPEG -> RGB888 | JPEG (fb=2) |
@@ -275,8 +280,8 @@ Using fb_count=2 theoretically can double the FPS (see JPEG with fb_count=2). Th
 | QCIF       | 11        | 11     | 11.5   | 25     | 25             | 25             | 50          |
 | HQVGA      | 12.5      | 12.5   | 12.5   | 25     | 16.7           | 16.7           | 50          |
 | R240X240   | 12.5      | 12.5   | 11.5   | 25     | 16.7           | 12.5           | 50          |
-| QVGA       | 12        | 11     | 12     | 25     | 12.5           | 12.5           | 50          |
-| CIF        | 12.5      | No img | No img | 6.3    | 1.6            | 1.6            | 12.5        |
+| QVGA       | 12        | 11     | 12     | 25     | 25             | 25             | 50          |
+| CIF        | 12.5      | No img | No img | 6.3    | 8.3            | 8.3            | 12.5        |
 | HVGA       | 3         | 3      | 2.5    | 12.5   | 6.3            | 6.3            | 25          |
 | VGA        | 3         | 3      | 3      | 12.5   | 3.6            | 3.6            | 25          |
 | SVGA       | 3         | 3      | 3      | 12.5   | 2.8            | 2.5            | 25          |
