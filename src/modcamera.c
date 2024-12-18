@@ -56,8 +56,8 @@ static inline void check_init(mp_camera_obj_t *self) {
 }
 
 static void set_check_xclk_freq(mp_camera_obj_t *self, int32_t xclk_freq_hz) {
-    if ( xclk_freq_hz > 20000000) {
-        mp_raise_ValueError(MP_ERROR_TEXT("xclk frequency cannot be grather than 20MHz"));
+    if ( xclk_freq_hz > 40000000) {
+        mp_raise_ValueError(MP_ERROR_TEXT("xclk frequency cannot be grather than 40MHz"));
     } else {
         self->camera_config.xclk_freq_hz = xclk_freq_hz;
     }
