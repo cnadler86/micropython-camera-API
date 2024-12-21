@@ -8,26 +8,41 @@ The API is stable, but it might change without previous announce.
 
 ## Content
 
-- [Precomiled FW](#Precompiled)
-- [Using the API](#Usage)
-- [Build it yourself](#Build)
+- [Precomiled FW (the easy way)](#precomiled-fw-the-easy-way)
+- [Using the API](#using-the-api)
+  - [Importing the camera module](#importing-the-camera-module)
+  - [Creating a camera object](#creating-a-camera-object)
+  - [Initializing the camera](#initializing-the-camera)
+  - [Capture image](#capture-image)
+  - [Convert image to another format](#convert-image-to-another-format)
+  - [Camera reconfiguration](#camera-reconfiguration)
+  - [Additional methods](#additional-methods)
+  - [Additional information](#additional-information)
+- [Build your custom FW](#build-your-custom-fw)
+  - [Setting up the build environment (DIY method)](#setting-up-the-build-environment-diy-method)
+  - [Add camera configurations to your board (optional, but recommended)](#add-camera-configurations-to-your-board-optional-but-recommended)
+    - [Supported camera models](#supported-camera-models)
+    - [For unsupported camera models](#for-unsupported-camera-models)
+    - [Customize additional camera settings](#customize-additional-camera-settings)
+  - [Build the API](#build-the-api)
 - [Notes](#notes)
 - [Benchmark](#benchmark)
+- [Troubleshooting](#troubleshooting)
 - [Donate](#donate)
 
-## Precomiled FW (the easy way) <a name="Precompiled">
+## Precomiled FW (the easy way)
 
 If you are not familiar with building custom firmware, visit the [releases](https://github.com/cnadler86/micropython-camera-API/releases) page to download firmware that suits your board. **There are over 20 precompiled board images with the latest micropython!**
 
-## Using the API <a name="Usage">
+## Using the API
 
-### Importing the Camera Module
+### Importing the camera module
 
 ```python
 from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
 ```
 
-### Creating a Camera Object
+### Creating a camera object
 
 Camera construction using defaults. This is the case if you are using a **non-generic** precompiled firmware or if you specified the camera model or pins in mpconfigboard.h during your build. Then you can just call the construction without any keyword arguments.
 
@@ -99,7 +114,7 @@ The following keyword arguments have default values:
   - LATEST for ESP32S3 boards
   - WHEN_EMPTY for all other
 
-### Initializing the Camera
+### Initializing the camera
 
 ```python
 cam.init()
@@ -172,7 +187,7 @@ vers = camera.Version()
 
 The FW images support the following cameras out of the box, but is therefore big: OV7670, OV7725, OV2640, OV3660, OV5640, NT99141, GC2145, GC032A, GC0308, BF3005, BF20A6, SC030IOT
 
-## Build your custom FW <a name="Build">
+## Build your custom FW
 
 ### Setting up the build environment (DIY method)
 
@@ -191,7 +206,7 @@ Alternatively, you can clone the <https://github.com/espressif/esp32-camera> rep
 
 ### Add camera configurations to your board (optional, but recommended)
 
-#### Supported Camera Models
+#### Supported camera models
 
 This project supports various boards with camera interface out of the box. You typically only need to add a single line to your board config file ("mpconfigboard.h).
 Example (don't forget to add the empty line at the bottom):
