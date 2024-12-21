@@ -8,10 +8,12 @@ The API is stable, but it might change without previous announce.
 
 ## Content
 
-[Precomiled FW](#precomiled-fw-the-easy-way)
-[Using the API](#using-the-api)
-[Build it yourself](#Build)
-
+- [Precomiled FW](#Precompiled)
+- [Using the API](#Usage)
+- [Build it yourself](#Build)
+- [Notes](#notes)
+- [Benchmark](#benchmark)
+- [Donate](#donate)
 
 ## Precomiled FW (the easy way) <a name="Precompiled">
 
