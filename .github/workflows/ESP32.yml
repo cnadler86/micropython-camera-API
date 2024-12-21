@@ -3,6 +3,8 @@ name: ESP32
 on:
   workflow_dispatch:
   push:
+    branches:
+      - '**'
     paths:
       - 'src/**'
       - '.github/workflows/*.yml'

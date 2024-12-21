@@ -2,7 +2,7 @@
 
 [![ESP32 Port](https://github.com/cnadler86/micropython-camera-API/actions/workflows/ESP32.yml/badge.svg)](https://github.com/cnadler86/micropython-camera-API/actions/workflows/ESP32.yml)
 
-This project aims to support various cameras (e.g. OV2640, OV5640) on different MicroPython ports, starting with the ESP32 port. The project implements a general API, has precompiled FW images and supports a lot of cameras out of the box.
+This project aims to support various cameras (e.g. OV2640, OV5640) on different MicroPython ports, starting with the ESP32 port. The project implements a general API, has precompiled FW images and supports a lot of cameras out of the box. Defaults are set to work with the OV2640.
 At the moment, this is a micropython user module, but it might get in the micropython repo in the future.
 The API is stable, but it might change without previous announce.
 
@@ -21,9 +21,6 @@ The API is stable, but it might change without previous announce.
 - [Build your custom FW](#build-your-custom-fw)
   - [Setting up the build environment (DIY method)](#setting-up-the-build-environment-diy-method)
   - [Add camera configurations to your board (optional, but recommended)](#add-camera-configurations-to-your-board-optional-but-recommended)
-    - [Supported camera models](#supported-camera-models)
-    - [For unsupported camera models](#for-unsupported-camera-models)
-    - [Customize additional camera settings](#customize-additional-camera-settings)
   - [Build the API](#build-the-api)
 - [Notes](#notes)
 - [Benchmark](#benchmark)
@@ -291,6 +288,7 @@ If you experience problems, visit [MicroPython external C modules](https://docs.
 - If your target board is a ESP32, I recommend using IDF >= 5.2, since older versions may lead to IRAM overflow during build. Alternatively you can modify your sdkconfig-file (see [issue #1](https://github.com/cnadler86/micropython-camera-API/issues/1)).
 - The driver requires PSRAM to be installed and activated.
 - Most of the precompiled firmware images are untested, but the only difference between them are the target architecture and pin definitions, so they should work out of the box. If not, please raise an issue.
+- Every sensor has its own ranges and settings, please consult the respective specifications.
 
 ## Benchmark
 
