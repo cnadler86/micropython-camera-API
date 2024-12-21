@@ -6,11 +6,18 @@ This project aims to support various cameras (e.g. OV2640, OV5640) on different 
 At the moment, this is a micropython user module, but it might get in the micropython repo in the future.
 The API is stable, but it might change without previous announce.
 
-## Precomiled FW (the easy way)
+## Content
+
+[Precomiled FW](#precomiled-fw-the-easy-way)
+[Using the API](#using-the-api)
+[Build it yourself](#Build)
+
+
+## Precomiled FW (the easy way) <a name="Precompiled">
 
 If you are not familiar with building custom firmware, visit the [releases](https://github.com/cnadler86/micropython-camera-API/releases) page to download firmware that suits your board. **There are over 20 precompiled board images with the latest micropython!**
 
-## Using the API
+## Using the API <a name="Usage">
 
 ### Importing the Camera Module
 
@@ -163,7 +170,7 @@ vers = camera.Version()
 
 The FW images support the following cameras out of the box, but is therefore big: OV7670, OV7725, OV2640, OV3660, OV5640, NT99141, GC2145, GC032A, GC0308, BF3005, BF20A6, SC030IOT
 
-## Build your custom FW
+## Build your custom FW <a name="Build">
 
 ### Setting up the build environment (DIY method)
 
@@ -268,9 +275,9 @@ If you experience problems, visit [MicroPython external C modules](https://docs.
 - The driver requires PSRAM to be installed and activated.
 - Most of the precompiled firmware images are untested, but the only difference between them are the target architecture and pin definitions, so they should work out of the box. If not, please raise an issue.
 
-## FPS benchmark
+## Benchmark
 
-I didn't use a calibrated osziloscope, but here is a benchmark with my ESP32S3 (GrabMode=LATEST, fb_count = 1, jpeg_quality=85%) and OV2640.
+I didn't use a calibrated osziloscope, but here is a FPS benchmark with my ESP32S3 (xclck_freq = 20MHz, GrabMode=LATEST, fb_count = 1, jpeg_quality=85%) and OV2640.
 Using fb_count=2 theoretically can double the FPS (see JPEG with fb_count=2). This might also aplly for other PixelFormats.
 
 | Frame Size | GRAYSCALE | RGB565 | YUV422 | JPEG   | JPEG -> RGB565 | JPEG -> RGB888 | JPEG (fb=2) |
@@ -293,14 +300,13 @@ Using fb_count=2 theoretically can double the FPS (see JPEG with fb_count=2). Th
 
 Looking at the results: image conversion make only sense for frame sized below QVGA or if capturing the image in the intended pixelformat and frame size combination fails.
 
-## Troubleshoot
+## Troubleshooting
 
 You can find information on the following sites:
 - [ESP-FAQ](https://docs.espressif.com/projects/esp-faq/en/latest/application-solution/camera-application.html)
 - [ChatGPT](https://chatgpt.com/)
 - [Issues in here](https://github.com/cnadler86/micropython-camera-API/issues?q=is%3Aissue)
 
-## Future Plans
+## Donate
 
-- Edge case: enable usage of pins such as i2c for other applications
-- Provide examples in binary image
+If you enjoy this work and would like to share your enjoyment, please feel free to [donate](https://github.com/sponsors/cnadler86?frequency=one-time) and contribute to the project. Thanks! :blush:

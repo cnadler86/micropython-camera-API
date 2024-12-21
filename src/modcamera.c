@@ -318,9 +318,13 @@ bool mp_camera_hal_initialized(mp_camera_obj_t *self){
 const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[] = {
     { MP_ROM_QSTR(MP_QSTR_JPEG),            MP_ROM_INT(PIXFORMAT_JPEG) },
     { MP_ROM_QSTR(MP_QSTR_YUV422),          MP_ROM_INT(PIXFORMAT_YUV422) },
+    { MP_ROM_QSTR(MP_QSTR_YUV420),          MP_ROM_INT(PIXFORMAT_YUV420) },
     { MP_ROM_QSTR(MP_QSTR_GRAYSCALE),       MP_ROM_INT(PIXFORMAT_GRAYSCALE) },
     { MP_ROM_QSTR(MP_QSTR_RGB565),          MP_ROM_INT(PIXFORMAT_RGB565) },
     { MP_ROM_QSTR(MP_QSTR_RGB888),          MP_ROM_INT(PIXFORMAT_RGB888) },
+    { MP_ROM_QSTR(MP_QSTR_RAW),             MP_ROM_INT(PIXFORMAT_RAW) },
+    { MP_ROM_QSTR(MP_QSTR_RGB444),          MP_ROM_INT(PIXFORMAT_RGB444) },
+    { MP_ROM_QSTR(MP_QSTR_RGB555),          MP_ROM_INT(PIXFORMAT_RGB555) },
 };
 
 const mp_rom_map_elem_t mp_camera_hal_frame_size_table[] = {
@@ -367,9 +371,6 @@ const mp_rom_map_elem_t mp_camera_hal_gainceiling_table[] = {
 
 //TODO: Makros with convertion function, since the API will use standarized values.
 // Helper functions to get and set camera and sensor information
-#define SENSOR_STATUS_GETSET_IN_RANGE(type, name, status_field_name, setter_function_name, min_val, max_val) \
-    SENSOR_GETSET_IN_RANGE(type, name, status.status_field_name, setter_function_name, min_val, max_val)
-
 #define SENSOR_STATUS_GETSET(type, name, status_field_name, setter_function_name) \
     SENSOR_GETSET(type, name, status.status_field_name, setter_function_name)
 
@@ -377,10 +378,6 @@ const mp_rom_map_elem_t mp_camera_hal_gainceiling_table[] = {
 #define SENSOR_GETSET(type, name, field_name, setter_function_name) \
     SENSOR_GET(type, name, field_name) \
     SENSOR_SET(type, name, setter_function_name)
-
-#define SENSOR_GETSET_IN_RANGE(type, name, field_name, setter_function_name, min_val, max_val) \
-    SENSOR_GET(type, name, field_name) \
-    SENSOR_SET_IN_RANGE(type, name, setter_function_name, min_val, max_val)
 
 #define SENSOR_GET(type, name, status_field_name) \
     type mp_camera_hal_get_##name(mp_camera_obj_t * self) { \
@@ -401,26 +398,11 @@ const mp_rom_map_elem_t mp_camera_hal_gainceiling_table[] = {
         } \
     }
 
-#define SENSOR_SET_IN_RANGE(type, name, setter_function_name, min_val, max_val) \
-    void mp_camera_hal_set_##name(mp_camera_obj_t * self, type value) { \
-        sensor_t *sensor = esp_camera_sensor_get(); \
-        check_init(self); \
-        if (value < min_val || value > max_val) { \
-            mp_raise_ValueError(MP_ERROR_TEXT(#name " value must be between " #min_val " and " #max_val)); \
-        } \
-        if (!sensor->setter_function_name) { \
-            mp_raise_ValueError(MP_ERROR_TEXT("No attribute " #name)); \
-        } \
-        if (sensor->setter_function_name(sensor, value) < 0) { \
-            mp_raise_ValueError(MP_ERROR_TEXT("Invalid setting for " #name)); \
-        } \
-    }
-
 SENSOR_GET(framesize_t, frame_size, status.framesize);
-SENSOR_STATUS_GETSET_IN_RANGE(int, contrast, contrast, set_contrast, -2, 2);
-SENSOR_STATUS_GETSET_IN_RANGE(int, brightness, brightness, set_brightness, -2, 2);
-SENSOR_STATUS_GETSET_IN_RANGE(int, saturation, saturation, set_saturation, -2, 2);
-SENSOR_STATUS_GETSET_IN_RANGE(int, sharpness, sharpness, set_sharpness, -2, 2);
+SENSOR_STATUS_GETSET(int, contrast, contrast, set_contrast);
+SENSOR_STATUS_GETSET(int, brightness, brightness, set_brightness);
+SENSOR_STATUS_GETSET(int, saturation, saturation, set_saturation);
+SENSOR_STATUS_GETSET(int, sharpness, sharpness, set_sharpness);
 SENSOR_STATUS_GETSET(int, denoise, denoise, set_denoise);
 SENSOR_STATUS_GETSET(mp_camera_gainceiling_t, gainceiling, gainceiling, set_gainceiling);
 SENSOR_STATUS_GETSET(bool, colorbar, colorbar, set_colorbar);
@@ -431,11 +413,11 @@ SENSOR_STATUS_GETSET(bool, hmirror, hmirror, set_hmirror);
 SENSOR_STATUS_GETSET(bool, vflip, vflip, set_vflip);
 SENSOR_STATUS_GETSET(bool, aec2, aec2, set_aec2);
 SENSOR_STATUS_GETSET(bool, awb_gain, awb_gain, set_awb_gain);
-SENSOR_STATUS_GETSET(int, agc_gain, agc_gain, set_agc_gain); //in_Range not needed since driver limits value
-SENSOR_STATUS_GETSET(int, aec_value, aec_value, set_aec_value); //in_Range not needed since driver limits value
-SENSOR_STATUS_GETSET_IN_RANGE(int, special_effect, special_effect, set_special_effect, 0, 6);
-SENSOR_STATUS_GETSET_IN_RANGE(int, wb_mode, wb_mode, set_wb_mode, 0, 4);
-SENSOR_STATUS_GETSET_IN_RANGE(int, ae_level, ae_level, set_ae_level, -2, 2);
+SENSOR_STATUS_GETSET(int, agc_gain, agc_gain, set_agc_gain);
+SENSOR_STATUS_GETSET(int, aec_value, aec_value, set_aec_value);
+SENSOR_STATUS_GETSET(int, special_effect, special_effect, set_special_effect);
+SENSOR_STATUS_GETSET(int, wb_mode, wb_mode, set_wb_mode);
+SENSOR_STATUS_GETSET(int, ae_level, ae_level, set_ae_level);
 SENSOR_STATUS_GETSET(bool, dcw, dcw, set_dcw);
 SENSOR_STATUS_GETSET(bool, bpc, bpc, set_bpc);
 SENSOR_STATUS_GETSET(bool, wpc, wpc, set_wpc);

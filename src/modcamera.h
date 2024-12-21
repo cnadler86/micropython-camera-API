@@ -205,7 +205,7 @@ extern mp_obj_t mp_camera_hal_convert(mp_camera_obj_t *self, int8_t out_format);
  * @brief Table mapping pixel formats API to their corresponding values at HAL.
  * @details Needs to be defined in the port-specific implementation.
  */
-extern const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[5];
+extern const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[9];
 
 /**
  * @brief Table mapping frame sizes API to their corresponding values at HAL.
