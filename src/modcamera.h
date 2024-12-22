@@ -88,7 +88,6 @@ defined (MICROPY_CAMERA_PIN_PCLK) && defined (MICROPY_CAMERA_PIN_VSYNC) && defin
 
 typedef pixformat_t  hal_camera_pixformat_t;
 typedef framesize_t  hal_camera_framesize_t;
-typedef camera_fb_location_t hal_camera_fb_location_t;
 typedef camera_grab_mode_t hal_camera_grabmode_t;
 typedef gainceiling_t hal_camera_gainceiling_t;
 
@@ -109,9 +108,7 @@ typedef hal_camera_pixformat_t  mp_camera_pixformat_t;
 typedef hal_camera_framesize_t  mp_camera_framesize_t;
 typedef hal_camera_grabmode_t mp_camera_grabmode_t;
 typedef hal_camera_gainceiling_t mp_camera_gainceiling_t;
-// typedef hal_camera_fb_location_t mp_camera_fb_location_t; //not used at the moment, but might be used in the future
 
-// TODO:    Define how to integrate external time source in constructor (e.g. in ESP is LED-Timer).
 /**
  * @brief Constructs the camera hardware abstraction layer.
  * @details The Port-plattform shall define a default pwm-time source and also frame buffer location (no input)

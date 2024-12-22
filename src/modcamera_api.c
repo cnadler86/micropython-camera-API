@@ -162,7 +162,6 @@ static mp_obj_t camera_convert(mp_obj_t self_in, mp_obj_t arg) {
 static MP_DEFINE_CONST_FUN_OBJ_2(camera_convert_obj, camera_convert);
 
 static mp_obj_t camera_reconfigure(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args){
-    //OPEN: Validate inputs
     mp_camera_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
     enum { ARG_frame_size, ARG_pixel_format, ARG_grab_mode, ARG_fb_count };
     static const mp_arg_t allowed_args[] = {

@@ -369,7 +369,6 @@ const mp_rom_map_elem_t mp_camera_hal_gainceiling_table[] = {
     { MP_ROM_QSTR(MP_QSTR_128X),    MP_ROM_INT(GAINCEILING_128X) },
 };
 
-//TODO: Makros with convertion function, since the API will use standarized values.
 // Helper functions to get and set camera and sensor information
 #define SENSOR_STATUS_GETSET(type, name, status_field_name, setter_function_name) \
     SENSOR_GETSET(type, name, status.status_field_name, setter_function_name)
