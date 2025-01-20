@@ -22,6 +22,7 @@ if(EXISTS "${ESP32_CAMERA_DIR}")
         ${ESP32_CAMERA_DIR}/conversions/include
         ${ESP32_CAMERA_DIR}/conversions/private_include
         ${ESP32_CAMERA_DIR}/sensors/private_include
+    )
 else()
     target_include_directories(usermod_mp_camera INTERFACE
         ${CMAKE_CURRENT_LIST_DIR})
