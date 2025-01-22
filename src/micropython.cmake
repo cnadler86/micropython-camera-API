@@ -8,14 +8,20 @@ target_sources(usermod_mp_camera INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/modcamera_api.c
 )
 
-if(EXISTS "${IDF_PATH}/components/esp32-camera")
+if(NOT ESP32_CAMERA_DIR)
+    set(ESP32_CAMERA_DIR "${IDF_PATH}/components/esp32-camera")
+endif()
+
+message("Camera Dir: ${ESP32_CAMERA_DIR}")
+
+if(EXISTS "${ESP32_CAMERA_DIR}")
     target_include_directories(usermod_mp_camera INTERFACE
         ${CMAKE_CURRENT_LIST_DIR}
-        ${IDF_PATH}/components/esp32-camera/driver/include
-        ${IDF_PATH}/components/esp32-camera/driver/private_include
-        ${IDF_PATH}/components/esp32-camera/conversions/include
-        ${IDF_PATH}/components/esp32-camera/conversions/private_include
-        ${IDF_PATH}/components/esp32-camera/sensors/private_include
+        ${ESP32_CAMERA_DIR}/driver/include
+        ${ESP32_CAMERA_DIR}/driver/private_include
+        ${ESP32_CAMERA_DIR}/conversions/include
+        ${ESP32_CAMERA_DIR}/conversions/private_include
+        ${ESP32_CAMERA_DIR}/sensors/private_include
     )
 else()
     target_include_directories(usermod_mp_camera INTERFACE
