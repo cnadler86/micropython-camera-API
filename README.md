@@ -269,7 +269,7 @@ If you want to customize additional camera setting or reduce the FW size by remo
 
 ### Build the API
 
-To build the project, you could do it the following way (Micropython and camera-api folders are at the same level):
+To build the project, you could do it the following way:
 
 ```bash
 . <path2esp-idf>/esp-idf/export.sh
@@ -279,6 +279,7 @@ make USER_C_MODULES=../../../../micropython-camera-API/src/micropython.cmake BOA
 make USER_C_MODULES=../../../../micropython-camera-API/src/micropython.cmake BOARD=<Your-Board> all
 ```
 
+Micropython and camera-api folders are at the same level. Note that you need those extra "/../"s while been inside the esp32 port folder.
 If you experience problems, visit [MicroPython external C modules](https://docs.micropython.org/en/latest/develop/cmodules.html).
 
 ## Notes
