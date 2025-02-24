@@ -269,7 +269,7 @@ If you want to customize additional camera setting or reduce the FW size by remo
 
 ### Build the API
 
-To build the project, you could do it the following way:
+To build the project, you could do it the following way (Micropython and camera-api folders are at the same level):
 
 ```bash
 . <path2esp-idf>/esp-idf/export.sh
