@@ -199,6 +199,13 @@ extern mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format);
 extern mp_obj_t mp_camera_hal_convert(mp_camera_obj_t *self, int8_t out_format);
 
 /**
+ * @brief Frees the buffer of the camera object.
+ * 
+ * @param self Pointer to the camera object.
+ */
+extern void mp_camera_hal_free_buffer(mp_camera_obj_t *self);
+
+/**
  * @brief Table mapping pixel formats API to their corresponding values at HAL.
  * @details Needs to be defined in the port-specific implementation.
  */

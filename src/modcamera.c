@@ -315,6 +315,13 @@ bool mp_camera_hal_initialized(mp_camera_obj_t *self){
     return self->initialized;
 }
 
+void mp_camera_hal_free_buffer(mp_camera_obj_t *self) {
+    if (self->captured_buffer) {
+        esp_camera_fb_return(self->captured_buffer);
+        self->captured_buffer = NULL;
+    }
+}
+
 const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[] = {
     { MP_ROM_QSTR(MP_QSTR_JPEG),            MP_ROM_INT((mp_uint_t)PIXFORMAT_JPEG) },
     { MP_ROM_QSTR(MP_QSTR_YUV422),          MP_ROM_INT((mp_uint_t)PIXFORMAT_YUV422) },
