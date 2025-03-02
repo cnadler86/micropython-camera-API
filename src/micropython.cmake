@@ -1,11 +1,5 @@
 include(${MICROPY_DIR}/py/py.cmake)
 
-# IDF version >= 5.4 not supported yet
-message(STATUS "IDF_VERSION: ${IDF_VER}")
-if (NOT IDF_VERSION_MINOR VERSION_LESS 4)
-    message(FATAL_ERROR "ESP-IDF version >= 5.4 or later is not supported by micropython with the esp32-camera yet. Please use IDF 5.2 or 5.3")
-endif()
-
 add_library(usermod_mp_camera INTERFACE)
 
 target_sources(usermod_mp_camera INTERFACE
