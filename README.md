@@ -14,7 +14,6 @@ The API is stable, but it might change without previous announce.
   - [Creating a camera object](#creating-a-camera-object)
   - [Initializing the camera](#initializing-the-camera)
   - [Capture image](#capture-image)
-  - [Convert image to another format](#convert-image-to-another-format)
   - [Camera reconfiguration](#camera-reconfiguration)
   - [Additional methods](#additional-methods)
   - [Additional information](#additional-information)
@@ -93,7 +92,6 @@ cam = Camera(
 - fb_count: Frame buffer count
 - grab_mode: Grab mode as GrabMode
 - init: Initialize camera at construction time (default: True)
-- bmp_out: Image captured output converted to bitmap (default: False)
 
 **Default values:**
 
@@ -123,28 +121,6 @@ cam.init()
 img = cam.capture()
 ```
 
-Arguments for capture
-
-- out_format: Output format as PixelFormat (optional)
-
-### Convert image to another format
-
-You can either convert the image with the `capture` method directly passing the desired output format:
-```python
-img_rgb888 = cam.capture(PixelFormat.RGB888) #capture image as configured (e.g. JPEG), convert it to RGB888 and return the converted image
-```
-Or you can first capture the image and then convert it to the desired PixelFormat with the `convert` method.
-Doing so you can have both, the captured and the converted image. Note that more memory will be used.
-```python
-img = cam.capture()
-img_rgb888 = cam.convert(PixelFormat.RGB888) #converts the last captured image to RGB888 and returns the converted image
-```
-
-Convertion supported 
-- from JPEG to RGB565
-- to RGB888 in general
-- to JPEG in gerenal (use the `set_quality` method to set the desired JPEG quality)
-
 ### Camera reconfiguration
 
 ```python
@@ -164,7 +140,6 @@ Here are just a few examples:
 
 ```python
 cam.set_quality(90)  # The quality goes from 0% to 100%, meaning 100% is the highest but has probably no compression
-cam.set_bmp_out(True) # Enables convertion to bmp when capturing image
 camera.get_brightness()
 camera.set_vflip(True) #Enable vertical flip
 ```
@@ -296,25 +271,22 @@ If you experience problems, visit [MicroPython external C modules](https://docs.
 I didn't use a calibrated osziloscope, but here is a FPS benchmark with my ESP32S3 (xclck_freq = 20MHz, GrabMode=LATEST, fb_count = 1, jpeg_quality=85%) and OV2640.
 Using fb_count=2 theoretically can double the FPS (see JPEG with fb_count=2). This might also aplly for other PixelFormats.
 
-| Frame Size | GRAYSCALE | RGB565 | YUV422 | JPEG   | JPEG -> RGB565 | JPEG -> RGB888 | JPEG (fb=2) |
-|------------|-----------|--------|--------|--------|----------------|----------------|-------------|
-| R96X96     | 12.5      | 12.5   | 12.5   | No img | No img         | No img         | No img      |
-| QQVGA      | 12.5      | 12.5   | 12.5   | 25     | 25             | 25             | 50          |
-| QCIF       | 11        | 11     | 11.5   | 25     | 25             | 25             | 50          |
-| HQVGA      | 12.5      | 12.5   | 12.5   | 25     | 16.7           | 16.7           | 50          |
-| R240X240   | 12.5      | 12.5   | 11.5   | 25     | 16.7           | 12.5           | 50          |
-| QVGA       | 12        | 11     | 12     | 25     | 25             | 25             | 50          |
-| CIF        | 12.5      | No img | No img | 6.3    | 8.3            | 8.3            | 12.5        |
-| HVGA       | 3         | 3      | 2.5    | 12.5   | 6.3            | 6.3            | 25          |
-| VGA        | 3         | 3      | 3      | 12.5   | 3.6            | 3.6            | 25          |
-| SVGA       | 3         | 3      | 3      | 12.5   | 2.8            | 2.5            | 25          |
-| XGA        | No img    | No img | No img | 6.3    | 1.6            | 1.6            | 12.5        |
-| HD         | No img    | No img | No img | 6.3    | 1.4            | 1.3            | 12.5        |
-| SXGA       | 2         | 2      | 2      | 6.3    | 1              | 1              | 12.5        |
-| UXGA       | No img    | No img | No img | 6.3    | 0.7            | 0.7            | 12.5        |
-
-
-Looking at the results: image conversion make only sense for frame sized below QVGA or if capturing the image in the intended pixelformat and frame size combination fails.
+| Frame Size | GRAYSCALE | RGB565 | YUV422 | JPEG   | JPEG (fb=2) |
+|------------|-----------|--------|--------|--------|-------------|
+| R96X96     | 12.5      | 12.5   | 12.5   | No img | No img      |
+| QQVGA      | 12.5      | 12.5   | 12.5   | 25     | 50          |
+| QCIF       | 11        | 11     | 11.5   | 25     | 50          |
+| HQVGA      | 12.5      | 12.5   | 12.5   | 25     | 50          |
+| R240X240   | 12.5      | 12.5   | 11.5   | 25     | 50          |
+| QVGA       | 12        | 11     | 12     | 25     | 50          |
+| CIF        | 12.5      | No img | No img | 6.3    | 12.5        |
+| HVGA       | 3         | 3      | 2.5    | 12.5   | 25          |
+| VGA        | 3         | 3      | 3      | 12.5   | 25          |
+| SVGA       | 3         | 3      | 3      | 12.5   | 25          |
+| XGA        | No img    | No img | No img | 6.3    | 12.5        |
+| HD         | No img    | No img | No img | 6.3    | 12.5        |
+| SXGA       | 2         | 2      | 2      | 6.3    | 12.5        |
+| UXGA       | No img    | No img | No img | 6.3    | 12.5        |
 
 ## Troubleshooting
 

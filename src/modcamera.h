@@ -96,8 +96,6 @@ typedef struct hal_camera_obj {
     camera_config_t     camera_config;
     bool                initialized;
     camera_fb_t         *captured_buffer;
-    bool                bmp_out;
-    mp_buffer_info_t    converted_buffer;
 } hal_camera_obj_t;
 
 #endif // CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
@@ -184,19 +182,9 @@ extern void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize
  * @brief Captures an image and returns it as mp_obj_t (e.g. mp_obj_new_memoryview).
  * 
  * @param self Pointer to the camera object.
- * @param out_format Output pixelformat format.
  * @return Captured image as micropython object.
  */
-extern mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format);
-
-/**
- * @brief Converts an image from one pixelformat to another.
- * 
- * @param self Pointer to the camera object.
- * @param out_format Output pixelformat format.
- * @return Converted image as micropython object.
- */
-extern mp_obj_t mp_camera_hal_convert(mp_camera_obj_t *self, int8_t out_format);
+extern mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self);
 
 /**
  * @brief Frees the buffer of the camera object.
