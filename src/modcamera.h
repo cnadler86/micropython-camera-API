@@ -187,6 +187,14 @@ extern void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize
 extern mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self);
 
 /**
+ * @brief Returns true, if a frame is available.
+ * 
+ * @param self Pointer to the camera object.
+ * @return True, if a frame is available.
+ */
+extern mp_obj_t mp_camera_hal_frame_available(mp_camera_obj_t *self);
+
+/**
  * @brief Frees the buffer of the camera object.
  * 
  * @param self Pointer to the camera object.

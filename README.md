@@ -134,6 +134,24 @@ Keyword arguments for reconfigure
 - grab_mode: Grab mode as GrabMode (optional)
 - fb_count: Frame buffer count (optional)
 
+### Freeing the buffer
+
+```python
+Img = bytes(cam.capture())  #Create a new bytes object from the memoryview (because we want to free it afterwards)
+cam.free_buffer() # This will free the captured image or in other words "deleting"" the memoryview 
+```
+
+### Is there a frame available
+
+```python
+Img = bytes(cam.capture())
+cam.free_buffer()
+while not cam.frame_available():
+  <do some other stuff>
+print('The frame is available now. You can grab the image by the capture method =)')
+```
+This enables the possibility to create async applications
+
 ### Additional methods
 
 Here are just a few examples:

@@ -219,7 +219,12 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self) {
     }
     return mp_obj_new_memoryview('b', self->captured_buffer->len, self->captured_buffer->buf);
 
-} // mp_camera_hal_capture
+}
+
+mp_obj_t mp_camera_hal_frame_available(mp_camera_obj_t *self) {
+    check_init(self);
+    return mp_obj_new_bool(esp_camera_available_frames());
+}
 
 bool mp_camera_hal_initialized(mp_camera_obj_t *self){
     return self->initialized;

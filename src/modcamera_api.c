@@ -151,6 +151,12 @@ static mp_obj_t camera_capture(mp_obj_t self_in){
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(camera_capture_obj, camera_capture);
 
+static mp_obj_t camera_frame_available(mp_obj_t self_in){
+    mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    return mp_camera_hal_frame_available(self);
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(camera_frame_available_obj, camera_frame_available);
+
 static mp_obj_t camera_free_buf(mp_obj_t self_in) {
     mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in);
     mp_camera_hal_free_buffer(self);
@@ -281,6 +287,7 @@ CREATE_GETSET_FUNCTIONS(lenc, mp_obj_new_bool, mp_obj_is_true);
 static const mp_rom_map_elem_t camera_camera_locals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_reconfigure), MP_ROM_PTR(&camera_reconfigure_obj) },
     { MP_ROM_QSTR(MP_QSTR_capture), MP_ROM_PTR(&camera_capture_obj) },
+    { MP_ROM_QSTR(MP_QSTR_frame_available), MP_ROM_PTR(&camera_frame_available_obj) },
     { MP_ROM_QSTR(MP_QSTR_free_buffer), MP_ROM_PTR(&camera_free_buf_obj) },
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&camera_init_obj) },
     { MP_ROM_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&mp_camera_deinit_obj) },
