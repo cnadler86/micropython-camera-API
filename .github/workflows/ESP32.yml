@@ -166,9 +166,9 @@ jobs:
           IFS='-' read -r BOARD_NAME BOARD_VARIANT <<< "${BUILD_TARGET}"
           
           if [ -n "${BOARD_VARIANT}" ]; then
-            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -D MICROPY_BOARD_VARIANT=$BOARD_VARIANT -B build-$BUILD_TARGET -D MP_CAMERA_DRIVER_VERSION=$CAM_DRIVER"
+            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -D MICROPY_BOARD_VARIANT=$BOARD_VARIANT -B build-$BUILD_TARGET -D MP_CAMERA_DRIVER_VERSION=$CAM_DRIVER -D MP_JPEG_DIR=${{ github.workspace }}/mp_jpeg"
           else
-            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -B build-$BUILD_TARGET -D MP_CAMERA_DRIVER_VERSION=$CAM_DRIVER"
+            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -B build-$BUILD_TARGET -D MP_CAMERA_DRIVER_VERSION=$CAM_DRIVER -D MP_JPEG_DIR=${{ github.workspace }}/mp_jpeg"
           fi
           if [ -n "${CAMERA_MODEL}" ]; then
             echo "FW_NAME=${CAMERA_MODEL}" >> $GITHUB_ENV
