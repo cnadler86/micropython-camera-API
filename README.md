@@ -2,13 +2,13 @@
 
 [![ESP32 Port](https://github.com/cnadler86/micropython-camera-API/actions/workflows/ESP32.yml/badge.svg)](https://github.com/cnadler86/micropython-camera-API/actions/workflows/ESP32.yml)
 
-This project aims to support various cameras (e.g. OV2640, OV5640) on different MicroPython ports, starting with the ESP32 port. The project implements a general API, has precompiled FW images and supports a lot of cameras out of the box. Defaults are set to work with the OV2640.
+This project aims to support various cameras (e.g. OV2640, OV5640) on different MicroPython ports, starting with the ESP32 port. The project implements a general API, has precompiled firmware images and supports a lot of cameras out of the box. Defaults are set to work with the OV2640.
 At the moment, this is a micropython user module, but it might get in the micropython repo in the future.
 The API is stable, but it might change without previous announce.
 
 ## Content
 
-- [Precomiled FW (the easy way)](#precomiled-fw-the-easy-way)
+- [Precompiled firmware (the easy way)](#Precompiled-firmware-the-easy-way)
 - [Using the API](#using-the-api)
   - [Importing the camera module](#importing-the-camera-module)
   - [Creating a camera object](#creating-a-camera-object)
@@ -17,7 +17,7 @@ The API is stable, but it might change without previous announce.
   - [Camera reconfiguration](#camera-reconfiguration)
   - [Additional methods](#additional-methods)
   - [Additional information](#additional-information)
-- [Build your custom FW](#build-your-custom-fw)
+- [Build your custom firmware](#build-your-custom-firmware)
   - [Setting up the build environment (DIY method)](#setting-up-the-build-environment-diy-method)
   - [Add camera configurations to your board (optional, but recommended)](#add-camera-configurations-to-your-board-optional-but-recommended)
   - [Build the API](#build-the-api)
@@ -26,16 +26,26 @@ The API is stable, but it might change without previous announce.
 - [Troubleshooting](#troubleshooting)
 - [Donate](#donate)
 
-## Precomiled FW (the easy way)
+## Precompiled firmware (the easy way)
 
 If you are not familiar with building custom firmware, visit the [releases](https://github.com/cnadler86/micropython-camera-API/releases) page to download firmware that suits your board. **There are over 20 precompiled board images with the latest micropython!**
+
+This firmware binaries also include the (mp_jpeg module)[https://github.com/cnadler86/mp_jpeg] to encode/decode JPEGs.
 
 ## Using the API
 
 ### Importing the camera module
 
+There general way of using the api is as follow:
+
 ```python
 from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
+```
+
+There is also a camera class with asyncio support! To use it, you need to import from the acamera package:
+
+```python
+from acamera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
 ```
 
 ### Creating a camera object
@@ -117,9 +127,21 @@ cam.init()
 
 ### Capture image
 
+The general way of capturing an image is calling the `capture` method:
+
 ```python
 img = cam.capture()
 ```
+
+Each time you call the method, you will receive a new frame.
+
+The probably better way of capturing an image would be in an asyncio-loop:
+
+```python
+img = await cam.acapture() #To access this method, you need to import from acamera
+```
+
+Please consult the [asyncio documentation](https://docs.micropython.org/en/latest/library/asyncio.html), if you have questions on this.
 
 ### Camera reconfiguration
 
@@ -150,9 +172,10 @@ while not cam.frame_available():
   <do some other stuff>
 print('The frame is available now. You can grab the image by the capture method =)')
 ```
-This enables the possibility to create async applications
 
-### Additional methods
+This gives you the possibility of creating an asynchronous application
+
+### Additional methods and examples
 
 Here are just a few examples:
 
@@ -163,8 +186,10 @@ camera.set_vflip(True) #Enable vertical flip
 ```
 
 See autocompletions in Thonny in order to see the list of methods.
-If you want more insides in the methods and what they actually do, you can find a very good documentation [here](https://docs.circuitpython.org/en/latest/shared-bindings/espcamera/index.html).
+If you want more insights in the methods and what they actually do, you can find a very good documentation [here](https://docs.circuitpython.org/en/latest/shared-bindings/espcamera/index.html).
 Note that each method requires a "get_" or "set_" prefix, depending on the desired action.
+
+Take also a look in the examples folder.
 
 To get the version of the camera driver used:
 
@@ -175,9 +200,9 @@ vers = camera.Version()
 
 ### Additional information
 
-The FW images support the following cameras out of the box, but is therefore big: OV7670, OV7725, OV2640, OV3660, OV5640, NT99141, GC2145, GC032A, GC0308, BF3005, BF20A6, SC030IOT
+The firmware images support the following cameras out of the box, but is therefore big: OV7670, OV7725, OV2640, OV3660, OV5640, NT99141, GC2145, GC032A, GC0308, BF3005, BF20A6, SC030IOT
 
-## Build your custom FW
+## Build your custom firmware
 
 ### Setting up the build environment (DIY method)
 
@@ -185,7 +210,7 @@ To build the project, follow these instructions:
 
 - [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.2.3/esp32/get-started/index.html): I used version 5.2.3, but it might work with other versions (see notes).
 - Clone the micropython repo and this repo in a folder, e.g. "MyESPCam". MicroPython version 1.24 or higher is required (at least commit 92484d8).
-- You will have to add the ESP32-Camera driver (I used v2.0.15). To do this, add the following to the respective idf_component.yml file (e.g. in micropython/ports/esp32/main_esp32s3/idf_component.yml):
+- You will have to add the ESP32-Camera driver from my fork. To do this, add the following to the respective idf_component.yml file (e.g. in micropython/ports/esp32/main_esp32s3/idf_component.yml):
 
 ```yml
   espressif/esp32-camera:
@@ -258,7 +283,11 @@ Example for Xiao sense:
 ```
 #### Customize additional camera settings
 
-If you want to customize additional camera setting or reduce the FW size by removing support for unused camera sensors, then take a look at the kconfig file of the esp32-camera driver and specify these on the sdkconfig file of your board.
+If you want to customize additional camera setting or reduce the firmware size by removing support for unused camera sensors, then take a look at the kconfig file of the esp32-camera driver and specify these on the sdkconfig file of your board.
+
+#### (Optional) Add the mp_jpeg module
+
+If you also want to include the [mp_jpeg module](https://github.com/cnadler86/mp_jpeg) in your build, clone the mp_jpeg repo at the same level and folder as the mp_camera_api repo and meet the requirements from the mp_jpeg repo.
 
 ### Build the API
 
@@ -286,8 +315,8 @@ If you experience problems, visit [MicroPython external C modules](https://docs.
 
 ## Benchmark
 
-I didn't use a calibrated osziloscope, but here is a FPS benchmark with my ESP32S3 (xclck_freq = 20MHz, GrabMode=LATEST, fb_count = 1, jpeg_quality=85%) and OV2640.
-Using fb_count=2 theoretically can double the FPS (see JPEG with fb_count=2). This might also aplly for other PixelFormats.
+I didn't use a calibrated oscilloscope, but here is a FPS benchmark with my ESP32S3 (xclk_freq = 20MHz, GrabMode=LATEST, fb_count = 1, jpeg_quality=85%) and OV2640.
+Using fb_count=2 theoretically can double the FPS (see JPEG with fb_count=2). This might also apply for other PixelFormats.
 
 | Frame Size | GRAYSCALE | RGB565 | YUV422 | JPEG   | JPEG (fb=2) |
 |------------|-----------|--------|--------|--------|-------------|

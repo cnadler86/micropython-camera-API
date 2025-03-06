@@ -76,8 +76,8 @@ jobs:
         if: steps.cache_esp_idf.outputs.cache-hit != 'true'
         run: |
           cd ~
-          # git clone --depth 1 --branch release/v5.2 https://github.com/espressif/esp-idf.git
-          git clone --depth 1 --branch ${{ env.IDF_VER }} https://github.com/espressif/esp-idf.git
+          git clone --depth 1 --branch release/v5.3 https://github.com/espressif/esp-idf.git
+          # git clone --depth 1 --branch ${{ env.IDF_VER }} https://github.com/espressif/esp-idf.git
           git -C esp-idf submodule update --init --recursive --filter=tree:0
           cd esp-idf
           ./install.sh all
@@ -85,8 +85,12 @@ jobs:
           # latest_cam_driver=$(curl -s https://api.github.com/repos/espressif/esp32-camera/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
           # git clone --depth 1 --branch $latest_cam_driver https://github.com/espressif/esp32-camera.git
           git clone https://github.com/cnadler86/esp32-camera.git
+          git clone https://github.com/espressif/esp-adf-libs.git
           cd ~/esp-idf/
           source ./export.sh
+          # cd ~
+          # git clone https://github.com/espressif/esp-adf-libs.git
+          # cp -r ~/esp-adf-libs/esp_new_jpeg ~/esp-idf/components/
 
   # Dynamically create jobs for each board
   build:
@@ -151,6 +155,7 @@ jobs:
       # Build MicroPython for each board
       - name: Build MicroPython
         run: |
+          git clone https://github.com/cnadler86/mp_jpeg.git
           cd ~/esp-idf/components/esp32-camera
           CAM_DRIVER=$(git describe --tags --always --dirty)
           cd ~/micropython/ports/esp32
