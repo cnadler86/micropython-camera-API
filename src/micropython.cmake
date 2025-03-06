@@ -1,5 +1,4 @@
 include(${MICROPY_DIR}/py/py.cmake)
-message (STATUS "Current manifest file: ${MICROPY_FROZEN_MANIFEST}")
 
 set(MICROPY_FROZEN_MANIFEST ${CMAKE_CURRENT_LIST_DIR}/manifest.py)
 
