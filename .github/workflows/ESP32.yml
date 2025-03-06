@@ -76,8 +76,8 @@ jobs:
         if: steps.cache_esp_idf.outputs.cache-hit != 'true'
         run: |
           cd ~
-          git clone --depth 1 --branch release/v5.3 https://github.com/espressif/esp-idf.git
-          # git clone --depth 1 --branch ${{ env.IDF_VER }} https://github.com/espressif/esp-idf.git
+          # git clone --depth 1 --branch release/v5.3 https://github.com/espressif/esp-idf.git
+          git clone --depth 1 --branch ${{ env.IDF_VER }} https://github.com/espressif/esp-idf.git
           git -C esp-idf submodule update --init --recursive --filter=tree:0
           cd esp-idf
           ./install.sh all
@@ -154,7 +154,7 @@ jobs:
       # Build MicroPython for each board
       - name: Build MicroPython
         run: |
-          cd ${{ github.workspace }}
+          cd ${{ github.workspace }}/micropython-camera-API
           git clone https://github.com/cnadler86/mp_jpeg.git
           cd ~/esp-idf/components/esp32-camera
           CAM_DRIVER=$(git describe --tags --always --dirty)
