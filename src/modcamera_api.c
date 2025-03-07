@@ -139,6 +139,8 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
     } else {
         if ( !args[ARG_init].u_bool ){
             mp_camera_hal_deinit(self);
+        } else {
+            mp_camera_hal_free_buffer(self);
         }
         return MP_OBJ_FROM_PTR(self);
     }
