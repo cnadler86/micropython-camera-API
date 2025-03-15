@@ -109,7 +109,7 @@ cam = Camera(
 
 The following keyword arguments have default values:
 
-- xclk_freq: 20MHz    // Frequencies are normally either 10 MHz or 20 MHz
+- xclk_freq: 20MHz    // Default for OV2640 (normally either 10 MHz or 20 MHz). Plase adapt it to your camera sensor.
 - frame_size: QQVGA
 - pixel_format: RGB565
 - jpeg_quality: 85    // Quality of JPEG output in percent. Higher means higher quality.
