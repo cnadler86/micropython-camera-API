@@ -15,6 +15,8 @@ The API is stable, but it might change without previous announce.
   - [Initializing the camera](#initializing-the-camera)
   - [Capture image](#capture-image)
   - [Camera reconfiguration](#camera-reconfiguration)
+  - [Freeing the buffer](#freeing-the-buffer)
+  - [Is a frame available](#is-frame-available)
   - [Additional methods](#additional-methods)
   - [Additional information](#additional-information)
 - [Build your custom firmware](#build-your-custom-firmware)
@@ -133,7 +135,8 @@ The general way of capturing an image is calling the `capture` method:
 img = cam.capture()
 ```
 
-Each time you call the method, you will receive a new frame.
+Each time you call the method, you will receive a new frame as memoryview.
+You can convert it to bytes and free the memoryview buffer, so a new frame can be pushed to it. This will reduce the image latency but need more RAM. (see [freeing the buffer](#freeing-the-buffer))
 
 The probably better way of capturing an image would be in an asyncio-loop:
 
@@ -158,12 +161,14 @@ Keyword arguments for reconfigure
 
 ### Freeing the buffer
 
+This is optional, but can reduce the latency of capturing an image in some cases (especially with fb_count = 1)..
+
 ```python
 Img = bytes(cam.capture())  #Create a new bytes object from the memoryview (because we want to free it afterwards)
 cam.free_buffer() # This will free the captured image or in other words "deleting"" the memoryview 
 ```
 
-### Is there a frame available
+### Is frame available
 
 ```python
 Img = bytes(cam.capture())
@@ -173,7 +178,7 @@ while not cam.frame_available():
 print('The frame is available now. You can grab the image by the capture method =)')
 ```
 
-This gives you the possibility of creating an asynchronous application
+This gives you the possibility of creating an asynchronous application without using asyncio.
 
 ### Additional methods and examples
 
