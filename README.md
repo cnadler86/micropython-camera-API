@@ -94,10 +94,10 @@ cam = Camera(
 - href_pin: HREF pin
 - sda_pin: SDA pin
 - scl_pin: SCL pin
-- xclk_pin: XCLK pin
-- xclk_freq: XCLK frequency in Hz
-- powerdown_pin: Powerdown pin
-- reset_pin: Reset pin
+- xclk_pin: XCLK pin ( set to -1, if you have an external clock source)
+- xclk_freq: XCLK frequency in Hz (consult the camera sensor specification)
+- powerdown_pin: Powerdown pin (set to -1 if not used)
+- reset_pin: Reset pin (set to -1 if not used)
 - pixel_format: Pixel format as PixelFormat
 - frame_size: Frame size as FrameSize
 - jpeg_quality: JPEG quality
