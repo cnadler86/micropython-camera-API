@@ -1,7 +1,7 @@
 import network
 import asyncio
 import time
-from camera import Camera, FrameSize, PixelFormat
+from acamera import Camera, FrameSize, PixelFormat # Import the async version of the Camera class, you can also use the sync version (camera.Camera)
 
 cam = Camera(frame_size=FrameSize.VGA, pixel_format=PixelFormat.JPEG, jpeg_quality=85, init=False)
 # WLAN config
@@ -34,7 +34,7 @@ async def stream_camera(writer):
         await writer.drain()
 
         while True:
-            frame = cam.capture()
+            frame = await cam.acapture() # This is the async version of capture, you can also use frame = cam.capture() instead
             if frame:
                 if cam.get_pixel_format() == PixelFormat.JPEG:
                     writer.write(b'--frame\r\nContent-Type: image/jpeg\r\n\r\n')

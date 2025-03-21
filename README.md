@@ -2,23 +2,24 @@
 
 [![ESP32 Port](https://github.com/cnadler86/micropython-camera-API/actions/workflows/ESP32.yml/badge.svg)](https://github.com/cnadler86/micropython-camera-API/actions/workflows/ESP32.yml)
 
-This project aims to support various cameras (e.g. OV2640, OV5640) on different MicroPython ports, starting with the ESP32 port. The project implements a general API, has precompiled FW images and supports a lot of cameras out of the box. Defaults are set to work with the OV2640.
+This project aims to support various cameras (e.g. OV2640, OV5640) on different MicroPython ports, starting with the ESP32 port. The project implements a general API, has precompiled firmware images and supports a lot of cameras out of the box. Defaults are set to work with the OV2640.
 At the moment, this is a micropython user module, but it might get in the micropython repo in the future.
 The API is stable, but it might change without previous announce.
 
 ## Content
 
-- [Precomiled FW (the easy way)](#precomiled-fw-the-easy-way)
+- [Precompiled firmware (the easy way)](#Precompiled-firmware-the-easy-way)
 - [Using the API](#using-the-api)
   - [Importing the camera module](#importing-the-camera-module)
   - [Creating a camera object](#creating-a-camera-object)
   - [Initializing the camera](#initializing-the-camera)
   - [Capture image](#capture-image)
-  - [Convert image to another format](#convert-image-to-another-format)
   - [Camera reconfiguration](#camera-reconfiguration)
+  - [Freeing the buffer](#freeing-the-buffer)
+  - [Is a frame available](#is-frame-available)
   - [Additional methods](#additional-methods)
   - [Additional information](#additional-information)
-- [Build your custom FW](#build-your-custom-fw)
+- [Build your custom firmware](#build-your-custom-firmware)
   - [Setting up the build environment (DIY method)](#setting-up-the-build-environment-diy-method)
   - [Add camera configurations to your board (optional, but recommended)](#add-camera-configurations-to-your-board-optional-but-recommended)
   - [Build the API](#build-the-api)
@@ -27,16 +28,26 @@ The API is stable, but it might change without previous announce.
 - [Troubleshooting](#troubleshooting)
 - [Donate](#donate)
 
-## Precomiled FW (the easy way)
+## Precompiled firmware (the easy way)
 
 If you are not familiar with building custom firmware, visit the [releases](https://github.com/cnadler86/micropython-camera-API/releases) page to download firmware that suits your board. **There are over 20 precompiled board images with the latest micropython!**
+
+This firmware binaries also include the [mp_jpeg modul](https://github.com/cnadler86/mp_jpe) to encode/decode JPEGs.
 
 ## Using the API
 
 ### Importing the camera module
 
+There general way of using the api is as follow:
+
 ```python
 from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
+```
+
+There is also a camera class with asyncio support! To use it, you need to import from the acamera package:
+
+```python
+from acamera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
 ```
 
 ### Creating a camera object
@@ -83,23 +94,22 @@ cam = Camera(
 - href_pin: HREF pin
 - sda_pin: SDA pin
 - scl_pin: SCL pin
-- xclk_pin: XCLK pin
-- xclk_freq: XCLK frequency in Hz
-- powerdown_pin: Powerdown pin
-- reset_pin: Reset pin
+- xclk_pin: XCLK pin ( set to -1, if you have an external clock source)
+- xclk_freq: XCLK frequency in Hz (consult the camera sensor specification)
+- powerdown_pin: Powerdown pin (set to -1 if not used)
+- reset_pin: Reset pin (set to -1 if not used)
 - pixel_format: Pixel format as PixelFormat
 - frame_size: Frame size as FrameSize
 - jpeg_quality: JPEG quality
 - fb_count: Frame buffer count
 - grab_mode: Grab mode as GrabMode
 - init: Initialize camera at construction time (default: True)
-- bmp_out: Image captured output converted to bitmap (default: False)
 
 **Default values:**
 
 The following keyword arguments have default values:
 
-- xclk_freq: 20MHz    // Frequencies are normally either 10 MHz or 20 MHz
+- xclk_freq: 20MHz    // Default for OV2640 (normally either 10 MHz or 20 MHz). Plase adapt it to your camera sensor.
 - frame_size: QQVGA
 - pixel_format: RGB565
 - jpeg_quality: 85    // Quality of JPEG output in percent. Higher means higher quality.
@@ -119,31 +129,22 @@ cam.init()
 
 ### Capture image
 
+The general way of capturing an image is calling the `capture` method:
+
 ```python
 img = cam.capture()
 ```
 
-Arguments for capture
+Each time you call the method, you will receive a new frame as memoryview.
+You can convert it to bytes and free the memoryview buffer, so a new frame can be pushed to it. This will reduce the image latency but need more RAM. (see [freeing the buffer](#freeing-the-buffer))
 
-- out_format: Output format as PixelFormat (optional)
+The probably better way of capturing an image would be in an asyncio-loop:
 
-### Convert image to another format
-
-You can either convert the image with the `capture` method directly passing the desired output format:
 ```python
-img_rgb888 = cam.capture(PixelFormat.RGB888) #capture image as configured (e.g. JPEG), convert it to RGB888 and return the converted image
-```
-Or you can first capture the image and then convert it to the desired PixelFormat with the `convert` method.
-Doing so you can have both, the captured and the converted image. Note that more memory will be used.
-```python
-img = cam.capture()
-img_rgb888 = cam.convert(PixelFormat.RGB888) #converts the last captured image to RGB888 and returns the converted image
+img = await cam.acapture() #To access this method, you need to import from acamera
 ```
 
-Convertion supported 
-- from JPEG to RGB565
-- to RGB888 in general
-- to JPEG in gerenal (use the `set_quality` method to set the desired JPEG quality)
+Please consult the [asyncio documentation](https://docs.micropython.org/en/latest/library/asyncio.html), if you have questions on this.
 
 ### Camera reconfiguration
 
@@ -158,20 +159,42 @@ Keyword arguments for reconfigure
 - grab_mode: Grab mode as GrabMode (optional)
 - fb_count: Frame buffer count (optional)
 
-### Additional methods
+### Freeing the buffer
+
+This is optional, but can reduce the latency of capturing an image in some cases (especially with fb_count = 1)..
+
+```python
+Img = bytes(cam.capture())  #Create a new bytes object from the memoryview (because we want to free it afterwards)
+cam.free_buffer() # This will free the captured image or in other words "deleting"" the memoryview 
+```
+
+### Is frame available
+
+```python
+Img = bytes(cam.capture())
+cam.free_buffer()
+while not cam.frame_available():
+  <do some other stuff>
+print('The frame is available now. You can grab the image by the capture method =)')
+```
+
+This gives you the possibility of creating an asynchronous application without using asyncio.
+
+### Additional methods and examples
 
 Here are just a few examples:
 
 ```python
 cam.set_quality(90)  # The quality goes from 0% to 100%, meaning 100% is the highest but has probably no compression
-cam.set_bmp_out(True) # Enables convertion to bmp when capturing image
 camera.get_brightness()
 camera.set_vflip(True) #Enable vertical flip
 ```
 
 See autocompletions in Thonny in order to see the list of methods.
-If you want more insides in the methods and what they actually do, you can find a very good documentation [here](https://docs.circuitpython.org/en/latest/shared-bindings/espcamera/index.html).
+If you want more insights in the methods and what they actually do, you can find a very good documentation [here](https://docs.circuitpython.org/en/latest/shared-bindings/espcamera/index.html).
 Note that each method requires a "get_" or "set_" prefix, depending on the desired action.
+
+Take also a look in the examples folder.
 
 To get the version of the camera driver used:
 
@@ -182,9 +205,9 @@ vers = camera.Version()
 
 ### Additional information
 
-The FW images support the following cameras out of the box, but is therefore big: OV7670, OV7725, OV2640, OV3660, OV5640, NT99141, GC2145, GC032A, GC0308, BF3005, BF20A6, SC030IOT
+The firmware images support the following cameras out of the box, but is therefore big: OV7670, OV7725, OV2640, OV3660, OV5640, NT99141, GC2145, GC032A, GC0308, BF3005, BF20A6, SC030IOT
 
-## Build your custom FW
+## Build your custom firmware
 
 ### Setting up the build environment (DIY method)
 
@@ -192,14 +215,14 @@ To build the project, follow these instructions:
 
 - [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.2.3/esp32/get-started/index.html): I used version 5.2.3, but it might work with other versions (see notes).
 - Clone the micropython repo and this repo in a folder, e.g. "MyESPCam". MicroPython version 1.24 or higher is required (at least commit 92484d8).
-- You will have to add the ESP32-Camera driver (I used v2.0.15). To do this, add the following to the respective idf_component.yml file (e.g. in micropython/ports/esp32/main_esp32s3/idf_component.yml):
+- You will have to add the ESP32-Camera driver from my fork. To do this, add the following to the respective idf_component.yml file (e.g. in micropython/ports/esp32/main_esp32s3/idf_component.yml):
 
 ```yml
   espressif/esp32-camera:
-    git: https://github.com/espressif/esp32-camera.git
+    git: https://github.com/cnadler86/esp32-camera.git
 ```
 
-Alternatively, you can clone the <https://github.com/espressif/esp32-camera> repository inside the esp-idf/components folder instead of altering the idf_component.yml file.
+Alternatively, you can clone the <https://github.com/cnadler86/esp32-camera> repository inside the esp-idf/components folder instead of altering the idf_component.yml file.
 
 ### Add camera configurations to your board (optional, but recommended)
 
@@ -265,7 +288,11 @@ Example for Xiao sense:
 ```
 #### Customize additional camera settings
 
-If you want to customize additional camera setting or reduce the FW size by removing support for unused camera sensors, then take a look at the kconfig file of the esp32-camera driver and specify these on the sdkconfig file of your board.
+If you want to customize additional camera setting or reduce the firmware size by removing support for unused camera sensors, then take a look at the kconfig file of the esp32-camera driver and specify these on the sdkconfig file of your board.
+
+#### (Optional) Add the mp_jpeg module
+
+If you also want to include the [mp_jpeg module](https://github.com/cnadler86/mp_jpeg) in your build, clone the mp_jpeg repo at the same level and folder as the mp_camera_api repo and meet the requirements from the mp_jpeg repo.
 
 ### Build the API
 
@@ -293,28 +320,25 @@ If you experience problems, visit [MicroPython external C modules](https://docs.
 
 ## Benchmark
 
-I didn't use a calibrated osziloscope, but here is a FPS benchmark with my ESP32S3 (xclck_freq = 20MHz, GrabMode=LATEST, fb_count = 1, jpeg_quality=85%) and OV2640.
-Using fb_count=2 theoretically can double the FPS (see JPEG with fb_count=2). This might also aplly for other PixelFormats.
+I didn't use a calibrated oscilloscope, but here is a FPS benchmark with my ESP32S3 (xclk_freq = 20MHz, GrabMode=LATEST, fb_count = 1, jpeg_quality=85%) and OV2640.
+Using fb_count=2 theoretically can double the FPS (see JPEG with fb_count=2). This might also apply for other PixelFormats.
 
-| Frame Size | GRAYSCALE | RGB565 | YUV422 | JPEG   | JPEG -> RGB565 | JPEG -> RGB888 | JPEG (fb=2) |
-|------------|-----------|--------|--------|--------|----------------|----------------|-------------|
-| R96X96     | 12.5      | 12.5   | 12.5   | No img | No img         | No img         | No img      |
-| QQVGA      | 12.5      | 12.5   | 12.5   | 25     | 25             | 25             | 50          |
-| QCIF       | 11        | 11     | 11.5   | 25     | 25             | 25             | 50          |
-| HQVGA      | 12.5      | 12.5   | 12.5   | 25     | 16.7           | 16.7           | 50          |
-| R240X240   | 12.5      | 12.5   | 11.5   | 25     | 16.7           | 12.5           | 50          |
-| QVGA       | 12        | 11     | 12     | 25     | 25             | 25             | 50          |
-| CIF        | 12.5      | No img | No img | 6.3    | 8.3            | 8.3            | 12.5        |
-| HVGA       | 3         | 3      | 2.5    | 12.5   | 6.3            | 6.3            | 25          |
-| VGA        | 3         | 3      | 3      | 12.5   | 3.6            | 3.6            | 25          |
-| SVGA       | 3         | 3      | 3      | 12.5   | 2.8            | 2.5            | 25          |
-| XGA        | No img    | No img | No img | 6.3    | 1.6            | 1.6            | 12.5        |
-| HD         | No img    | No img | No img | 6.3    | 1.4            | 1.3            | 12.5        |
-| SXGA       | 2         | 2      | 2      | 6.3    | 1              | 1              | 12.5        |
-| UXGA       | No img    | No img | No img | 6.3    | 0.7            | 0.7            | 12.5        |
-
-
-Looking at the results: image conversion make only sense for frame sized below QVGA or if capturing the image in the intended pixelformat and frame size combination fails.
+| Frame Size | GRAYSCALE | RGB565 | YUV422 | JPEG   | JPEG (fb=2) |
+|------------|-----------|--------|--------|--------|-------------|
+| R96X96     | 12.5      | 12.5   | 12.5   | No img | No img      |
+| QQVGA      | 12.5      | 12.5   | 12.5   | 25     | 50          |
+| QCIF       | 11        | 11     | 11.5   | 25     | 50          |
+| HQVGA      | 12.5      | 12.5   | 12.5   | 25     | 50          |
+| R240X240   | 12.5      | 12.5   | 11.5   | 25     | 50          |
+| QVGA       | 12        | 11     | 12     | 25     | 50          |
+| CIF        | 12.5      | No img | No img | 6.3    | 12.5        |
+| HVGA       | 3         | 3      | 2.5    | 12.5   | 25          |
+| VGA        | 3         | 3      | 3      | 12.5   | 25          |
+| SVGA       | 3         | 3      | 3      | 12.5   | 25          |
+| XGA        | No img    | No img | No img | 6.3    | 12.5        |
+| HD         | No img    | No img | No img | 6.3    | 12.5        |
+| SXGA       | 2         | 2      | 2      | 6.3    | 12.5        |
+| UXGA       | No img    | No img | No img | 6.3    | 12.5        |
 
 ## Troubleshooting
 

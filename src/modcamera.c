@@ -28,7 +28,6 @@
 #include "modcamera.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "img_converters.h"
 #include "mphalport.h"
 
 #define TAG "MPY_CAMERA"
@@ -153,10 +152,6 @@ void mp_camera_hal_construct(
 
         self->initialized = false;
         self->captured_buffer = NULL;
-        self->converted_buffer.len = 0;
-        self->converted_buffer.buf = NULL;
-        self->converted_buffer.typecode = 'B';
-        self->bmp_out = false;
     }
 
 void mp_camera_hal_init(mp_camera_obj_t *self) {
@@ -175,11 +170,6 @@ void mp_camera_hal_init(mp_camera_obj_t *self) {
 
 void mp_camera_hal_deinit(mp_camera_obj_t *self) {
     if (self->initialized) {
-        if (self->converted_buffer.buf) {
-            free(self->converted_buffer.buf);
-            self->converted_buffer.buf = NULL;
-            self->converted_buffer.len = 0;
-        }
         if (self->captured_buffer) {
             esp_camera_return_all();
             self->captured_buffer = NULL;
@@ -214,62 +204,7 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
     ESP_LOGI(TAG, "Camera reconfigured successfully");
 }
 
-static bool ensure_buffer(mp_camera_obj_t *self, size_t req_len) {
-    if (self->converted_buffer.len == req_len) {
-        return true;
-    }
-    if (self->converted_buffer.len > 0 || self->converted_buffer.buf) {
-        free(self->converted_buffer.buf);
-    }
-    self->converted_buffer.buf = (uint8_t *)malloc(req_len);
-    if (!self->converted_buffer.buf) {
-        self->converted_buffer.len = 0;
-        ESP_LOGE(TAG, "converted_buffer malloc failed");
-        return false;
-    }
-    self->converted_buffer.len = req_len;
-    return true;
-}
-
-static bool mp_camera_convert(mp_camera_obj_t *self, mp_camera_pixformat_t out_format) {
-    ESP_LOGI(TAG, "Converting image to pixel format: %d", out_format);
-
-    switch (out_format) {
-        case PIXFORMAT_JPEG:
-            return frame2jpg(self->captured_buffer, self->camera_config.jpeg_quality, self->converted_buffer.buf, &self->converted_buffer.len);
-
-        case PIXFORMAT_RGB888:
-            if (ensure_buffer(self, self->captured_buffer->width * self->captured_buffer->height * 3)) {
-                return fmt2rgb888(self->captured_buffer->buf, self->captured_buffer->len, self->captured_buffer->format, self->converted_buffer.buf);
-            } else {
-                return false;
-            }
-
-        case PIXFORMAT_RGB565:
-            if (self->camera_config.pixel_format == PIXFORMAT_JPEG) {
-                if (ensure_buffer(self, self->captured_buffer->width * self->captured_buffer->height * 2)) {
-                    return jpg2rgb565(self->captured_buffer->buf, self->captured_buffer->len, self->converted_buffer.buf, JPG_SCALE_NONE);
-                } else {
-                    return false;
-                }
-            } else {
-                mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Can only convert JPEG to RGB565"));
-            }
-
-        default:
-            mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Unsupported pixel format for conversion"));
-    }
-}
-mp_obj_t mp_camera_hal_convert(mp_camera_obj_t *self, int8_t out_format) {
-    check_init(self);
-    if (mp_camera_convert(self, (mp_camera_pixformat_t)out_format)) {
-        return mp_obj_new_memoryview('b', self->converted_buffer.len, self->converted_buffer.buf);    
-    } else {
-        return mp_const_none;
-    }
-}
-
-mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format) {
+mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self) {
     check_init(self);
     if (self->captured_buffer) {
         esp_camera_fb_return(self->captured_buffer);
@@ -282,91 +217,78 @@ mp_obj_t mp_camera_hal_capture(mp_camera_obj_t *self, int8_t out_format) {
         ESP_LOGE(TAG, "Failed to capture image");
         return mp_const_none;
     }
-    
-    if (out_format >= 0 && (mp_camera_pixformat_t)out_format != self->camera_config.pixel_format) {
-        if (mp_camera_convert(self, (mp_camera_pixformat_t)out_format)) {
-            esp_camera_fb_return(self->captured_buffer);
-            mp_obj_t result = mp_obj_new_memoryview('b', self->converted_buffer.len, self->converted_buffer.buf);
-            return result;
-        } else {
-            return mp_const_none;
-        }
-    }
+    return mp_obj_new_memoryview('b', self->captured_buffer->len, self->captured_buffer->buf);
 
-    if (self->bmp_out == false) {
-        ESP_LOGI(TAG, "Returning image without conversion");
-        return mp_obj_new_memoryview('b', self->captured_buffer->len, self->captured_buffer->buf);
-    } else {
-        ESP_LOGI(TAG, "Returning image as bitmap");
-        if (frame2bmp(self->captured_buffer, self->converted_buffer.buf, &self->converted_buffer.len)) {
-            esp_camera_fb_return(self->captured_buffer);
-            mp_obj_t result = mp_obj_new_memoryview('b', self->converted_buffer.len, self->converted_buffer.buf);
-            return result;
-        } else {
-            free(self->converted_buffer.buf);
-            self->converted_buffer.buf = NULL;
-            self->converted_buffer.len = 0;
-            mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to convert image to BMP"));
-        }
-    }
-} // mp_camera_hal_capture
+}
+
+mp_obj_t mp_camera_hal_frame_available(mp_camera_obj_t *self) {
+    check_init(self);
+    return mp_obj_new_bool(esp_camera_available_frames());
+}
 
 bool mp_camera_hal_initialized(mp_camera_obj_t *self){
     return self->initialized;
 }
 
+void mp_camera_hal_free_buffer(mp_camera_obj_t *self) {
+    if (self->captured_buffer) {
+        esp_camera_fb_return(self->captured_buffer);
+        self->captured_buffer = NULL;
+    }
+}
+
 const mp_rom_map_elem_t mp_camera_hal_pixel_format_table[] = {
-    { MP_ROM_QSTR(MP_QSTR_JPEG),            MP_ROM_INT(PIXFORMAT_JPEG) },
-    { MP_ROM_QSTR(MP_QSTR_YUV422),          MP_ROM_INT(PIXFORMAT_YUV422) },
-    { MP_ROM_QSTR(MP_QSTR_YUV420),          MP_ROM_INT(PIXFORMAT_YUV420) },
-    { MP_ROM_QSTR(MP_QSTR_GRAYSCALE),       MP_ROM_INT(PIXFORMAT_GRAYSCALE) },
-    { MP_ROM_QSTR(MP_QSTR_RGB565),          MP_ROM_INT(PIXFORMAT_RGB565) },
-    { MP_ROM_QSTR(MP_QSTR_RGB888),          MP_ROM_INT(PIXFORMAT_RGB888) },
-    { MP_ROM_QSTR(MP_QSTR_RAW),             MP_ROM_INT(PIXFORMAT_RAW) },
-    { MP_ROM_QSTR(MP_QSTR_RGB444),          MP_ROM_INT(PIXFORMAT_RGB444) },
-    { MP_ROM_QSTR(MP_QSTR_RGB555),          MP_ROM_INT(PIXFORMAT_RGB555) },
+    { MP_ROM_QSTR(MP_QSTR_JPEG),            MP_ROM_INT((mp_uint_t)PIXFORMAT_JPEG) },
+    { MP_ROM_QSTR(MP_QSTR_YUV422),          MP_ROM_INT((mp_uint_t)PIXFORMAT_YUV422) },
+    { MP_ROM_QSTR(MP_QSTR_YUV420),          MP_ROM_INT((mp_uint_t)PIXFORMAT_YUV420) },
+    { MP_ROM_QSTR(MP_QSTR_GRAYSCALE),       MP_ROM_INT((mp_uint_t)PIXFORMAT_GRAYSCALE) },
+    { MP_ROM_QSTR(MP_QSTR_RGB565),          MP_ROM_INT((mp_uint_t)PIXFORMAT_RGB565) },
+    { MP_ROM_QSTR(MP_QSTR_RGB888),          MP_ROM_INT((mp_uint_t)PIXFORMAT_RGB888) },
+    { MP_ROM_QSTR(MP_QSTR_RAW),             MP_ROM_INT((mp_uint_t)PIXFORMAT_RAW) },
+    { MP_ROM_QSTR(MP_QSTR_RGB444),          MP_ROM_INT((mp_uint_t)PIXFORMAT_RGB444) },
+    { MP_ROM_QSTR(MP_QSTR_RGB555),          MP_ROM_INT((mp_uint_t)PIXFORMAT_RGB555) },
 };
 
 const mp_rom_map_elem_t mp_camera_hal_frame_size_table[] = {
-    { MP_ROM_QSTR(MP_QSTR_R96X96),    MP_ROM_INT(FRAMESIZE_96X96) },
-    { MP_ROM_QSTR(MP_QSTR_QQVGA),     MP_ROM_INT(FRAMESIZE_QQVGA) },
-    { MP_ROM_QSTR(MP_QSTR_R128x128),  MP_ROM_INT(FRAMESIZE_128X128) },
-    { MP_ROM_QSTR(MP_QSTR_QCIF),      MP_ROM_INT(FRAMESIZE_QCIF) },
-    { MP_ROM_QSTR(MP_QSTR_HQVGA),     MP_ROM_INT(FRAMESIZE_HQVGA) },
-    { MP_ROM_QSTR(MP_QSTR_R240X240),  MP_ROM_INT(FRAMESIZE_240X240) },
-    { MP_ROM_QSTR(MP_QSTR_QVGA),      MP_ROM_INT(FRAMESIZE_QVGA) },
-    { MP_ROM_QSTR(MP_QSTR_R320X320),  MP_ROM_INT(FRAMESIZE_320X320) },
-    { MP_ROM_QSTR(MP_QSTR_CIF),       MP_ROM_INT(FRAMESIZE_CIF) },
-    { MP_ROM_QSTR(MP_QSTR_HVGA),      MP_ROM_INT(FRAMESIZE_HVGA) },
-    { MP_ROM_QSTR(MP_QSTR_VGA),       MP_ROM_INT(FRAMESIZE_VGA) },
-    { MP_ROM_QSTR(MP_QSTR_SVGA),      MP_ROM_INT(FRAMESIZE_SVGA) },
-    { MP_ROM_QSTR(MP_QSTR_XGA),       MP_ROM_INT(FRAMESIZE_XGA) },
-    { MP_ROM_QSTR(MP_QSTR_HD),        MP_ROM_INT(FRAMESIZE_HD) },
-    { MP_ROM_QSTR(MP_QSTR_SXGA),      MP_ROM_INT(FRAMESIZE_SXGA) },
-    { MP_ROM_QSTR(MP_QSTR_UXGA),      MP_ROM_INT(FRAMESIZE_UXGA) },
-    { MP_ROM_QSTR(MP_QSTR_FHD),       MP_ROM_INT(FRAMESIZE_FHD) },
-    { MP_ROM_QSTR(MP_QSTR_P_HD),      MP_ROM_INT(FRAMESIZE_P_HD) },
-    { MP_ROM_QSTR(MP_QSTR_P_3MP),     MP_ROM_INT(FRAMESIZE_P_3MP) },
-    { MP_ROM_QSTR(MP_QSTR_QXGA),      MP_ROM_INT(FRAMESIZE_QXGA) },
-    { MP_ROM_QSTR(MP_QSTR_QHD),       MP_ROM_INT(FRAMESIZE_QHD) },
-    { MP_ROM_QSTR(MP_QSTR_WQXGA),     MP_ROM_INT(FRAMESIZE_WQXGA) },
-    { MP_ROM_QSTR(MP_QSTR_P_FHD),     MP_ROM_INT(FRAMESIZE_P_FHD) },
-    { MP_ROM_QSTR(MP_QSTR_QSXGA),     MP_ROM_INT(FRAMESIZE_QSXGA) },
+    { MP_ROM_QSTR(MP_QSTR_R96X96),    MP_ROM_INT((mp_uint_t)FRAMESIZE_96X96) },
+    { MP_ROM_QSTR(MP_QSTR_QQVGA),     MP_ROM_INT((mp_uint_t)FRAMESIZE_QQVGA) },
+    { MP_ROM_QSTR(MP_QSTR_R128x128),  MP_ROM_INT((mp_uint_t)FRAMESIZE_128X128) },
+    { MP_ROM_QSTR(MP_QSTR_QCIF),      MP_ROM_INT((mp_uint_t)FRAMESIZE_QCIF) },
+    { MP_ROM_QSTR(MP_QSTR_HQVGA),     MP_ROM_INT((mp_uint_t)FRAMESIZE_HQVGA) },
+    { MP_ROM_QSTR(MP_QSTR_R240X240),  MP_ROM_INT((mp_uint_t)FRAMESIZE_240X240) },
+    { MP_ROM_QSTR(MP_QSTR_QVGA),      MP_ROM_INT((mp_uint_t)FRAMESIZE_QVGA) },
+    { MP_ROM_QSTR(MP_QSTR_R320X320),  MP_ROM_INT((mp_uint_t)FRAMESIZE_320X320) },
+    { MP_ROM_QSTR(MP_QSTR_CIF),       MP_ROM_INT((mp_uint_t)FRAMESIZE_CIF) },
+    { MP_ROM_QSTR(MP_QSTR_HVGA),      MP_ROM_INT((mp_uint_t)FRAMESIZE_HVGA) },
+    { MP_ROM_QSTR(MP_QSTR_VGA),       MP_ROM_INT((mp_uint_t)FRAMESIZE_VGA) },
+    { MP_ROM_QSTR(MP_QSTR_SVGA),      MP_ROM_INT((mp_uint_t)FRAMESIZE_SVGA) },
+    { MP_ROM_QSTR(MP_QSTR_XGA),       MP_ROM_INT((mp_uint_t)FRAMESIZE_XGA) },
+    { MP_ROM_QSTR(MP_QSTR_HD),        MP_ROM_INT((mp_uint_t)FRAMESIZE_HD) },
+    { MP_ROM_QSTR(MP_QSTR_SXGA),      MP_ROM_INT((mp_uint_t)FRAMESIZE_SXGA) },
+    { MP_ROM_QSTR(MP_QSTR_UXGA),      MP_ROM_INT((mp_uint_t)FRAMESIZE_UXGA) },
+    { MP_ROM_QSTR(MP_QSTR_FHD),       MP_ROM_INT((mp_uint_t)FRAMESIZE_FHD) },
+    { MP_ROM_QSTR(MP_QSTR_P_HD),      MP_ROM_INT((mp_uint_t)FRAMESIZE_P_HD) },
+    { MP_ROM_QSTR(MP_QSTR_P_3MP),     MP_ROM_INT((mp_uint_t)FRAMESIZE_P_3MP) },
+    { MP_ROM_QSTR(MP_QSTR_QXGA),      MP_ROM_INT((mp_uint_t)FRAMESIZE_QXGA) },
+    { MP_ROM_QSTR(MP_QSTR_QHD),       MP_ROM_INT((mp_uint_t)FRAMESIZE_QHD) },
+    { MP_ROM_QSTR(MP_QSTR_WQXGA),     MP_ROM_INT((mp_uint_t)FRAMESIZE_WQXGA) },
+    { MP_ROM_QSTR(MP_QSTR_P_FHD),     MP_ROM_INT((mp_uint_t)FRAMESIZE_P_FHD) },
+    { MP_ROM_QSTR(MP_QSTR_QSXGA),     MP_ROM_INT((mp_uint_t)FRAMESIZE_QSXGA) },
 };
 
 const mp_rom_map_elem_t mp_camera_hal_grab_mode_table[] = {
-    { MP_ROM_QSTR(MP_QSTR_WHEN_EMPTY), MP_ROM_INT(CAMERA_GRAB_WHEN_EMPTY) },
-    { MP_ROM_QSTR(MP_QSTR_LATEST),     MP_ROM_INT(CAMERA_GRAB_LATEST) },
+    { MP_ROM_QSTR(MP_QSTR_WHEN_EMPTY), MP_ROM_INT((mp_uint_t)CAMERA_GRAB_WHEN_EMPTY) },
+    { MP_ROM_QSTR(MP_QSTR_LATEST),     MP_ROM_INT((mp_uint_t)CAMERA_GRAB_LATEST) },
 };
 
 const mp_rom_map_elem_t mp_camera_hal_gainceiling_table[] = {
-    { MP_ROM_QSTR(MP_QSTR_2X),      MP_ROM_INT(GAINCEILING_2X) },
-    { MP_ROM_QSTR(MP_QSTR_4X),      MP_ROM_INT(GAINCEILING_4X) },
-    { MP_ROM_QSTR(MP_QSTR_8X),      MP_ROM_INT(GAINCEILING_8X) },
-    { MP_ROM_QSTR(MP_QSTR_16X),     MP_ROM_INT(GAINCEILING_16X) },
-    { MP_ROM_QSTR(MP_QSTR_32X),     MP_ROM_INT(GAINCEILING_32X) },
-    { MP_ROM_QSTR(MP_QSTR_64X),     MP_ROM_INT(GAINCEILING_64X) },
-    { MP_ROM_QSTR(MP_QSTR_128X),    MP_ROM_INT(GAINCEILING_128X) },
+    { MP_ROM_QSTR(MP_QSTR_2X),      MP_ROM_INT((mp_uint_t)GAINCEILING_2X) },
+    { MP_ROM_QSTR(MP_QSTR_4X),      MP_ROM_INT((mp_uint_t)GAINCEILING_4X) },
+    { MP_ROM_QSTR(MP_QSTR_8X),      MP_ROM_INT((mp_uint_t)GAINCEILING_8X) },
+    { MP_ROM_QSTR(MP_QSTR_16X),     MP_ROM_INT((mp_uint_t)GAINCEILING_16X) },
+    { MP_ROM_QSTR(MP_QSTR_32X),     MP_ROM_INT((mp_uint_t)GAINCEILING_32X) },
+    { MP_ROM_QSTR(MP_QSTR_64X),     MP_ROM_INT((mp_uint_t)GAINCEILING_64X) },
+    { MP_ROM_QSTR(MP_QSTR_128X),    MP_ROM_INT((mp_uint_t)GAINCEILING_128X) },
 };
 
 // Helper functions to get and set camera and sensor information

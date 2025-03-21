@@ -76,17 +76,20 @@ jobs:
         if: steps.cache_esp_idf.outputs.cache-hit != 'true'
         run: |
           cd ~
-          # git clone --depth 1 --branch release/v5.2 https://github.com/espressif/esp-idf.git
+          # git clone --depth 1 --branch release/v5.3 https://github.com/espressif/esp-idf.git
           git clone --depth 1 --branch ${{ env.IDF_VER }} https://github.com/espressif/esp-idf.git
           git -C esp-idf submodule update --init --recursive --filter=tree:0
           cd esp-idf
           ./install.sh all
           cd components
-          latest_cam_driver=$(curl -s https://api.github.com/repos/espressif/esp32-camera/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-          git clone --depth 1 --branch $latest_cam_driver https://github.com/espressif/esp32-camera.git
-          # git clone https://github.com/cnadler86/esp32-camera.git
+          # latest_cam_driver=$(curl -s https://api.github.com/repos/espressif/esp32-camera/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+          # git clone --depth 1 --branch $latest_cam_driver https://github.com/espressif/esp32-camera.git
+          git clone https://github.com/cnadler86/esp32-camera.git
           cd ~/esp-idf/
           source ./export.sh
+          cd ~
+          git clone https://github.com/espressif/esp-adf-libs.git
+          cp -r ~/esp-adf-libs/esp_new_jpeg ~/esp-idf/components/
 
   # Dynamically create jobs for each board
   build:
@@ -151,6 +154,8 @@ jobs:
       # Build MicroPython for each board
       - name: Build MicroPython
         run: |
+          cd ${{ github.workspace }}
+          git clone https://github.com/cnadler86/mp_jpeg.git
           cd ~/esp-idf/components/esp32-camera
           CAM_DRIVER=$(git describe --tags --always --dirty)
           cd ~/micropython/ports/esp32
@@ -161,9 +166,9 @@ jobs:
           IFS='-' read -r BOARD_NAME BOARD_VARIANT <<< "${BUILD_TARGET}"
           
           if [ -n "${BOARD_VARIANT}" ]; then
-            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -D MICROPY_BOARD_VARIANT=$BOARD_VARIANT -B build-$BUILD_TARGET -D MP_CAMERA_DRIVER_VERSION=$CAM_DRIVER"
+            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -D MICROPY_BOARD_VARIANT=$BOARD_VARIANT -B build-$BUILD_TARGET -D MP_CAMERA_DRIVER_VERSION=$CAM_DRIVER -D MP_JPEG_DIR=${{ github.workspace }}/mp_jpeg"
           else
-            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -B build-$BUILD_TARGET -D MP_CAMERA_DRIVER_VERSION=$CAM_DRIVER"
+            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -B build-$BUILD_TARGET -D MP_CAMERA_DRIVER_VERSION=$CAM_DRIVER -D MP_JPEG_DIR=${{ github.workspace }}/mp_jpeg"
           fi
           if [ -n "${CAMERA_MODEL}" ]; then
             echo "FW_NAME=${CAMERA_MODEL}" >> $GITHUB_ENV
@@ -183,6 +188,6 @@ jobs:
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
         with:
-          name: firmware-${{ env.FW_NAME }}
+          name: mpy_cam-${{ env.MPY_RELEASE }}-${{ env.FW_NAME }}
           path: ~/artifacts/**
           retention-days: 5
