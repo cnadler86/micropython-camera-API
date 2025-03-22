@@ -32,7 +32,7 @@ The API is stable, but it might change without previous announce.
 
 If you are not familiar with building custom firmware, visit the [releases](https://github.com/cnadler86/micropython-camera-API/releases) page to download firmware that suits your board. **There are over 20 precompiled board images with the latest micropython!**
 
-This firmware binaries also include the [mp_jpeg modul](https://github.com/cnadler86/mp_jpeg) to encode/decode JPEGs.
+These firmware binaries also include the [mp_jpeg modul](https://github.com/cnadler86/mp_jpeg) to encode/decode JPEGs.
 
 ## Using the API
 
