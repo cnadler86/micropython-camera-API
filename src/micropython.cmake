@@ -4,6 +4,8 @@ set(MICROPY_FROZEN_MANIFEST ${CMAKE_CURRENT_LIST_DIR}/manifest.py)
 
 add_library(usermod_mp_camera INTERFACE)
 
+add_dependencies(usermod_mp_camera esp32_camera)
+
 target_sources(usermod_mp_camera INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/modcamera.c
     ${CMAKE_CURRENT_LIST_DIR}/modcamera_api.c
@@ -23,7 +25,7 @@ if(DEFINED ESP32_CAMERA_DIR AND EXISTS "${ESP32_CAMERA_DIR}")
     )
 
 # If no manual directory is provided, try to fetch it from ESP-IDF
-else()
+elseif(EXISTS ${IDF_PATH}/components/esp32-camera)
     idf_component_get_property(CAMERA_INCLUDES esp32-camera INCLUDE_DIRS)
     idf_component_get_property(CAMERA_PRIV_INCLUDES esp32-camera PRIV_INCLUDE_DIRS)
     idf_component_get_property(CAMERA_DIR esp32-camera COMPONENT_DIR)
