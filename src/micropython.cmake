@@ -1,5 +1,12 @@
 include(${MICROPY_DIR}/py/py.cmake)
 
+function(check_and_register_component target component)
+  get_target_property(LIBRARIES ${target} INTERFACE_LINK_LIBRARIES)
+  if(NOT "${LIBRARIES}" MATCHES "${component}")
+    target_link_libraries(${target} INTERFACE ${component})
+  endif()
+endfunction()
+
 set(MICROPY_FROZEN_MANIFEST ${CMAKE_CURRENT_LIST_DIR}/manifest.py)
 
 add_library(usermod_mp_camera INTERFACE)
@@ -81,7 +88,7 @@ if (MP_CAMERA_DRIVER_VERSION)
 endif()
 
 # Link the camera module with the main usermod target
-target_link_libraries(usermod INTERFACE usermod_mp_camera)
+check_and_register_component(usermod usermod_mp_camera)
 
 # Gather target properties for MicroPython build system
 micropy_gather_target_properties(usermod_mp_camera)
