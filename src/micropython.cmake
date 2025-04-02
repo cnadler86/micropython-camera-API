@@ -18,9 +18,14 @@ target_sources(usermod_mp_camera INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/modcamera_api.c
 )
 
-# Prefer user-defined ESP32_CAMERA_DIR if provided
+# Prefer esp32-camera submodule, if not manually provided
+if (NOT DEFINED ESP32_CAMERA_DIR AND EXISTS "${CMAKE_CURRENT_LIST_DIR}/../lib/esp32-camera")
+    set(ESP32_CAMERA_DIR "${CMAKE_CURRENT_LIST_DIR}/../lib/esp32-camera")
+endif()
+
+# Use user-defined ESP32_CAMERA_DIR if provided
 if(DEFINED ESP32_CAMERA_DIR AND EXISTS "${ESP32_CAMERA_DIR}")
-    message(STATUS "Using user-defined ESP32 Camera directory: ${ESP32_CAMERA_DIR}")
+    message(STATUS "ESP32 Camera driver directory: ${ESP32_CAMERA_DIR}")
 
     target_include_directories(usermod_mp_camera INTERFACE
         ${CMAKE_CURRENT_LIST_DIR}
@@ -31,7 +36,7 @@ if(DEFINED ESP32_CAMERA_DIR AND EXISTS "${ESP32_CAMERA_DIR}")
         ${ESP32_CAMERA_DIR}/sensors/private_include
     )
 
-# If no manual directory is provided, try to fetch it from ESP-IDF
+# If no manual directory is provided, try to fetch it from ESP-IDF (thil will probably not work until some PR get merged into the official esp32 camera component)
 elseif(EXISTS ${IDF_PATH}/components/esp32-camera)
     idf_component_get_property(CAMERA_INCLUDES esp32-camera INCLUDE_DIRS)
     idf_component_get_property(CAMERA_PRIV_INCLUDES esp32-camera PRIV_INCLUDE_DIRS)
