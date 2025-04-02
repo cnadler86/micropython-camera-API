@@ -21,6 +21,7 @@ target_sources(usermod_mp_camera INTERFACE
 # Prefer esp32-camera submodule, if not manually provided
 if (NOT DEFINED ESP32_CAMERA_DIR AND EXISTS "${CMAKE_CURRENT_LIST_DIR}/../lib/esp32-camera")
     set(ESP32_CAMERA_DIR "${CMAKE_CURRENT_LIST_DIR}/../lib/esp32-camera")
+    get_filename_component(ESP32_CAMERA_DIR "${ESP32_CAMERA_DIR}" ABSOLUTE)
 endif()
 
 # Use user-defined ESP32_CAMERA_DIR if provided
