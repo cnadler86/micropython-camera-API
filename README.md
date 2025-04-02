@@ -284,8 +284,8 @@ Example for Xiao sense:
 #define MICROPY_CAMERA_FB_COUNT     (2)         // The value is between 1 (slow) and 2 (fast, but more load on CPU and more ram usage)
 #define MICROPY_CAMERA_JPEG_QUALITY (85)        // Quality of JPEG output in percent. Higher means higher quality.
 #define MICROPY_CAMERA_GRAB_MODE    (1)         // 0=WHEN_EMPTY (might have old data, but less resources), 1=LATEST (best, but more resources)
-
 ```
+
 #### Customize additional camera settings
 
 If you want to customize additional camera setting or reduce the firmware size by removing support for unused camera sensors, then take a look at the kconfig file of the esp32-camera driver and specify these on the sdkconfig file of your board.
@@ -299,6 +299,8 @@ If you also want to include the [mp_jpeg module](https://github.com/cnadler86/mp
 To build the project, you could do it the following way:
 
 ```bash
+cd MyESPCam/
+git clone --recursive https://github.com/cnadler86/micropython-camera-API.git
 . <path2esp-idf>/esp-idf/export.sh
 cd MyESPCam/micropython/ports/esp32
 make USER_C_MODULES=../../../../micropython-camera-API/src/micropython.cmake BOARD=<Your-Board> clean
