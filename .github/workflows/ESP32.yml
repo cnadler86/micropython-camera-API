@@ -158,7 +158,8 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           git clone https://github.com/cnadler86/mp_jpeg.git
-          cd ~/esp-idf/components/esp32-camera
+          # cd ~/esp-idf/components/esp32-camera
+          cd micropython-camera-API/lib/esp32-camera
           CAM_DRIVER=$(git describe --tags --always --dirty)
           cd ~/micropython/ports/esp32
           source ~/esp-idf/export.sh
