@@ -31,7 +31,7 @@ The API is stable, but it might change without previous announce.
 ## Precompiled firmware (the easy way)
 
 If you are not familiar with building custom firmware, visit the [releases](https://github.com/cnadler86/micropython-camera-API/releases) page to download firmware that suits your board. **There are over 20 precompiled board images with the latest micropython!**
-To flash the firmware, you can use for example https://esp.huhn.me/](https://esp.huhn.me/).
+To flash the firmware, you can use for example [https://esp.huhn.me/](https://esp.huhn.me/).
 
 These firmware binaries also include the [mp_jpeg modul](https://github.com/cnadler86/mp_jpeg) to encode/decode JPEGs.
 
