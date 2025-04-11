@@ -64,7 +64,14 @@ async def handle_client(reader, writer):
                 writer.write(response.encode())
                 await writer.drain()
             else:
-                response = 'HTTP/1.1 404 Not Found\r\n\r\n'
+                try:
+                    cam.reconfigure(**{method_name: value})
+                    print(f"Camera reconfigured with {method_name}={value}")
+                    print("This action restores all previous configuration!")
+                    response = 'HTTP/1.1 200 OK\r\n\r\n'
+                except Exception as e:
+                    print(f"Error with {method_name}: {e}")
+                    response = 'HTTP/1.1 404 Not Found\r\n\r\n'
                 writer.write(response.encode())
                 await writer.drain()
 
