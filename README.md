@@ -3,8 +3,11 @@
 [![ESP32 Port](https://github.com/cnadler86/micropython-camera-API/actions/workflows/ESP32.yml/badge.svg)](https://github.com/cnadler86/micropython-camera-API/actions/workflows/ESP32.yml)
 
 This project aims to support various cameras (e.g. OV2640, OV5640) on different MicroPython ports, starting with the ESP32 port. The project implements a general API, has precompiled firmware images and supports a lot of cameras out of the box. Defaults are set to work with the OV2640.
-At the moment, this is a micropython user module, but it might get in the micropython repo in the future.
-The API is stable, but it might change without previous announce.
+
+The API is stable, but it might change. Please look into the release section for the latest changes.
+
+I tied to make things as easy as possible. If you find this project useful, please consider donating to support my work. Thanks!
+[![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.me/cnadler)
 
 ## Content
 
