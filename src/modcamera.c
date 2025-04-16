@@ -97,7 +97,7 @@ static bool init_camera(mp_camera_obj_t *self) {
     self->camera_config.jpeg_quality = get_mapped_jpeg_quality(api_jpeg_quality);
     esp_err_t err = esp_camera_init(&self->camera_config);
     self->camera_config.jpeg_quality = api_jpeg_quality;
-    check_esp_err_(err);
+    check_esp_err(err);
     return true;
 }
 
@@ -175,7 +175,7 @@ void mp_camera_hal_deinit(mp_camera_obj_t *self) {
             self->captured_buffer = NULL;
         }
         esp_err_t err = esp_camera_deinit();
-        check_esp_err_(err);
+        check_esp_err(err);
         self->initialized = false;
         ESP_LOGI(TAG, "Camera deinitialized");
     }
@@ -198,7 +198,7 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
     set_check_grab_mode(self, grab_mode);
     set_check_fb_count(self, fb_count);
 
-    check_esp_err_(esp_camera_deinit());
+    check_esp_err(esp_camera_deinit());
     self->initialized = false;
     self->initialized = init_camera(self);
     ESP_LOGI(TAG, "Camera reconfigured successfully");

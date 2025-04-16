@@ -9,6 +9,8 @@ The API is stable, but it might change. Please look into the release section for
 I tied to make things as easy as possible. If you find this project useful, please consider donating to support my work. Thanks!
 [![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.me/cnadler)
 
+If you want to play arround with AI, take a look at the [micropython binding for esp-dl](https://github.com/cnadler86/mp_esp_dl_models).
+
 ## Content
 
 - [Precompiled firmware (the easy way)](#Precompiled-firmware-the-easy-way)
