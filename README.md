@@ -252,7 +252,7 @@ Below is a list of supported `MICROPY_CAMERA_MODEL_xxx` definitions:
 - MICROPY_CAMERA_MODEL_M5STACK_WIDE - [M5Stack Wide](https://shop.m5stack.com/collections/m5-cameras)
 - MICROPY_CAMERA_MODEL_M5STACK_ESP32CAM - [M5Stack ESP32CAM](https://shop.m5stack.com/collections/m5-cameras)
 - MICROPY_CAMERA_MODEL_M5STACK_CAMS3_UNIT - [M5Stack CAMS3 Unit](https://shop.m5stack.com/collections/m5-cameras)
-- MICROPY_CAMERA_MODEL_M5STACK_ATOM_S3R - [M5Stack Atom S3R](https://shop.m5stack.com/products/atoms3r-camera-kit-m12-version-ov3660)
+- MICROPY_CAMERA_MODEL_M5STACK_ATOM_S3R - [M5Stack Atom S3R](https://docs.m5stack.com/en/core/AtomS3R-M12)
 - MICROPY_CAMERA_MODEL_AI_THINKER - [AI-Thinker ESP32-CAM]
 - MICROPY_CAMERA_MODEL_XIAO_ESP32S3 - [XIAO ESP32S3](https://www.seeedstudio.com/xiao-series-page)
 - MICROPY_CAMERA_MODEL_ESP32_MP_CAMERA_BOARD - [ESP32 MP Camera Board]
