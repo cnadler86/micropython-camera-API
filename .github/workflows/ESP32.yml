@@ -105,7 +105,6 @@ jobs:
           - ESP32_GENERIC_S2
           - ESP32_GENERIC_S3
           - ESP32_GENERIC_S3-SPIRAM_OCT
-          - ESP32_GENERIC_S3-FLASH_4M
           - ESP32_GENERIC-SPIRAM@WROVER_KIT
           - ESP32_GENERIC-SPIRAM@ESP_EYE
           - ESP32_GENERIC-SPIRAM@M5STACK_PSRAM
@@ -158,6 +157,7 @@ jobs:
       - name: Build MicroPython
         run: |
           cd ${{ github.workspace }}
+          cd ..
           git clone https://github.com/cnadler86/mp_jpeg.git
           cd ~/esp-idf/components/esp32-camera
           CAM_DRIVER=$(git describe --tags --always --dirty)
@@ -169,9 +169,9 @@ jobs:
           IFS='-' read -r BOARD_NAME BOARD_VARIANT <<< "${BUILD_TARGET}"
           
           if [ -n "${BOARD_VARIANT}" ]; then
-            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -D MICROPY_BOARD_VARIANT=$BOARD_VARIANT -B build-$BUILD_TARGET -D MP_CAMERA_DRIVER_VERSION=$CAM_DRIVER -D MP_JPEG_DIR=${{ github.workspace }}/mp_jpeg"
+            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -D MICROPY_BOARD_VARIANT=$BOARD_VARIANT -B build-$BUILD_TARGET -D MP_CAMERA_DRIVER_VERSION=$CAM_DRIVER"
           else
-            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -B build-$BUILD_TARGET -D MP_CAMERA_DRIVER_VERSION=$CAM_DRIVER -D MP_JPEG_DIR=${{ github.workspace }}/mp_jpeg"
+            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake -B build-$BUILD_TARGET -D MP_CAMERA_DRIVER_VERSION=$CAM_DRIVER"
           fi
           if [ -n "${CAMERA_MODEL}" ]; then
             echo "FW_NAME=${CAMERA_MODEL}" >> $GITHUB_ENV

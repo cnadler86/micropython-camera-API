@@ -81,6 +81,11 @@ if (MP_CAMERA_DRIVER_VERSION)
     )
 endif()
 
+# Camera module strings are not suitable for compression and cause size increase
+target_compile_definitions(usermod_mp_camera INTERFACE 
+    MICROPY_ROM_TEXT_COMPRESSION=0
+)
+
 # Link the camera module with the main usermod target
 target_link_libraries(usermod INTERFACE usermod_mp_camera)
 
