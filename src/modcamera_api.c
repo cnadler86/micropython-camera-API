@@ -38,6 +38,9 @@
 typedef struct mp_camera_obj_t mp_camera_obj;
 const mp_obj_type_t camera_type;
 
+// Static camera object to ensure only one instance exists at a time
+static mp_camera_obj_t mp_camera_singleton = { .base = { NULL } };
+
 //Constructor
 static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
     enum { ARG_data_pins, ARG_pixel_clock_pin, ARG_vsync_pin, ARG_href_pin, ARG_sda_pin, ARG_scl_pin, ARG_xclock_pin, ARG_xclock_frequency, ARG_powerdown_pin, ARG_reset_pin, ARG_pixel_format, ARG_frame_size, ARG_jpeg_quality, ARG_fb_count, ARG_grab_mode, ARG_init, NUM_ARGS };
@@ -126,8 +129,19 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
     int8_t fb_count = args[ARG_fb_count].u_int;
     mp_camera_grabmode_t grab_mode = args[ARG_grab_mode].u_int;
     
-    mp_camera_obj_t *self = mp_obj_malloc_with_finaliser(mp_camera_obj_t, &camera_type);
-    self->base.type = &camera_type;
+    // Get static singleton object
+    mp_camera_obj_t *self = &mp_camera_singleton;
+    
+    // If camera was already initialized, deinit it first
+    bool first_init = false;
+    if (self->base.type == NULL) {
+        // First time initialization
+        self->base.type = &camera_type;
+        first_init = true;
+    } else {
+        // Camera already exists, deinit it before reinitializing
+        mp_camera_hal_deinit(self);
+    }
 
     mp_camera_hal_construct(self, data_pins, xclock_pin, pixel_clock_pin, vsync_pin, href_pin, powerdown_pin, reset_pin, 
         sda_pin, scl_pin, xclock_frequency, pixel_format, frame_size, jpeg_quality, fb_count, grab_mode);
