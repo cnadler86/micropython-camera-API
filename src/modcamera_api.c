@@ -35,6 +35,13 @@
 
 #include "modcamera.h"
 
+#if MICROPY_HW_ESP_NEW_I2C_DRIVER
+#include "driver/i2c_master.h"
+#else
+#include "driver/i2c.h"
+#include "hal/i2c_ll.h"
+#endif
+
 typedef struct mp_camera_obj_t mp_camera_obj;
 const mp_obj_type_t camera_type;
 
@@ -43,7 +50,7 @@ static mp_camera_obj_t mp_camera_singleton = { .base = { NULL } };
 
 //Constructor
 static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
-    enum { ARG_data_pins, ARG_pixel_clock_pin, ARG_vsync_pin, ARG_href_pin, ARG_sda_pin, ARG_scl_pin, ARG_xclock_pin, ARG_xclock_frequency, ARG_powerdown_pin, ARG_reset_pin, ARG_pixel_format, ARG_frame_size, ARG_jpeg_quality, ARG_fb_count, ARG_grab_mode, ARG_init, NUM_ARGS };
+    enum { ARG_data_pins, ARG_pixel_clock_pin, ARG_vsync_pin, ARG_href_pin, ARG_sda_pin, ARG_scl_pin, ARG_xclock_pin, ARG_i2c, ARG_xclock_frequency, ARG_powerdown_pin, ARG_reset_pin, ARG_pixel_format, ARG_frame_size, ARG_jpeg_quality, ARG_fb_count, ARG_grab_mode, ARG_init, NUM_ARGS };
     static const mp_arg_t allowed_args[] = {
         #ifdef MICROPY_CAMERA_ALL_REQ_PINS_DEFINED
             { MP_QSTR_data_pins, MP_ARG_OBJ | MP_ARG_KW_ONLY , { .u_obj = MP_ROM_NONE } },
@@ -58,10 +65,11 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
             { MP_QSTR_pclk_pin, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
             { MP_QSTR_vsync_pin, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
             { MP_QSTR_href_pin, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
-            { MP_QSTR_sda_pin, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
-            { MP_QSTR_scl_pin, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
+            { MP_QSTR_sda_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = -1 } },
+            { MP_QSTR_scl_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = -1 } },
             { MP_QSTR_xclk_pin, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED },
         #endif
+        { MP_QSTR_i2c, MP_ARG_OBJ | MP_ARG_KW_ONLY, { .u_obj = MP_ROM_NONE } },
         { MP_QSTR_xclk_freq, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_XCLK_FREQ } },
         { MP_QSTR_powerdown_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_PIN_PWDN } },
         { MP_QSTR_reset_pin, MP_ARG_INT | MP_ARG_KW_ONLY, { .u_int = MICROPY_CAMERA_PIN_RESET } },
@@ -111,8 +119,48 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
     int8_t pixel_clock_pin = args[ARG_pixel_clock_pin].u_int;
     int8_t vsync_pin = args[ARG_vsync_pin].u_int;
     int8_t href_pin = args[ARG_href_pin].u_int;
-    int8_t sda_pin = args[ARG_sda_pin].u_int;
-    int8_t scl_pin = args[ARG_scl_pin].u_int;
+    
+    // Handle I2C configuration: either use I2C object or individual pins
+    int8_t sda_pin = -1;
+    int8_t scl_pin = -1;
+    int8_t i2c_port = -1;
+    mp_obj_t i2c_obj = args[ARG_i2c].u_obj;
+    
+    if (i2c_obj != MP_ROM_NONE) {
+        // External I2C object provided - extract port number from it
+        extern const mp_obj_type_t machine_i2c_type;
+        if (!mp_obj_is_type(i2c_obj, &machine_i2c_type)) {
+            mp_raise_TypeError(MP_ERROR_TEXT("i2c must be a machine.I2C object"));
+        }
+        
+        // Get the I2C port from the I2C object
+        // Structure matches machine_hw_i2c_obj_t from machine_i2c.c
+        typedef struct _machine_hw_i2c_obj_t {
+            mp_obj_base_t base;
+            i2c_port_t port : 8;
+            gpio_num_t scl : 8;
+            gpio_num_t sda : 8;
+            uint32_t freq;
+            uint32_t timeout_us;
+        } machine_hw_i2c_obj_t;
+
+        machine_hw_i2c_obj_t *i2c = (machine_hw_i2c_obj_t *)MP_OBJ_TO_PTR(i2c_obj);
+        i2c_port = (int8_t)i2c->port;
+        sda_pin = i2c->sda;
+        scl_pin = i2c->scl;
+    } else {
+        // Use individual pins
+        sda_pin = args[ARG_sda_pin].u_int;
+        scl_pin = args[ARG_scl_pin].u_int;
+        
+        // Validate that pins are provided (if no default pins defined)
+        #ifndef MICROPY_CAMERA_ALL_REQ_PINS_DEFINED
+            if (sda_pin == -1 || scl_pin == -1) {
+                mp_raise_ValueError(MP_ERROR_TEXT("Either i2c object or sda_pin/scl_pin must be specified"));
+            }
+        #endif
+    }
+    
     int8_t xclock_pin = args[ARG_xclock_pin].u_int;
     int32_t xclock_frequency = args[ARG_xclock_frequency].u_int;
     if (xclock_frequency < 1000) {
@@ -132,21 +180,17 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
     // Get static singleton object
     mp_camera_obj_t *self = &mp_camera_singleton;
     
-    // If camera was already initialized, deinit it first
-    bool first_init = false;
     if (self->base.type == NULL) {
-        // First time initialization
         self->base.type = &camera_type;
-        first_init = true;
     } else {
-        // Camera already exists, deinit it before reinitializing
-        mp_camera_hal_deinit(self);
+        mp_camera_hal_deinit(self);     // Camera already exists, deinit it before reinitializing
     }
 
     mp_camera_hal_construct(self, data_pins, xclock_pin, pixel_clock_pin, vsync_pin, href_pin, powerdown_pin, reset_pin, 
-        sda_pin, scl_pin, xclock_frequency, pixel_format, frame_size, jpeg_quality, fb_count, grab_mode);
+        sda_pin, scl_pin, i2c_port, xclock_frequency, pixel_format, frame_size, jpeg_quality, fb_count, grab_mode);
 
     mp_camera_hal_init(self);
+    mp_hal_delay_ms(10); // Small delay to ensure I2C/SCCB is fully initialized
     if (mp_camera_hal_capture(self) == mp_const_none){
         mp_camera_hal_deinit(self);
         mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture initial frame. Construct a new object with appropriate configuration."));

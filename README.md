@@ -23,6 +23,7 @@ If you want to play arround with AI, take a look at the [micropython binding for
   - [Freeing the buffer](#freeing-the-buffer)
   - [Is a frame available](#is-frame-available)
   - [Additional methods](#additional-methods)
+  - [I2C Integration](#i2c-integration)
   - [Additional information](#additional-information)
 - [Build your custom firmware](#build-your-custom-firmware)
   - [Setting up the build environment (DIY method)](#setting-up-the-build-environment-diy-method)
@@ -207,6 +208,42 @@ To get the version of the camera driver used:
 ```python
 import camera
 vers = camera.Version()
+```
+
+### I2C Integration
+
+The camera uses I2C (SCCB protocol) to communicate with the camera sensor. You can share this I2C bus with other devices by passing an external I2C object to the camera:
+
+#### Sharing I2C with Camera
+
+```python
+import machine
+
+# Create your own I2C object first
+i2c = machine.I2C(0, scl=22, sda=21, freq=400000)
+
+# Pass it to the camera (no need for sda_pin/scl_pin)
+cam = camera.Camera(i2c=i2c, data_pins=..., pclk_pin=..., ...)
+
+# The same I2C object can be used for other devices on the same bus!
+devices = i2c.scan()
+print(f"I2C devices found: {devices}")
+
+# You can communicate with other I2C devices while camera is running
+i2c.writeto(0x42, b'\x00\x01')  # Write to another device
+
+# Camera sensor communication works too
+cam.set_saturation(1)  # Uses the shared I2C bus
+```
+
+#### Alternative: Camera Creates Its Own I2C (Default)
+
+```python
+# Camera creates and manages its own I2C internally
+cam = camera.Camera(sda_pin=21, scl_pin=22, ...)
+
+# In this mode, you cannot share I2C with other devices
+# Use the first method if you need to share I2C
 ```
 
 ### Additional information
