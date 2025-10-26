@@ -212,7 +212,7 @@ vers = camera.Version()
 
 ### I2C Integration
 
-The camera uses I2C (SCCB protocol) to communicate with the camera sensor. You can share this I2C bus with other devices by passing an external I2C object to the camera:
+The camera uses I2C (SCCB protocol) to communicate with the camera sensor. You can share this I2C bus with other devices by passing an external I2C object (SoftI2C not supported) to the camera:
 
 #### Sharing I2C with Camera
 
