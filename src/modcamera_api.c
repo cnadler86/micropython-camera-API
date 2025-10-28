@@ -403,7 +403,7 @@ static void camera_obj_property(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
             case MP_QSTR_pixel_height:
             case MP_QSTR_max_frame_size:
             case MP_QSTR_sensor_name:
-                mp_raise_AttributeError(MP_ERROR_TEXT("read-only property"));
+                mp_raise_ValueError(MP_ERROR_TEXT("read-only property"));
                 break;
 
             // Read-write properties
