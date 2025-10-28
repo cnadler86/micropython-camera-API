@@ -88,8 +88,7 @@ jobs:
           # git submodule update --init --depth 1
           cd mpy-cross
           make
-          cd ~/micropython/ports/esp32
-          make submodules
+          
           echo "Micropython setup successfully"
           source ~/micropython/tools/ci.sh && echo "IDF_VER=$IDF_VER" >> $GITHUB_ENV
 
@@ -180,7 +179,8 @@ jobs:
             echo "FW_NAME=${BUILD_TARGET}" >> $GITHUB_ENV
             FINAL_CMD="${IDF_CMD} build"
           fi
-          make USER_C_MODULES=${{ github.workspace }}/src/micropython.cmake BOARD=$BOARD_NAME submodules
+          
+          make BOARD=$BOARD_NAME submodules
           echo "Running command: $FINAL_CMD"
           eval $FINAL_CMD
           cd ~/micropython/ports/esp32/build-${BUILD_TARGET}
