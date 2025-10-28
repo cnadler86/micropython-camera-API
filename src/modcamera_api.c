@@ -289,13 +289,13 @@ static void camera_obj_property(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
         switch (attr) {
             // Read-only properties
             case MP_QSTR_pixel_format:
-                dest[0] = mp_obj_new_int(mp_camera_hal_get_pixel_format(self));
+                dest[0] = MP_OBJ_NEW_SMALL_INT(mp_camera_hal_get_pixel_format(self));
                 break;
             case MP_QSTR_grab_mode:
-                dest[0] = mp_obj_new_int(mp_camera_hal_get_grab_mode(self));
+                dest[0] = MP_OBJ_NEW_SMALL_INT(mp_camera_hal_get_grab_mode(self));
                 break;
             case MP_QSTR_fb_count:
-                dest[0] = mp_obj_new_int(mp_camera_hal_get_fb_count(self));
+                dest[0] = MP_OBJ_NEW_SMALL_INT(mp_camera_hal_get_fb_count(self));
                 break;
             case MP_QSTR_pixel_width:
                 dest[0] = mp_obj_new_int(mp_camera_hal_get_pixel_width(self));
@@ -304,7 +304,7 @@ static void camera_obj_property(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
                 dest[0] = mp_obj_new_int(mp_camera_hal_get_pixel_height(self));
                 break;
             case MP_QSTR_max_frame_size:
-                dest[0] = mp_obj_new_int(mp_camera_hal_get_max_frame_size(self));
+                dest[0] = MP_OBJ_NEW_SMALL_INT(mp_camera_hal_get_max_frame_size(self));
                 break;
             case MP_QSTR_sensor_name:
                 dest[0] = mp_obj_new_str_from_cstr(mp_camera_hal_get_sensor_name(self));
@@ -524,12 +524,12 @@ static void camera_obj_property(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
     { MP_ROM_QSTR(MP_QSTR_set_##property), MP_ROM_PTR(&camera_set_##property##_obj) }
 
 CREATE_GETSET_FUNCTIONS(frame_size, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
-CREATE_GETTER(pixel_format, mp_obj_new_int);
-CREATE_GETTER(grab_mode, mp_obj_new_int);
-CREATE_GETTER(fb_count, mp_obj_new_int);
+CREATE_GETTER(pixel_format, MP_OBJ_NEW_SMALL_INT);
+CREATE_GETTER(grab_mode, MP_OBJ_NEW_SMALL_INT);
+CREATE_GETTER(fb_count, MP_OBJ_NEW_SMALL_INT);
 CREATE_GETTER(pixel_width, mp_obj_new_int);
 CREATE_GETTER(pixel_height, mp_obj_new_int);
-CREATE_GETTER(max_frame_size, mp_obj_new_int);
+CREATE_GETTER(max_frame_size, MP_OBJ_NEW_SMALL_INT);
 CREATE_GETTER(sensor_name, mp_obj_new_str_from_cstr);
 CREATE_GETSET_FUNCTIONS(contrast, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
 CREATE_GETSET_FUNCTIONS(brightness, MP_OBJ_NEW_SMALL_INT, mp_obj_get_int);
