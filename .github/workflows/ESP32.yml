@@ -43,6 +43,8 @@ jobs:
             !~/.espressif/dist/
             ~/.cache/pip/
             ~/micropython/
+            ~/esp32-camera/
+            ~/esp_new_jpeg/
           key: mpy-${{ env.MPY_RELEASE }}
           restore-keys: mpy-
 
@@ -64,15 +66,21 @@ jobs:
           git -C esp-idf submodule update --init --recursive --filter=tree:0
           cd esp-idf
           ./install.sh all
-          cd components
-          # latest_cam_driver=$(curl -s https://api.github.com/repos/espressif/esp32-camera/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-          # git clone --depth 1 --branch $latest_cam_driver https://github.com/espressif/esp32-camera.git
-          git clone https://github.com/cnadler86/esp32-camera.git
-          cd ~/esp-idf/
           source ./export.sh
+
+      # Clone external components (if not cached)
+      - name: Clone external components
+        if: steps.cache_esp_idf.outputs.cache-hit != 'true'
+        run: |
           cd ~
+          # Clone camera driver
+          git clone https://github.com/cnadler86/esp32-camera.git
+          echo "ESP32_CAMERA_DIR=~/esp32-camera" >> $GITHUB_ENV
+          # Clone esp_new_jpeg
           git clone https://github.com/espressif/esp-adf-libs.git
-          cp -r ~/esp-adf-libs/esp_new_jpeg ~/esp-idf/components/
+          mv ~/esp-adf-libs/esp_new_jpeg ~/esp_new_jpeg
+          rm -rf ~/esp-adf-libs
+          echo "ESP_JPEG_DIR=~/esp_new_jpeg" >> $GITHUB_ENV
 
       # Clone the latest MicroPython release (if not cached)
       - name: Clone MicroPython latest release
@@ -141,6 +149,8 @@ jobs:
             !~/.espressif/dist/
             ~/.cache/pip/
             ~/micropython/
+            ~/esp32-camera/
+            ~/esp_new_jpeg/
           key: mpy-${{ env.MPY_RELEASE }}
           restore-keys: mpy-
 
@@ -158,7 +168,12 @@ jobs:
           cd ${{ github.workspace }}
           cd ..
           git clone https://github.com/cnadler86/mp_jpeg.git
-          cd ~/esp-idf/components/esp32-camera
+          # Set environment variables for component directories
+          echo "ESP32_CAMERA_DIR=~/esp32-camera" >> $GITHUB_ENV
+          echo "ESP_JPEG_DIR=~/esp_new_jpeg" >> $GITHUB_ENV
+          export ESP32_CAMERA_DIR=~/esp32-camera
+          export ESP_JPEG_DIR=~/esp_new_jpeg
+          cd ~/esp32-camera
           CAM_DRIVER=$(git describe --tags --always --dirty)
           cd ~/micropython/ports/esp32
           source ~/esp-idf/export.sh
