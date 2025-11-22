@@ -258,21 +258,19 @@ To build the project, follow these instructions:
 
 - [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.2.3/esp32/get-started/index.html): I used version 5.2.3, but it might work with other versions (see notes).
 - Clone the micropython repo and this repo in a folder, e.g. "MyESPCam". MicroPython version 1.24 or higher is required (at least commit 92484d8).
-- You will have to add the ESP32-Camera driver from my fork. To do this, add the following to the respective idf_component.yml file (e.g. in micropython/ports/esp32/main_esp32s3/idf_component.yml):
+- You will have to add the ESP32-Camera driver. To do this, add the following to the respective idf_component.yml file (e.g. in micropython/ports/esp32/main/idf_component.yml):
 
 ```yml
   espressif/esp32-camera:
     git: https://github.com/cnadler86/esp32-camera.git
 ```
 
-Alternatively, you can clone the <https://github.com/cnadler86/esp32-camera> repository inside the esp-idf/components folder instead of altering the idf_component.yml file.
-
 ### Add camera configurations to your board (optional, but recommended)
 
 #### Supported camera models
 
 This project supports various boards with camera interface out of the box. You typically only need to add a single line to your board config file ("mpconfigboard.h).
-Example (don't forget to add the empty line at the bottom):
+Example:
 
 ```c
 #define MICROPY_CAMERA_MODEL_WROVER_KIT       1
@@ -345,9 +343,9 @@ To build the project, you could do it the following way:
 ```bash
 . <path2esp-idf>/esp-idf/export.sh
 cd MyESPCam/micropython/ports/esp32
-make USER_C_MODULES=../../../../micropython-camera-API/src/micropython.cmake BOARD=<Your-Board> clean
-make USER_C_MODULES=../../../../micropython-camera-API/src/micropython.cmake BOARD=<Your-Board> submodules
-make USER_C_MODULES=../../../../micropython-camera-API/src/micropython.cmake BOARD=<Your-Board> all
+make USER_C_MODULES=../../../../micropython-camera-API/micropython.cmake BOARD=<Your-Board> clean
+make USER_C_MODULES=../../../../micropython-camera-API/micropython.cmake BOARD=<Your-Board> submodules
+make USER_C_MODULES=../../../../micropython-camera-API/micropython.cmake BOARD=<Your-Board> all
 ```
 
 Micropython and camera-api folders are at the same level. Note that you need those extra "/../"s while been inside the esp32 port folder.
