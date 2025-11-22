@@ -75,12 +75,10 @@ jobs:
           cd ~
           # Clone camera driver
           git clone https://github.com/cnadler86/esp32-camera.git
-          echo "ESP32_CAMERA_DIR=~/esp32-camera" >> $GITHUB_ENV
           # Clone esp_new_jpeg
           git clone https://github.com/espressif/esp-adf-libs.git
           mv ~/esp-adf-libs/esp_new_jpeg ~/esp_new_jpeg
           rm -rf ~/esp-adf-libs
-          echo "ESP_JPEG_DIR=~/esp_new_jpeg" >> $GITHUB_ENV
 
       # Clone the latest MicroPython release (if not cached)
       - name: Clone MicroPython latest release
@@ -168,11 +166,6 @@ jobs:
           cd ${{ github.workspace }}
           cd ..
           git clone https://github.com/cnadler86/mp_jpeg.git
-          # Set environment variables for component directories
-          echo "ESP32_CAMERA_DIR=~/esp32-camera" >> $GITHUB_ENV
-          echo "ESP_JPEG_DIR=~/esp_new_jpeg" >> $GITHUB_ENV
-          export ESP32_CAMERA_DIR=~/esp32-camera
-          export ESP_JPEG_DIR=~/esp_new_jpeg
           cd ~/esp32-camera
           CAM_DRIVER=$(git describe --tags --always --dirty)
           cd ~/micropython/ports/esp32
@@ -183,9 +176,9 @@ jobs:
           IFS='-' read -r BOARD_NAME BOARD_VARIANT <<< "${BUILD_TARGET}"
           
           if [ -n "${BOARD_VARIANT}" ]; then
-            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/micropython.cmake -D MICROPY_BOARD_VARIANT=$BOARD_VARIANT -B build-$BUILD_TARGET -D MP_CAMERA_DRIVER_VERSION=$CAM_DRIVER"
+            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/micropython.cmake -D MICROPY_BOARD_VARIANT=$BOARD_VARIANT -B build-$BUILD_TARGET -D MP_CAMERA_DRIVER_VERSION=$CAM_DRIVER -D ESP32_CAMERA_DIR=$HOME/esp32-camera -D ESP_JPEG_DIR=$HOME/esp_new_jpeg"
           else
-            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/micropython.cmake -B build-$BUILD_TARGET -D MP_CAMERA_DRIVER_VERSION=$CAM_DRIVER"
+            IDF_CMD="idf.py -D MICROPY_BOARD=$BOARD_NAME -D USER_C_MODULES=${{ github.workspace }}/micropython.cmake -B build-$BUILD_TARGET -D MP_CAMERA_DRIVER_VERSION=$CAM_DRIVER -D ESP32_CAMERA_DIR=$HOME/esp32-camera -D ESP_JPEG_DIR=$HOME/esp_new_jpeg"
           fi
           if [ -n "${CAMERA_MODEL}" ]; then
             echo "FW_NAME=${CAMERA_MODEL}" >> $GITHUB_ENV
