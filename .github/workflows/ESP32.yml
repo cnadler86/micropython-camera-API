@@ -150,8 +150,8 @@ jobs:
           cd ${{ github.workspace }}
           cd ..
           git clone https://github.com/cnadler86/mp_jpeg.git
-          cd ~/esp32-camera
-          CAM_DRIVER=$(git describe --tags --always --dirty)
+          # cd ~/esp32-camera
+          # CAM_DRIVER=$(git describe --tags --always --dirty)
           cd ~/micropython/ports/esp32
           source ~/esp-idf/export.sh
 
