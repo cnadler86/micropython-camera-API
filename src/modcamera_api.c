@@ -42,6 +42,34 @@
 #include "hal/i2c_ll.h"
 #endif
 
+// Get the I2C port from the I2C object. This will be deleted in the future
+// Structure matches machine_hw_i2c_obj_t from machine_i2c.c
+#if MICROPY_HW_ESP_NEW_I2C_DRIVER && CONFIG_SCCB_HARDWARE_I2C_DRIVER_NEW
+    typedef struct _machine_hw_i2c_obj_t {
+        mp_obj_base_t base;
+        i2c_master_bus_handle_t bus_handle;
+        #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 5, 0)
+        i2c_master_dev_handle_t dev_handle;
+        #endif
+        uint8_t port : 8;
+        gpio_num_t scl : 8;
+        gpio_num_t sda : 8;
+        uint32_t freq;
+        uint32_t timeout_us;
+    } machine_hw_i2c_obj_t;
+#elif CONFIG_SCCB_HARDWARE_I2C_DRIVER_LEGACY
+    typedef struct _machine_hw_i2c_obj_t {
+        mp_obj_base_t base;
+        i2c_port_t port : 8;
+        gpio_num_t scl : 8;
+        gpio_num_t sda : 8;
+        uint32_t freq;
+        uint32_t timeout_us;
+    } machine_hw_i2c_obj_t;
+#else
+    #error "Unsupported I2C driver configuration for casmera module"
+#endif
+
 typedef struct mp_camera_obj_t mp_camera_obj;
 const mp_obj_type_t camera_type;
 
@@ -133,17 +161,6 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
             mp_raise_TypeError(MP_ERROR_TEXT("i2c must be a machine.I2C object"));
         }
         
-        // Get the I2C port from the I2C object
-        // Structure matches machine_hw_i2c_obj_t from machine_i2c.c
-        typedef struct _machine_hw_i2c_obj_t {
-            mp_obj_base_t base;
-            i2c_port_t port : 8;
-            gpio_num_t scl : 8;
-            gpio_num_t sda : 8;
-            uint32_t freq;
-            uint32_t timeout_us;
-        } machine_hw_i2c_obj_t;
-
         machine_hw_i2c_obj_t *i2c = (machine_hw_i2c_obj_t *)MP_OBJ_TO_PTR(i2c_obj);
         i2c_port = (int8_t)i2c->port;
         sda_pin = i2c->sda;
