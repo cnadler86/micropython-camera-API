@@ -9,48 +9,22 @@ target_sources(usermod_mp_camera INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/src/modcamera_api.c
 )
 
-# Register dependency on esp32-camera component
-# The component is managed by IDF component manager via idf_component.yml
-# Add include directories directly from managed_components (they exist after Component Manager ran)
-# Allow manual override via ESP32_CAMERA_DIR
-if(DEFINED ESP32_CAMERA_DIR AND EXISTS "${ESP32_CAMERA_DIR}")
-    message(STATUS "Using user-defined ESP32_CAMERA_DIR: ${ESP32_CAMERA_DIR}")
-    set(ESP32_CAMERA_MANAGED_DIR "${ESP32_CAMERA_DIR}")
-else()
-    set(ESP32_CAMERA_MANAGED_DIR "${MICROPY_PORT_DIR}/managed_components/espressif__esp32-camera")
-endif()
+idf_component_get_property(camera_dir esp32-camera COMPONENT_DIR)
+target_include_directories(usermod_mp_camera INTERFACE
+    ${camera_dir}/driver/include
+    ${camera_dir}/driver/private_include
+    ${camera_dir}/sensors/private_include
+)
 
-if(EXISTS "${ESP32_CAMERA_MANAGED_DIR}")
-    # Add standard include directories for esp32-camera
-    list(APPEND MICROPY_INC_USERMOD
-        ${ESP32_CAMERA_MANAGED_DIR}/driver/include
-        ${ESP32_CAMERA_MANAGED_DIR}/driver/private_include
-        ${ESP32_CAMERA_MANAGED_DIR}/conversions/include
-        ${ESP32_CAMERA_MANAGED_DIR}/conversions/private_include
-        ${ESP32_CAMERA_MANAGED_DIR}/sensors/private_include
-    )
-    
-    message(STATUS "Found esp32-camera at: ${ESP32_CAMERA_MANAGED_DIR}")
-    
-    # Link against the component library when target exists (during actual build)
-    # The target doesn't exist yet during include(), but will exist during build
-    if(TARGET espressif__esp32-camera)
-        idf_component_get_property(esp32_camera_lib espressif__esp32-camera COMPONENT_LIB)
-        target_link_libraries(usermod_mp_camera INTERFACE ${esp32_camera_lib})
-    endif()
-    
-    # Set MP_CAMERA_DRIVER_VERSION if available
-    if(EXISTS "${ESP32_CAMERA_MANAGED_DIR}/idf_component.yml")
-        file(READ "${ESP32_CAMERA_MANAGED_DIR}/idf_component.yml" _camera_component_yml)
-        string(REGEX MATCH "version: ([0-9]+\\.[0-9]+(\\.[0-9]+)?)" _ ${_camera_component_yml})
-        if(CMAKE_MATCH_1)
-            set(MP_CAMERA_DRIVER_VERSION "${CMAKE_MATCH_1}")
-            message(STATUS "Found esp32-camera version: ${MP_CAMERA_DRIVER_VERSION}")
-        endif()
-    endif()
-else()
-    message(WARNING "esp32-camera component not found - component manager should have downloaded it based on idf_component.yml")
-endif()
+#     # Set MP_CAMERA_DRIVER_VERSION if available
+#     if(EXISTS "${ESP32_CAMERA_MANAGED_DIR}/idf_component.yml")
+#         file(READ "${ESP32_CAMERA_MANAGED_DIR}/idf_component.yml" _camera_component_yml)
+#         string(REGEX MATCH "version: ([0-9]+\\.[0-9]+(\\.[0-9]+)?)" _ ${_camera_component_yml})
+#         if(CMAKE_MATCH_1)
+#             set(MP_CAMERA_DRIVER_VERSION "${CMAKE_MATCH_1}")
+#             message(STATUS "Found esp32-camera version: ${MP_CAMERA_DRIVER_VERSION}")
+#         endif()
+#     endif()
 
 # Check if MP_JPEG_DIR is set or if mp_jpeg directory exists two levels up
 if(DEFINED MP_JPEG_DIR AND EXISTS "${MP_JPEG_DIR}")

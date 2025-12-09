@@ -44,7 +44,7 @@
 
 // Get the I2C port from the I2C object. This will be deleted in the future
 // Structure matches machine_hw_i2c_obj_t from machine_i2c.c
-#if MICROPY_HW_ESP_NEW_I2C_DRIVER && CONFIG_SCCB_HARDWARE_I2C_DRIVER_NEW
+#if MICROPY_HW_ESP_NEW_I2C_DRIVER
     typedef struct _machine_hw_i2c_obj_t {
         mp_obj_base_t base;
         i2c_master_bus_handle_t bus_handle;
@@ -57,7 +57,7 @@
         uint32_t freq;
         uint32_t timeout_us;
     } machine_hw_i2c_obj_t;
-#elif CONFIG_SCCB_HARDWARE_I2C_DRIVER_LEGACY
+#else
     typedef struct _machine_hw_i2c_obj_t {
         mp_obj_base_t base;
         i2c_port_t port : 8;
@@ -66,8 +66,6 @@
         uint32_t freq;
         uint32_t timeout_us;
     } machine_hw_i2c_obj_t;
-#else
-    #error "Unsupported I2C driver configuration for casmera module"
 #endif
 
 typedef struct mp_camera_obj_t mp_camera_obj;

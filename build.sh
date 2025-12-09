@@ -5,19 +5,21 @@ set -e
 IDF_PATH_DEFAULT="$HOME/esp/esp-idf"
 MICROPYTHON_PATH=""
 IDF_PATH="$IDF_PATH_DEFAULT"
-BOARD=""
+BOARD="ESP32_GENERIC_S3"
 BOARD_VARIANT=""
+CAMERA_MODEL=""
 BUILD_DIR="build-mp_camera"
 
 # Parse arguments
 usage() {
-    echo "Usage: $0 -m <micropython_path> [-i <idf_path>] [-b <board>] [-v <board_variant>]"
+    echo "Usage: $0 -m <micropython_path> [-i <idf_path>] [-b <board>] [-v <board_variant>] [-c <camera_model>]"
     echo ""
     echo "Options:"
     echo "  -m <path>    Path to MicroPython directory (required)"
     echo "  -i <path>    Path to ESP-IDF directory (optional, default: $IDF_PATH_DEFAULT)"
-    echo "  -b <board>   Board name (optional, e.g. ESP32_GENERIC_S3)"
+    echo "  -b <board>   Board name (optional, e.g. ESP32_GENERIC_S3, default: $BOARD)"
     echo "  -v <variant> Board variant (optional, e.g. SPIRAM_OCT)"
+    echo "  -c <model>   Camera model (optional, e.g. FREENOVE_ESP32S3_CAM)"
     echo "  -h           Show this help message"
     echo ""
     echo "Examples:"
@@ -25,16 +27,18 @@ usage() {
     echo "  $0 -m ~/privat/micropython -i ~/esp/esp-idf"
     echo "  $0 -m ~/privat/micropython -b ESP32_GENERIC_S3"
     echo "  $0 -m ~/privat/micropython -b ESP32_GENERIC_S3 -v SPIRAM_OCT"
+    echo "  $0 -m ~/privat/micropython -b ESP32_GENERIC_S3 -c FREENOVE_ESP32S3_CAM"
     exit 1
 }
 
 # Parse command line options
-while getopts "m:i:b:v:h" opt; do
+while getopts "m:i:b:v:c:h" opt; do
     case $opt in
         m) MICROPYTHON_PATH="$OPTARG" ;;
         i) IDF_PATH="$OPTARG" ;;
         b) BOARD="$OPTARG" ;;
         v) BOARD_VARIANT="$OPTARG" ;;
+        c) CAMERA_MODEL="$OPTARG" ;;
         h) usage ;;
         *) usage ;;
     esac
@@ -69,17 +73,21 @@ IDF_PATH=$(realpath "$IDF_PATH")
 MODULE_PATH=$(dirname "$(realpath "$0")")
 
 echo "=========================================="
-echo "Building MicroPython with IR Learn Module"
+echo "Building MicroPython with Camera Module"
 echo "=========================================="
 echo "MicroPython path: $MICROPYTHON_PATH"
 echo "ESP-IDF path:     $IDF_PATH"
 echo "Module path:      $MODULE_PATH"
 if [ -n "$BOARD" ]; then
     echo "Board:            $BOARD"
+    BUILD_DIR="${BUILD_DIR}-${BOARD}"
     if [ -n "$BOARD_VARIANT" ]; then
         echo "Board variant:    $BOARD_VARIANT"
-        BUILD_DIR="build-${BOARD_VARIANT}"
+        BUILD_DIR="${BUILD_DIR}_${BOARD_VARIANT}"
     fi
+fi
+if [ -n "$CAMERA_MODEL" ]; then
+    echo "Camera model:     $CAMERA_MODEL"
 fi
 echo "Build directory:  $BUILD_DIR"
 echo "=========================================="
@@ -101,6 +109,10 @@ fi
 
 if [ -n "$BOARD_VARIANT" ]; then
     IDF_CMD="$IDF_CMD -D MICROPY_BOARD_VARIANT=$BOARD_VARIANT"
+fi
+
+if [ -n "$CAMERA_MODEL" ]; then
+    IDF_CMD="$IDF_CMD -D MICROPY_CAMERA_MODEL=$CAMERA_MODEL"
 fi
 
 IDF_CMD="$IDF_CMD -D USER_C_MODULES=$MODULE_PATH/micropython.cmake"
@@ -130,3 +142,7 @@ echo ""
 echo "Build completed successfully!"
 echo "Firmware files in: $MICROPYTHON_PATH/ports/esp32/$BUILD_DIR"
 echo "=========================================="
+
+# Clean up build directory
+cd "$MODULE_PATH"
+rm -rf build
