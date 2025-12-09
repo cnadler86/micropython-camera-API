@@ -62,8 +62,8 @@ jobs:
           cd ~/esp-idf/
           source ./export.sh
           cd ~
-          # git clone --depth 1 --branch ${{ env.MPY_RELEASE }} https://github.com/micropython/micropython.git
-          git clone --depth 1 https://github.com/micropython/micropython.git
+          git clone --depth 1 --branch ${{ env.MPY_RELEASE }} https://github.com/micropython/micropython.git
+          # git clone --depth 1 https://github.com/micropython/micropython.git
           cd micropython
           # git submodule update --init --depth 1
           cd mpy-cross
