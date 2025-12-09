@@ -139,6 +139,8 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install ESP-IDF dependencies
         run: |
