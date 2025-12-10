@@ -52,7 +52,27 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
-
+      
+      # Clone MicroPython (if not cached)
+      - name: Clone MicroPython
+        id: clone-micropython
+        if: steps.cache_esp_idf.outputs.cache-hit != 'true'
+        run: |
+          cd ~
+          if [ "${{ github.ref }}" == "refs/heads/master" ]; then
+            echo "Master branch detected - cloning MicroPython release: $MPY_RELEASE"
+            git clone --depth 1 --branch ${{ env.MPY_RELEASE }} https://github.com/micropython/micropython.git
+          else
+            echo "Development branch detected - cloning latest MicroPython master"
+            git clone --depth 1 https://github.com/micropython/micropython.git
+          fi
+          cd micropython
+          cd mpy-cross
+          make
+          
+          echo "Micropython setup successfully"
+          source ~/micropython/tools/ci.sh && echo "IDF_VER=$IDF_VER" >> $GITHUB_ENV
+      
       # Download and set up ESP-IDF (if not cached)
       - name: Set up ESP-IDF
         id: export-idf
@@ -65,25 +85,6 @@ jobs:
           cd esp-idf
           ./install.sh all
           source ./export.sh
-
-      # Clone the latest MicroPython release (if not cached)
-      - name: Clone MicroPython latest release
-        id: clone-micropython
-        if: steps.cache_esp_idf.outputs.cache-hit != 'true'
-        run: |
-          echo "Cloning MicroPython release: $MPY_RELEASE"
-          cd ~/esp-idf/
-          source ./export.sh
-          cd ~
-          git clone --depth 1 --branch ${{ env.MPY_RELEASE }} https://github.com/micropython/micropython.git
-          # git clone --depth 1 https://github.com/micropython/micropython.git
-          cd micropython
-          # git submodule update --init --depth 1
-          cd mpy-cross
-          make
-          
-          echo "Micropython setup successfully"
-          source ~/micropython/tools/ci.sh && echo "IDF_VER=$IDF_VER" >> $GITHUB_ENV
 
   # Dynamically create jobs for each board
   build:
