@@ -23,6 +23,7 @@ If you want to play arround with AI, take a look at the [micropython binding for
   - [Freeing the buffer](#freeing-the-buffer)
   - [Is a frame available](#is-frame-available)
   - [Additional methods](#additional-methods)
+  - [I2C Integration](#i2c-integration)
   - [Additional information](#additional-information)
 - [Build your custom firmware](#build-your-custom-firmware)
   - [Setting up the build environment (DIY method)](#setting-up-the-build-environment-diy-method)
@@ -209,6 +210,42 @@ import camera
 vers = camera.Version()
 ```
 
+### I2C Integration
+
+The camera uses I2C (SCCB protocol) to communicate with the camera sensor. You can share this I2C bus with other devices by passing an external I2C object (SoftI2C not supported) to the camera:
+
+#### Sharing I2C with Camera
+
+```python
+import machine
+
+# Create your own I2C object first
+i2c = machine.I2C(0, scl=22, sda=21, freq=400000)
+
+# Pass it to the camera (no need for sda_pin/scl_pin)
+cam = camera.Camera(i2c=i2c, data_pins=..., pclk_pin=..., ...)
+
+# The same I2C object can be used for other devices on the same bus!
+devices = i2c.scan()
+print(f"I2C devices found: {devices}")
+
+# You can communicate with other I2C devices while camera is running
+i2c.writeto(0x42, b'\x00\x01')  # Write to another device
+
+# Camera sensor communication works too
+cam.set_saturation(1)  # Uses the shared I2C bus
+```
+
+#### Alternative: Camera Creates Its Own I2C (Default)
+
+```python
+# Camera creates and manages its own I2C internally
+cam = camera.Camera(sda_pin=21, scl_pin=22, ...)
+
+# In this mode, you cannot share I2C with other devices
+# Use the first method if you need to share I2C
+```
+
 ### Additional information
 
 The firmware images support the following cameras out of the box, but is therefore big: OV7670, OV7725, OV2640, OV3660, OV5640, NT99141, GC2145, GC032A, GC0308, BF3005, BF20A6, SC030IOT
@@ -221,21 +258,19 @@ To build the project, follow these instructions:
 
 - [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.2.3/esp32/get-started/index.html): I used version 5.2.3, but it might work with other versions (see notes).
 - Clone the micropython repo and this repo in a folder, e.g. "MyESPCam". MicroPython version 1.24 or higher is required (at least commit 92484d8).
-- You will have to add the ESP32-Camera driver from my fork. To do this, add the following to the respective idf_component.yml file (e.g. in micropython/ports/esp32/main_esp32s3/idf_component.yml):
+- You will have to add the ESP32-Camera driver. To do this, add the following to the respective idf_component.yml file (e.g. in micropython/ports/esp32/main/idf_component.yml):
 
 ```yml
   espressif/esp32-camera:
     git: https://github.com/cnadler86/esp32-camera.git
 ```
 
-Alternatively, you can clone the <https://github.com/cnadler86/esp32-camera> repository inside the esp-idf/components folder instead of altering the idf_component.yml file.
-
 ### Add camera configurations to your board (optional, but recommended)
 
 #### Supported camera models
 
 This project supports various boards with camera interface out of the box. You typically only need to add a single line to your board config file ("mpconfigboard.h).
-Example (don't forget to add the empty line at the bottom):
+Example:
 
 ```c
 #define MICROPY_CAMERA_MODEL_WROVER_KIT       1
@@ -303,17 +338,13 @@ If you also want to include the [mp_jpeg module](https://github.com/cnadler86/mp
 
 ### Build the API
 
-To build the project, you could do it the following way:
+To build the project, just use the buils script with the path to your micropython folder:
 
 ```bash
-. <path2esp-idf>/esp-idf/export.sh
-cd MyESPCam/micropython/ports/esp32
-make USER_C_MODULES=../../../../micropython-camera-API/src/micropython.cmake BOARD=<Your-Board> clean
-make USER_C_MODULES=../../../../micropython-camera-API/src/micropython.cmake BOARD=<Your-Board> submodules
-make USER_C_MODULES=../../../../micropython-camera-API/src/micropython.cmake BOARD=<Your-Board> all
+./build.sh -m path/to/micropython -b ESP32_GENERIC_S3
 ```
 
-Micropython and camera-api folders are at the same level. Note that you need those extra "/../"s while been inside the esp32 port folder.
+Use `./build.sh -h` to see all available options.
 If you experience problems, visit [MicroPython external C modules](https://docs.micropython.org/en/latest/develop/cmodules.html).
 
 ## Notes

@@ -6,6 +6,9 @@
 #.vscode folder
 .vscode/
 
+# Build
+/build/
+
 # User-specific files
 *.rsuser
 *.suo

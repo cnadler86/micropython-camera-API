@@ -119,8 +119,9 @@ typedef hal_camera_gainceiling_t mp_camera_gainceiling_t;
  * @param href_pin HREF pin.
  * @param powerdown_pin Power down pin.
  * @param reset_pin Reset pin.
- * @param sccb_sda_pin SCCB SDA pin.
+ * @param sccb_sda_pin SCCB SDA pin (set to -1 to use sccb_i2c_port instead).
  * @param sccb_scl_pin SCCB SCL pin.
+ * @param sccb_i2c_port I2C port number to use (only if sccb_sda_pin is -1).
  * @param xclk_freq_hz External clock frequency in Hz.
  * @param pixel_format Pixel format.
  * @param frame_size Frame size.
@@ -139,6 +140,7 @@ extern void mp_camera_hal_construct(
     int8_t reset_pin,
     int8_t sccb_sda_pin,
     int8_t sccb_scl_pin,
+    int8_t sccb_i2c_port,
     int32_t xclk_freq_hz,
     mp_camera_pixformat_t pixel_format,
     mp_camera_framesize_t frame_size,

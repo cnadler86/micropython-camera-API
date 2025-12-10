@@ -75,6 +75,7 @@ class Camera():
                  xclk_freq: int = 20000000,
                  powerdown_pin: int = -1,
                  reset_pin: int = -1,
+                 i2c: object | None = None,
                  pixel_format: int = PixelFormat.RGB565,
                  frame_size: int = FrameSize.QVGA,
                  jpeg_quality: int = 85,
@@ -83,118 +84,278 @@ class Camera():
                  init: bool = True) -> None:
         ...
 
-    def get_special_effect(self) -> int:
-        """Get the current special effect setting."""
+    # Properties (read-only)
+    @property
+    def pixel_format(self) -> int:
+        """Get current pixel format (read-only)."""
         ...
 
-    def set_special_effect(self, value: int) -> None:
-        """Set the special effect."""
+    @property
+    def grab_mode(self) -> int:
+        """Get current grab mode (read-only)."""
         ...
 
-    def set_awb_gain(self, value: bool) -> None:
-        """Enable/disable Auto White Balance Gain."""
+    @property
+    def fb_count(self) -> int:
+        """Get frame buffer count (read-only)."""
         ...
 
-    def get_awb_gain(self) -> bool:
-        """Get Auto White Balance Gain state."""
+    @property
+    def pixel_width(self) -> int:
+        """Get frame width in pixels (read-only)."""
         ...
 
-    def set_agc_gain(self, value: int) -> None:
-        """Set the Auto Gain Control gain value."""
+    @property
+    def pixel_height(self) -> int:
+        """Get frame height in pixels (read-only)."""
         ...
 
-    def get_agc_gain(self) -> int:
-        """Get the Auto Gain Control gain value."""
+    @property
+    def max_frame_size(self) -> int:
+        """Get maximum supported frame size (read-only)."""
         ...
 
-    def set_aec_value(self, value: int) -> None:
-        """Set the Auto Exposure Control value."""
+    @property
+    def sensor_name(self) -> str:
+        """Get camera sensor name (read-only)."""
         ...
 
-    def get_aec_value(self) -> int:
-        """Get the Auto Exposure Control value."""
+    # Properties (read-write)
+    @property
+    def frame_size(self) -> int:
+        """Get/set frame size."""
         ...
 
-    def set_bpc(self, value: bool) -> None:
-        """Enable/disable Bad Pixel Correction."""
+    @frame_size.setter
+    def frame_size(self, value: int) -> None:
         ...
 
-    def get_bpc(self) -> bool:
-        """Get Bad Pixel Correction state."""
+    @property
+    def contrast(self) -> int:
+        """Get/set contrast level (-2 to 2)."""
         ...
 
-    def set_contrast(self, value: int) -> None:
-        """Set the contrast level (-2 to 2)."""
+    @contrast.setter
+    def contrast(self, value: int) -> None:
         ...
 
-    def get_contrast(self) -> int:
-        """Get the contrast level."""
+    @property
+    def brightness(self) -> int:
+        """Get/set brightness level (-2 to 2)."""
         ...
 
-    def set_colorbar(self, value: bool) -> None:
-        """Enable/disable color bar test pattern."""
+    @brightness.setter
+    def brightness(self, value: int) -> None:
         ...
 
-    def get_colorbar(self) -> bool:
-        """Get color bar test pattern state."""
+    @property
+    def saturation(self) -> int:
+        """Get/set saturation level (-2 to 2)."""
         ...
 
-    def set_brightness(self, value: int) -> None:
-        """Set the brightness level (-2 to 2)."""
+    @saturation.setter
+    def saturation(self, value: int) -> None:
         ...
 
-    def get_brightness(self) -> int:
-        """Get the brightness level."""
+    @property
+    def sharpness(self) -> int:
+        """Get/set sharpness level (-2 to 2)."""
         ...
 
-    def set_aec2(self, value: bool) -> None:
-        """Enable/disable AEC DSP."""
+    @sharpness.setter
+    def sharpness(self, value: int) -> None:
         ...
 
-    def get_aec2(self) -> bool:
-        """Get AEC DSP state."""
+    @property
+    def denoise(self) -> int:
+        """Get/set denoise level."""
         ...
 
-    def set_whitebal(self, value: bool) -> None:
-        """Enable/disable white balance."""
+    @denoise.setter
+    def denoise(self, value: int) -> None:
         ...
 
-    def get_whitebal(self) -> bool:
-        """Get white balance state."""
+    @property
+    def gainceiling(self) -> int:
+        """Get/set gain ceiling."""
         ...
 
-    def set_wb_mode(self, value: int) -> None:
-        """Set white balance mode."""
+    @gainceiling.setter
+    def gainceiling(self, value: int) -> None:
         ...
 
-    def get_wb_mode(self) -> int:
-        """Get white balance mode."""
+    @property
+    def quality(self) -> int:
+        """Get/set JPEG quality (0-63)."""
         ...
 
-    def set_vflip(self, value: bool) -> None:
-        """Enable/disable vertical flip."""
+    @quality.setter
+    def quality(self, value: int) -> None:
         ...
 
-    def get_vflip(self) -> bool:
-        """Get vertical flip state."""
+    @property
+    def colorbar(self) -> bool:
+        """Get/set color bar test pattern."""
         ...
 
-    def set_wpc(self, value: bool) -> None:
-        """Enable/disable White Pixel Correction."""
+    @colorbar.setter
+    def colorbar(self, value: bool) -> None:
         ...
 
-    def get_wpc(self) -> bool:
-        """Get White Pixel Correction state."""
+    @property
+    def whitebal(self) -> bool:
+        """Get/set white balance."""
         ...
 
-    def set_ae_level(self, value: int) -> None:
-        """Set Auto Exposure level (-2 to 2)."""
+    @whitebal.setter
+    def whitebal(self, value: bool) -> None:
         ...
 
-    def get_ae_level(self) -> int:
-        """Get Auto Exposure level."""
+    @property
+    def gain_ctrl(self) -> bool:
+        """Get/set Auto Gain Control."""
         ...
 
+    @gain_ctrl.setter
+    def gain_ctrl(self, value: bool) -> None:
+        ...
+
+    @property
+    def exposure_ctrl(self) -> bool:
+        """Get/set Auto Exposure Control."""
+        ...
+
+    @exposure_ctrl.setter
+    def exposure_ctrl(self, value: bool) -> None:
+        ...
+
+    @property
+    def hmirror(self) -> bool:
+        """Get/set horizontal mirror."""
+        ...
+
+    @hmirror.setter
+    def hmirror(self, value: bool) -> None:
+        ...
+
+    @property
+    def vflip(self) -> bool:
+        """Get/set vertical flip."""
+        ...
+
+    @vflip.setter
+    def vflip(self, value: bool) -> None:
+        ...
+
+    @property
+    def aec2(self) -> bool:
+        """Get/set AEC DSP."""
+        ...
+
+    @aec2.setter
+    def aec2(self, value: bool) -> None:
+        ...
+
+    @property
+    def awb_gain(self) -> bool:
+        """Get/set Auto White Balance Gain."""
+        ...
+
+    @awb_gain.setter
+    def awb_gain(self, value: bool) -> None:
+        ...
+
+    @property
+    def agc_gain(self) -> int:
+        """Get/set Auto Gain Control gain value."""
+        ...
+
+    @agc_gain.setter
+    def agc_gain(self, value: int) -> None:
+        ...
+
+    @property
+    def aec_value(self) -> int:
+        """Get/set Auto Exposure Control value."""
+        ...
+
+    @aec_value.setter
+    def aec_value(self, value: int) -> None:
+        ...
+
+    @property
+    def special_effect(self) -> int:
+        """Get/set special effect."""
+        ...
+
+    @special_effect.setter
+    def special_effect(self, value: int) -> None:
+        ...
+
+    @property
+    def wb_mode(self) -> int:
+        """Get/set white balance mode."""
+        ...
+
+    @wb_mode.setter
+    def wb_mode(self, value: int) -> None:
+        ...
+
+    @property
+    def ae_level(self) -> int:
+        """Get/set Auto Exposure level (-2 to 2)."""
+        ...
+
+    @ae_level.setter
+    def ae_level(self, value: int) -> None:
+        ...
+
+    @property
+    def dcw(self) -> bool:
+        """Get/set DCW (Downsize EN)."""
+        ...
+
+    @dcw.setter
+    def dcw(self, value: bool) -> None:
+        ...
+
+    @property
+    def bpc(self) -> bool:
+        """Get/set Bad Pixel Correction."""
+        ...
+
+    @bpc.setter
+    def bpc(self, value: bool) -> None:
+        ...
+
+    @property
+    def wpc(self) -> bool:
+        """Get/set White Pixel Correction."""
+        ...
+
+    @wpc.setter
+    def wpc(self, value: bool) -> None:
+        ...
+
+    @property
+    def raw_gma(self) -> bool:
+        """Get/set GMA (Gamma) Correction."""
+        ...
+
+    @raw_gma.setter
+    def raw_gma(self, value: bool) -> None:
+        ...
+
+    @property
+    def lenc(self) -> bool:
+        """Get/set Lens Correction."""
+        ...
+
+    @lenc.setter
+    def lenc(self, value: bool) -> None:
+        ...
+
+    # Core methods
     def reconfigure(self, *, frame_size: int | None = None,
                    pixel_format: int | None = None,
                    grab_mode: int | None = None,
@@ -210,102 +371,6 @@ class Camera():
         """Deinitialize the camera."""
         ...
 
-    def set_dcw(self, value: bool) -> None:
-        """Enable/disable DCW (Downsize EN)."""
-        ...
-
-    def get_dcw(self) -> bool:
-        """Get DCW (Downsize EN) state."""
-        ...
-
-    def set_sharpness(self, value: int) -> None:
-        """Set the sharpness level (-2 to 2)."""
-        ...
-
-    def get_sharpness(self) -> int:
-        """Get the sharpness level."""
-        ...
-
-    def set_saturation(self, value: int) -> None:
-        """Set the saturation level (-2 to 2)."""
-        ...
-
-    def get_saturation(self) -> int:
-        """Get the saturation level."""
-        ...
-
-    def set_raw_gma(self, value: bool) -> None:
-        """Enable/disable GMA (Gamma) Correction."""
-        ...
-
-    def get_raw_gma(self) -> bool:
-        """Get GMA (Gamma) Correction state."""
-        ...
-
-    def set_quality(self, value: int) -> None:
-        """Set JPEG quality (0-63)."""
-        ...
-
-    def get_quality(self) -> int:
-        """Get JPEG quality."""
-        ...
-
-    def set_frame_size(self, value: int) -> None:
-        """Set frame size."""
-        ...
-
-    def get_frame_size(self) -> int:
-        """Get frame size."""
-        ...
-
-    def set_exposure_ctrl(self, value: bool) -> None:
-        """Enable/disable Auto Exposure Control."""
-        ...
-
-    def get_exposure_ctrl(self) -> bool:
-        """Get Auto Exposure Control state."""
-        ...
-
-    def set_denoise(self, value: int) -> None:
-        """Set denoise level."""
-        ...
-
-    def get_denoise(self) -> int:
-        """Get denoise level."""
-        ...
-
-    def set_gain_ctrl(self, value: bool) -> None:
-        """Enable/disable Auto Gain Control."""
-        ...
-
-    def get_gain_ctrl(self) -> bool:
-        """Get Auto Gain Control state."""
-        ...
-
-    def set_lenc(self, value: bool) -> None:
-        """Enable/disable Lens Correction."""
-        ...
-
-    def get_lenc(self) -> bool:
-        """Get Lens Correction state."""
-        ...
-
-    def set_hmirror(self, value: bool) -> None:
-        """Enable/disable horizontal mirror."""
-        ...
-
-    def get_hmirror(self) -> bool:
-        """Get horizontal mirror state."""
-        ...
-
-    def set_gainceiling(self, value: int) -> None:
-        """Set gain ceiling."""
-        ...
-
-    def get_gainceiling(self) -> int:
-        """Get gain ceiling."""
-        ...
-
     def frame_available(self) -> bool:
         """Check if a frame is available."""
         ...
@@ -318,31 +383,240 @@ class Camera():
         """Free the frame buffer."""
         ...
 
+    # Deprecated methods (use properties instead)
+    def get_special_effect(self) -> int:
+        """Deprecated: Use the special_effect property instead."""
+        ...
+
+    def set_special_effect(self, value: int) -> None:
+        """Deprecated: Use the special_effect property instead."""
+        ...
+
+    def set_awb_gain(self, value: bool) -> None:
+        """Deprecated: Use the awb_gain property instead."""
+        ...
+
+    def get_awb_gain(self) -> bool:
+        """Deprecated: Use the awb_gain property instead."""
+        ...
+
+    def set_agc_gain(self, value: int) -> None:
+        """Deprecated: Use the agc_gain property instead."""
+        ...
+
+    def get_agc_gain(self) -> int:
+        """Deprecated: Use the agc_gain property instead."""
+        ...
+
+    def set_aec_value(self, value: int) -> None:
+        """Deprecated: Use the aec_value property instead."""
+        ...
+
+    def get_aec_value(self) -> int:
+        """Deprecated: Use the aec_value property instead."""
+        ...
+
+    def set_bpc(self, value: bool) -> None:
+        """Deprecated: Use the bpc property instead."""
+        ...
+
+    def get_bpc(self) -> bool:
+        """Deprecated: Use the bpc property instead."""
+        ...
+
+    def set_contrast(self, value: int) -> None:
+        """Deprecated: Use the contrast property instead."""
+        ...
+
+    def get_contrast(self) -> int:
+        """Deprecated: Use the contrast property instead."""
+        ...
+
+    def set_colorbar(self, value: bool) -> None:
+        """Deprecated: Use the colorbar property instead."""
+        ...
+
+    def get_colorbar(self) -> bool:
+        """Deprecated: Use the colorbar property instead."""
+        ...
+
+    def set_brightness(self, value: int) -> None:
+        """Deprecated: Use the brightness property instead."""
+        ...
+
+    def get_brightness(self) -> int:
+        """Deprecated: Use the brightness property instead."""
+        ...
+
+    def set_aec2(self, value: bool) -> None:
+        """Deprecated: Use the aec2 property instead."""
+        ...
+
+    def get_aec2(self) -> bool:
+        """Deprecated: Use the aec2 property instead."""
+        ...
+
+    def set_whitebal(self, value: bool) -> None:
+        """Deprecated: Use the whitebal property instead."""
+        ...
+
+    def get_whitebal(self) -> bool:
+        """Deprecated: Use the whitebal property instead."""
+        ...
+
+    def set_wb_mode(self, value: int) -> None:
+        """Deprecated: Use the wb_mode property instead."""
+        ...
+
+    def get_wb_mode(self) -> int:
+        """Deprecated: Use the wb_mode property instead."""
+        ...
+
+    def set_vflip(self, value: bool) -> None:
+        """Deprecated: Use the vflip property instead."""
+        ...
+
+    def get_vflip(self) -> bool:
+        """Deprecated: Use the vflip property instead."""
+        ...
+
+    def set_wpc(self, value: bool) -> None:
+        """Deprecated: Use the wpc property instead."""
+        ...
+
+    def get_wpc(self) -> bool:
+        """Deprecated: Use the wpc property instead."""
+        ...
+
+    def set_ae_level(self, value: int) -> None:
+        """Deprecated: Use the ae_level property instead."""
+        ...
+
+    def get_ae_level(self) -> int:
+        """Deprecated: Use the ae_level property instead."""
+        ...
+
+    def set_dcw(self, value: bool) -> None:
+        """Deprecated: Use the dcw property instead."""
+        ...
+
+    def get_dcw(self) -> bool:
+        """Deprecated: Use the dcw property instead."""
+        ...
+
+    def set_sharpness(self, value: int) -> None:
+        """Deprecated: Use the sharpness property instead."""
+        ...
+
+    def get_sharpness(self) -> int:
+        """Deprecated: Use the sharpness property instead."""
+        ...
+
+    def set_saturation(self, value: int) -> None:
+        """Deprecated: Use the saturation property instead."""
+        ...
+
+    def get_saturation(self) -> int:
+        """Deprecated: Use the saturation property instead."""
+        ...
+
+    def set_raw_gma(self, value: bool) -> None:
+        """Deprecated: Use the raw_gma property instead."""
+        ...
+
+    def get_raw_gma(self) -> bool:
+        """Deprecated: Use the raw_gma property instead."""
+        ...
+
+    def set_quality(self, value: int) -> None:
+        """Deprecated: Use the quality property instead."""
+        ...
+
+    def get_quality(self) -> int:
+        """Deprecated: Use the quality property instead."""
+        ...
+
+    def set_frame_size(self, value: int) -> None:
+        """Deprecated: Use the frame_size property instead."""
+        ...
+
+    def get_frame_size(self) -> int:
+        """Deprecated: Use the frame_size property instead."""
+        ...
+
+    def set_exposure_ctrl(self, value: bool) -> None:
+        """Deprecated: Use the exposure_ctrl property instead."""
+        ...
+
+    def get_exposure_ctrl(self) -> bool:
+        """Deprecated: Use the exposure_ctrl property instead."""
+        ...
+
+    def set_denoise(self, value: int) -> None:
+        """Deprecated: Use the denoise property instead."""
+        ...
+
+    def get_denoise(self) -> int:
+        """Deprecated: Use the denoise property instead."""
+        ...
+
+    def set_gain_ctrl(self, value: bool) -> None:
+        """Deprecated: Use the gain_ctrl property instead."""
+        ...
+
+    def get_gain_ctrl(self) -> bool:
+        """Deprecated: Use the gain_ctrl property instead."""
+        ...
+
+    def set_lenc(self, value: bool) -> None:
+        """Deprecated: Use the lenc property instead."""
+        ...
+
+    def get_lenc(self) -> bool:
+        """Deprecated: Use the lenc property instead."""
+        ...
+
+    def set_hmirror(self, value: bool) -> None:
+        """Deprecated: Use the hmirror property instead."""
+        ...
+
+    def get_hmirror(self) -> bool:
+        """Deprecated: Use the hmirror property instead."""
+        ...
+
+    def set_gainceiling(self, value: int) -> None:
+        """Deprecated: Use the gainceiling property instead."""
+        ...
+
+    def get_gainceiling(self) -> int:
+        """Deprecated: Use the gainceiling property instead."""
+        ...
+
     def get_pixel_width(self) -> int:
-        """Get frame width in pixels."""
+        """Deprecated: Use the pixel_width property instead."""
         ...
 
     def get_pixel_height(self) -> int:
-        """Get frame height in pixels."""
+        """Deprecated: Use the pixel_height property instead."""
         ...
 
     def get_pixel_format(self) -> int:
-        """Get current pixel format."""
+        """Deprecated: Use the pixel_format property instead."""
         ...
 
     def get_sensor_name(self) -> str:
-        """Get camera sensor name."""
+        """Deprecated: Use the sensor_name property instead."""
         ...
 
     def get_max_frame_size(self) -> int:
-        """Get maximum supported frame size."""
+        """Deprecated: Use the max_frame_size property instead."""
         ...
 
     def get_fb_count(self) -> int:
-        """Get frame buffer count."""
+        """Deprecated: Use the fb_count property instead."""
         ...
 
     def get_grab_mode(self) -> int:
-        """Get current grab mode."""
+        """Deprecated: Use the grab_mode property instead."""
         ...
 

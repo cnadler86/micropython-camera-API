@@ -113,6 +113,7 @@ void mp_camera_hal_construct(
     int8_t reset_pin,
     int8_t sccb_sda_pin,
     int8_t sccb_scl_pin,
+    int8_t sccb_i2c_port,
     int32_t xclk_freq_hz,
     mp_camera_pixformat_t pixel_format,
     mp_camera_framesize_t frame_size,
@@ -134,9 +135,15 @@ void mp_camera_hal_construct(
         self->camera_config.pin_pwdn = powerdown_pin;
         self->camera_config.pin_reset = reset_pin;
         self->camera_config.pin_xclk = external_clock_pin;
-        self->camera_config.pin_sscb_sda = sccb_sda_pin;
-        self->camera_config.pin_sscb_scl = sccb_scl_pin;
-
+        if (sccb_i2c_port != -1) {
+            self->camera_config.sccb_i2c_port = sccb_i2c_port;
+            self->camera_config.pin_sscb_sda = -1;  // Set sda_pin = -1 to signal esp_camera_init to use SCCB_Use_Port()
+            self->camera_config.pin_sscb_scl = -1;
+        } else {
+            self->camera_config.pin_sscb_sda = sccb_sda_pin;
+            self->camera_config.pin_sscb_scl = sccb_scl_pin;
+            self->camera_config.sccb_i2c_port = sccb_i2c_port;
+        }
         self->camera_config.frame_size = frame_size;        
         self->camera_config.jpeg_quality = jpeg_quality;    //save value in here, but will be corrected (with map) before passing it to the esp32-driver
 
