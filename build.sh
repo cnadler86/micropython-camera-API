@@ -12,10 +12,12 @@ BUILD_DIR="build-mp_camera"
 
 # Parse arguments
 usage() {
-    echo "Usage: $0 -m <micropython_path> [-i <idf_path>] [-b <board>] [-v <board_variant>] [-c <camera_model>]"
+    echo "Usage: $0 <micropython_path> [-i <idf_path>] [-b <board>] [-v <board_variant>] [-c <camera_model>]"
+    echo ""
+    echo "Arguments:"
+    echo "  <path>       Path to MicroPython directory (required)"
     echo ""
     echo "Options:"
-    echo "  -m <path>    Path to MicroPython directory (required)"
     echo "  -i <path>    Path to ESP-IDF directory (optional, default: $IDF_PATH_DEFAULT)"
     echo "  -b <board>   Board name (optional, e.g. ESP32_GENERIC_S3, default: $BOARD)"
     echo "  -v <variant> Board variant (optional, e.g. SPIRAM_OCT)"
@@ -23,18 +25,27 @@ usage() {
     echo "  -h           Show this help message"
     echo ""
     echo "Examples:"
-    echo "  $0 -m ~/privat/micropython"
-    echo "  $0 -m ~/privat/micropython -i ~/esp/esp-idf"
-    echo "  $0 -m ~/privat/micropython -b ESP32_GENERIC_S3"
-    echo "  $0 -m ~/privat/micropython -b ESP32_GENERIC_S3 -v SPIRAM_OCT"
-    echo "  $0 -m ~/privat/micropython -b ESP32_GENERIC_S3 -c FREENOVE_ESP32S3_CAM"
+    echo "  $0 ~/privat/micropython"
+    echo "  $0 ~/privat/micropython -i ~/esp/esp-idf"
+    echo "  $0 ~/privat/micropython -b ESP32_GENERIC_S3"
+    echo "  $0 ~/privat/micropython -b ESP32_GENERIC_S3 -v SPIRAM_OCT"
+    echo "  $0 ~/privat/micropython -b ESP32_GENERIC_S3 -c FREENOVE_ESP32S3_CAM"
     exit 1
 }
 
+# Check required arguments first
+if [ -z "$1" ]; then
+    echo "Error: MicroPython path is required as first argument"
+    echo ""
+    usage
+fi
+
+MICROPYTHON_PATH="$1"
+shift
+
 # Parse command line options
-while getopts "m:i:b:v:c:h" opt; do
+while getopts "i:b:v:c:h" opt; do
     case $opt in
-        m) MICROPYTHON_PATH="$OPTARG" ;;
         i) IDF_PATH="$OPTARG" ;;
         b) BOARD="$OPTARG" ;;
         v) BOARD_VARIANT="$OPTARG" ;;
@@ -43,13 +54,6 @@ while getopts "m:i:b:v:c:h" opt; do
         *) usage ;;
     esac
 done
-
-# Check required arguments
-if [ -z "$MICROPYTHON_PATH" ]; then
-    echo "Error: MicroPython path is required (-m option)"
-    echo ""
-    usage
-fi
 
 # Validate paths
 if [ ! -d "$MICROPYTHON_PATH" ]; then
@@ -97,8 +101,16 @@ echo ""
 echo "Setting up ESP-IDF environment..."
 source "$IDF_PATH/export.sh"
 
+# Check and initialize camera API submodules if needed
+cd "$MODULE_PATH"
+if git submodule status | grep -q '^-'; then
+    echo "Initializing camera API submodules ..."
+    git submodule update --init --depth 1
+fi
+
 # Change to MicroPython ESP32 port directory
 cd "$MICROPYTHON_PATH/ports/esp32"
+make BOARD=$BOARD submodules
 
 # Build idf.py command with optional parameters
 IDF_CMD="idf.py -B $BUILD_DIR"
