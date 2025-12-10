@@ -71,10 +71,6 @@ jobs:
           make
           
           echo "Micropython setup successfully"
-          # Extract IDF_VER directly from ci.sh
-          IDF_VER=$(grep "^IDF_VER=" ~/micropython/tools/ci.sh | cut -d'=' -f2)
-          echo "IDF_VER=$IDF_VER" >> $GITHUB_ENV
-          echo "Using ESP-IDF version: $IDF_VER"
       
       # Download and set up ESP-IDF (if not cached)
       - name: Set up ESP-IDF
@@ -82,8 +78,7 @@ jobs:
         if: steps.cache_esp_idf.outputs.cache-hit != 'true'
         run: |
           cd ~
-          # git clone --depth 1 --branch v5.5.1 https://github.com/espressif/esp-idf.git
-          git clone --depth 1 --branch ${{ env.IDF_VER }} https://github.com/espressif/esp-idf.git
+          git clone --depth 1 --branch v5.5.1 https://github.com/espressif/esp-idf.git
           git -C esp-idf submodule update --init --recursive --filter=tree:0
           cd esp-idf
           ./install.sh all
