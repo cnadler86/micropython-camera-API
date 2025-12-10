@@ -24,6 +24,8 @@ concurrency:
 jobs:
   setup-environment:
     runs-on: ubuntu-24.04
+    outputs:
+      idf_ver: ${{ steps.get_idf_ver.outputs.idf_ver }}
     steps:
      # Get the latest MicroPython release
       - name: Get MicroPython latest release
@@ -71,7 +73,14 @@ jobs:
           make
           
           echo "Micropython setup successfully"
-          source ~/micropython/tools/ci.sh && echo "IDF_VER=$IDF_VER" >> $GITHUB_ENV
+      
+      # Get IDF version from MicroPython ci.sh
+      - name: Get IDF version
+        id: get_idf_ver
+        run: |
+          source ~/micropython/tools/ci.sh
+          echo "idf_ver=$IDF_VER" >> $GITHUB_OUTPUT
+          echo "IDF_VER=$IDF_VER"
       
       # Download and set up ESP-IDF (if not cached)
       - name: Set up ESP-IDF
@@ -79,8 +88,7 @@ jobs:
         if: steps.cache_esp_idf.outputs.cache-hit != 'true'
         run: |
           cd ~
-          # git clone --depth 1 --branch v5.5.1 https://github.com/espressif/esp-idf.git
-          git clone --depth 1 --branch ${{ env.IDF_VER }} https://github.com/espressif/esp-idf.git
+          git clone --depth 1 --branch ${{ steps.get_idf_ver.outputs.idf_ver }} https://github.com/espressif/esp-idf.git
           git -C esp-idf submodule update --init --recursive --filter=tree:0
           cd esp-idf
           ./install.sh all
@@ -124,6 +132,7 @@ jobs:
         run: |
           MPY_RELEASE=$(curl --silent "https://api.github.com/repos/micropython/micropython/releases/latest" | jq -r .tag_name)
           echo "MPY_RELEASE=${MPY_RELEASE}" >> $GITHUB_ENV
+          echo "IDF_VER=${{ needs.setup-environment.outputs.idf_ver }}" >> $GITHUB_ENV
 
       # Cache ESP-IDF dependencies and MicroPython
       - name: Cache ESP-IDF and MicroPython
