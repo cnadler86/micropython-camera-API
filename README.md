@@ -130,9 +130,13 @@ The following keyword arguments have default values:
 
 ### Initializing the camera
 
+The camera initializes when constructing the camera object per default. If you set init=False during construction, you need to call the init method manually:
+
 ```python
 cam.init()
 ```
+
+Note that most of the camera seeting can only be set or aquired after initialization.
 
 ### Capture image
 
@@ -192,14 +196,14 @@ This gives you the possibility of creating an asynchronous application without u
 Here are just a few examples:
 
 ```python
-cam.set_quality(90)  # The quality goes from 0% to 100%, meaning 100% is the highest but has probably no compression
-camera.get_brightness()
-camera.set_vflip(True) #Enable vertical flip
+cam.quality = 90  # The quality goes from 0% to 100%, meaning 100% is the highest but has probably no compression
+print("cam.brightness =", cam.brightness)
+camera.vflip = True #Enable vertical flip
 ```
 
 See autocompletions in Thonny in order to see the list of methods.
 If you want more insights in the methods and what they actually do, you can find a very good documentation [here](https://docs.circuitpython.org/en/latest/shared-bindings/espcamera/index.html).
-Note that each method requires a "get_" or "set_" prefix, depending on the desired action.
+Note: "get_" and "set_" prefixed methods are deprecated.
 
 Take also a look in the examples folder.
 
@@ -233,7 +237,7 @@ print(f"I2C devices found: {devices}")
 i2c.writeto(0x42, b'\x00\x01')  # Write to another device
 
 # Camera sensor communication works too
-cam.set_saturation(1)  # Uses the shared I2C bus
+cam.saturation = 1  # Uses the shared I2C bus
 ```
 
 #### Alternative: Camera Creates Its Own I2C (Default)

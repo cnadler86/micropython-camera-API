@@ -12,8 +12,6 @@ target_sources(usermod_mp_camera INTERFACE
 idf_component_get_property(camera_dir esp32-camera COMPONENT_DIR)
 target_include_directories(usermod_mp_camera INTERFACE
     ${camera_dir}/driver/include
-    ${camera_dir}/driver/private_include
-    ${camera_dir}/sensors/private_include
 )
 
 #     # Set MP_CAMERA_DRIVER_VERSION if available

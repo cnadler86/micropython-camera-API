@@ -298,7 +298,10 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_camera___exit___obj, 4, 4, mp_came
 // Property handler
 static void camera_obj_property(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
     mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    
+    if (self->initialized == false) {
+        mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Camera not initialized"));
+    }
+
     if (dest[0] == MP_OBJ_NULL) {
         // Load (reading)
         switch (attr) {
@@ -501,6 +504,8 @@ static void camera_obj_property(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
                 mp_camera_hal_set_lenc(self, mp_obj_is_true(dest[1]));
                 break;
             default:
+                // Indicate that the attribute was not found
+                dest[1] = MP_OBJ_SENTINEL;
                 return;
         }
         dest[0] = MP_OBJ_NULL;

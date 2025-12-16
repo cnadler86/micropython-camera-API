@@ -56,35 +56,39 @@ async def handle_client(reader, writer):
         elif 'GET /set_' in request:
             method_name = request.split('GET /set_')[1].split('?')[0]
             value = int(request.split('value=')[1].split(' ')[0])
-            set_method = getattr(cam, f'set_{method_name}', None)
-            if callable(set_method):
+            try:
+                # Use property assignment instead of method call
+                setattr(cam, method_name, value)
                 print(f"setting {method_name} to {value}")
-                set_method(value)
                 response = 'HTTP/1.1 200 OK\r\n\r\n'
                 writer.write(response.encode())
                 await writer.drain()
-            else:
+            except (AttributeError, ValueError) as e:
+                # Fallback to reconfigure if property doesn't exist
                 try:
                     cam.reconfigure(**{method_name: value})
                     print(f"Camera reconfigured with {method_name}={value}")
                     print("This action restores all previous configuration!")
                     response = 'HTTP/1.1 200 OK\r\n\r\n'
-                except Exception as e:
-                    print(f"Error with {method_name}: {e}")
+                    writer.write(response.encode())
+                    await writer.drain()
+                except Exception as e2:
+                    print(f"Error setting {method_name}: {e2}")
                     response = 'HTTP/1.1 404 Not Found\r\n\r\n'
-                writer.write(response.encode())
-                await writer.drain()
+                    writer.write(response.encode())
+                    await writer.drain()
 
         elif 'GET /get_' in request:
             method_name = request.split('GET /get_')[1].split(' ')[0]
-            get_method = getattr(cam, f'get_{method_name}', None)
-            if callable(get_method):
-                value = get_method()
+            try:
+                # Use property access instead of method call
+                value = getattr(cam, method_name)
                 print(f"{method_name} is {value}")
                 response = f'HTTP/1.1 200 OK\r\n\r\n{value}'
                 writer.write(response.encode())
                 await writer.drain()
-            else:
+            except AttributeError as e:
+                print(f"Error getting {method_name}: {e}")
                 response = 'HTTP/1.1 404 Not Found\r\n\r\n'
                 writer.write(response.encode())
                 await writer.drain()
