@@ -192,15 +192,8 @@ void mp_camera_hal_reconfigure(mp_camera_obj_t *self, mp_camera_framesize_t fram
     check_init(self);
     ESP_LOGI(TAG, "Reconfiguring camera with frame size: %d, pixel format: %d, grab mode: %d, fb count: %d", (int)frame_size, (int)pixel_format, (int)grab_mode, (int)fb_count);
     
-    sensor_t *sensor = esp_camera_sensor_get();
-    camera_sensor_info_t *sensor_info = esp_camera_sensor_get_info(&sensor->id);
-    if (frame_size > sensor_info->max_size) {
-        mp_warning(NULL, "Frame size will be scaled down to maximal frame size supported by the camera sensor");
-        self->camera_config.frame_size = sensor_info->max_size;
-    } else {
-        self->camera_config.frame_size = frame_size;
-    }
-
+    // Set frame_size before deinit to ensure it's properly stored in camera_config and the sensor
+    mp_camera_hal_set_frame_size(self, frame_size);
     set_check_pixel_format(self, pixel_format);
     set_check_grab_mode(self, grab_mode);
     set_check_fb_count(self, fb_count);
@@ -357,6 +350,13 @@ void mp_camera_hal_set_frame_size(mp_camera_obj_t * self, framesize_t value) {
     sensor_t *sensor = esp_camera_sensor_get();
     if (!sensor->set_framesize) {
         mp_raise_ValueError(MP_ERROR_TEXT("No attribute frame_size"));
+    }
+
+    // Validate against sensor's maximum frame size
+    camera_sensor_info_t *sensor_info = esp_camera_sensor_get_info(&sensor->id);
+    if (value > sensor_info->max_size) {
+        mp_warning(NULL, "Frame size will be scaled down to maximal frame size supported by the camera sensor");
+        value = sensor_info->max_size;
     }
 
     if (self->captured_buffer) {
