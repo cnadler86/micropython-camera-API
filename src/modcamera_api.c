@@ -408,9 +408,11 @@ static void camera_obj_property(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
                 dest[0] = mp_obj_new_bool(mp_camera_hal_get_lenc(self));
                 break;
             default:
+                // Delegate to locals_dict
                 dest[1] = MP_OBJ_SENTINEL;
+                return;
         }
-    } else if (dest[1] != MP_OBJ_NULL) {
+    } else if (dest[0] == MP_OBJ_SENTINEL && dest[1] != MP_OBJ_NULL) {
         // Store (writing)
         switch (attr) {
             // Read-only properties
@@ -504,10 +506,10 @@ static void camera_obj_property(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
                 mp_camera_hal_set_lenc(self, mp_obj_is_true(dest[1]));
                 break;
             default:
-                // Indicate that the attribute was not found
-                dest[1] = MP_OBJ_SENTINEL;
+                // Delegate to locals_dict for methods not handled here
                 return;
         }
+        // Success - indicate attribute was stored
         dest[0] = MP_OBJ_NULL;
     }
 }
