@@ -298,7 +298,10 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_camera___exit___obj, 4, 4, mp_came
 // Property handler
 static void camera_obj_property(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
     mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    
+    if (self->initialized == false) {
+        mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Camera not initialized"));
+    }
+
     if (dest[0] == MP_OBJ_NULL) {
         // Load (reading)
         switch (attr) {
@@ -405,9 +408,11 @@ static void camera_obj_property(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
                 dest[0] = mp_obj_new_bool(mp_camera_hal_get_lenc(self));
                 break;
             default:
+                // Delegate to locals_dict
                 dest[1] = MP_OBJ_SENTINEL;
+                return;
         }
-    } else if (dest[1] != MP_OBJ_NULL) {
+    } else if (dest[0] == MP_OBJ_SENTINEL && dest[1] != MP_OBJ_NULL) {
         // Store (writing)
         switch (attr) {
             // Read-only properties
@@ -501,8 +506,10 @@ static void camera_obj_property(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
                 mp_camera_hal_set_lenc(self, mp_obj_is_true(dest[1]));
                 break;
             default:
+                // Delegate to locals_dict for methods not handled here
                 return;
         }
+        // Success - indicate attribute was stored
         dest[0] = MP_OBJ_NULL;
     }
 }
@@ -511,7 +518,6 @@ static void camera_obj_property(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
 // Camera sensor property functions
 #define CREATE_GETTER(property, get_function) \
     static mp_obj_t camera_get_##property(const mp_obj_t self_in) { \
-        mp_warning(NULL, "get_" #property "() is deprecated. Use the " #property " property instead."); \
         mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in); \
         return get_function(mp_camera_hal_get_##property(self)); \
     } \
@@ -519,7 +525,6 @@ static void camera_obj_property(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
 
 #define CREATE_SETTER(property, set_conversion) \
     static mp_obj_t camera_set_##property(const mp_obj_t self_in, const mp_obj_t arg) { \
-        mp_warning(NULL, "set_" #property "() is deprecated. Use the " #property " property instead."); \
         mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in); \
         mp_camera_hal_set_##property(self, set_conversion(arg)); \
         if (mp_camera_hal_get_##property(self) != set_conversion(arg)) { \

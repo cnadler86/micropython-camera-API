@@ -1,4 +1,5 @@
 from camera import Camera as _Camera
+from camera import FrameSize, PixelFormat, GainCeiling, GrabMode
 
 class Camera(_Camera):
     async def acapture(self) -> memoryview:
@@ -7,3 +8,5 @@ class Camera(_Camera):
         Yields control back to the event loop while waiting for a frame to become available.
         """
         ...
+
+__all__ = ['Camera', 'FrameSize', 'PixelFormat', 'GainCeiling', 'GrabMode']

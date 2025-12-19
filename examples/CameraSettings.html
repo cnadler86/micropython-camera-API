@@ -3,32 +3,50 @@
 <head>
     <title>Micropython Camera Stream</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
         body {
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             background-color: #f0f0f0;
         }
         .container {
             display: flex;
             flex-direction: row;
-            height: 100%;
             width: 100%;
+            flex: 1;
         }
         .settings-container {
             display: flex;
             flex-direction: column;
-            padding: 20px;
+            padding: 15px;
             background-color: #ffffff;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
             width: 300px;
+            overflow-y: auto;
         }
         .setting {
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .setting label {
+            font-size: 14px;
+            flex: 1;
+        }
+        .setting input[type="range"],
+        .setting select {
+            width: 100%;
+        }
+        .setting input[type="checkbox"] {
+            width: auto;
+            margin-left: 10px;
         }
         .hidden {
             display: none;
@@ -37,18 +55,45 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            width: 100%;
+            flex: 1;
             padding: 20px;
+            overflow: hidden;
         }
         img {
+            max-width: 100%;
+            max-height: 100%;
             width: auto;
-            height: 100%;
+            height: auto;
         }
         .title-container {
             width: 100%;
             text-align: center;
             background-color: #ffffff;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+        }
+        .title-container h1 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .settings-container {
+                width: 100%;
+                max-height: 40vh;
+                order: 2;
+            }
+            .video-container {
+                width: 100%;
+                min-height: 50vh;
+                padding: 10px;
+                order: 1;
+            }
+            .title-container h1 {
+                font-size: 1.2em;
+            }
         }
     </style>
     <script>
