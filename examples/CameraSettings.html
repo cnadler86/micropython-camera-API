@@ -32,15 +32,21 @@
         }
         .setting {
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
         .setting label {
-            display: block;
             font-size: 14px;
-            margin-bottom: 3px;
+            flex: 1;
         }
         .setting input[type="range"],
         .setting select {
             width: 100%;
+        }
+        .setting input[type="checkbox"] {
+            width: auto;
+            margin-left: 10px;
         }
         .hidden {
             display: none;

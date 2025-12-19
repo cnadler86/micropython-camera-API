@@ -15,7 +15,7 @@ station.connect(ssid, password)
 while not station.isconnected():
     time.sleep(1)
 
-print(f'Connected! IP: {station.ifconfig()[0]}. Open this IP in your browser')
+print(f'Connected! IP: http://{station.ifconfig()[0]}. Open it in your browser')
 
 try:
     with open("CameraSettings.html", 'r') as file:

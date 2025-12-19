@@ -13,7 +13,7 @@ If you want to play arround with AI, take a look at the [micropython binding for
 
 ## Content
 
-- [Precompiled firmware (the easy way)](#Precompiled-firmware-the-easy-way)
+- [Precompiled firmware (the easy way)](#precompiled-firmware-the-easy-way)
 - [Using the API](#using-the-api)
   - [Importing the camera module](#importing-the-camera-module)
   - [Creating a camera object](#creating-a-camera-object)
@@ -22,7 +22,7 @@ If you want to play arround with AI, take a look at the [micropython binding for
   - [Camera reconfiguration](#camera-reconfiguration)
   - [Freeing the buffer](#freeing-the-buffer)
   - [Is a frame available](#is-frame-available)
-  - [Additional methods](#additional-methods)
+  - [Additional methods and examples](#additional-methods-and-examples)
   - [I2C Integration](#i2c-integration)
   - [Additional information](#additional-information)
 - [Build your custom firmware](#build-your-custom-firmware)
@@ -202,8 +202,8 @@ camera.vflip = True #Enable vertical flip
 ```
 
 See autocompletions in Thonny in order to see the list of methods.
-If you want more insights in the methods and what they actually do, you can find a very good documentation [here](https://docs.circuitpython.org/en/latest/shared-bindings/espcamera/index.html).
-Note: "get_" and "set_" prefixed methods are deprecated.
+If you want more insights in the methods and what they actually do, you can find a very good documentation [in circuitpython](https://docs.circuitpython.org/en/latest/shared-bindings/espcamera/index.html).
+Note: "get_" and "set_" prefixed methods are deprecated and will be removed in a future release.
 
 Take also a look in the examples folder.
 
@@ -332,6 +332,7 @@ Example for Xiao sense:
 #define MICROPY_CAMERA_GRAB_MODE    (1)         // 0=WHEN_EMPTY (might have old data, but less resources), 1=LATEST (best, but more resources)
 
 ```
+
 #### Customize additional camera settings
 
 If you want to customize additional camera setting or reduce the firmware size by removing support for unused camera sensors, then take a look at the kconfig file of the esp32-camera driver and specify these on the sdkconfig file of your board.
@@ -385,6 +386,7 @@ Using fb_count=2 theoretically can double the FPS (see JPEG with fb_count=2). Th
 ## Troubleshooting
 
 You can find information on the following sites:
+
 - [ESP-FAQ](https://docs.espressif.com/projects/esp-faq/en/latest/application-solution/camera-application.html)
 - [ChatGPT](https://chatgpt.com/)
 - [Issues in here](https://github.com/cnadler86/micropython-camera-API/issues?q=is%3Aissue)
