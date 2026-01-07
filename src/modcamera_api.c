@@ -205,7 +205,7 @@ static mp_obj_t mp_camera_make_new(const mp_obj_type_t *type, size_t n_args, siz
         sda_pin, scl_pin, i2c_port, xclock_frequency, pixel_format, frame_size, jpeg_quality, fb_count, grab_mode);
 
     mp_camera_hal_init(self);
-    mp_hal_delay_ms(10); // Small delay to ensure I2C/SCCB is fully initialized
+
     if (mp_camera_hal_capture(self) == mp_const_none){
         mp_camera_hal_deinit(self);
         mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Failed to capture initial frame. Construct a new object with appropriate configuration."));
@@ -299,7 +299,10 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_camera___exit___obj, 4, 4, mp_came
 static void camera_obj_property(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
     mp_camera_obj_t *self = MP_OBJ_TO_PTR(self_in);
     if (self->initialized == false) {
-        mp_raise_msg(&mp_type_OSError, MP_ERROR_TEXT("Camera not initialized"));
+        if (dest[0] == MP_OBJ_NULL) {
+            dest[1] = MP_OBJ_SENTINEL;
+        }
+        return;
     }
 
     if (dest[0] == MP_OBJ_NULL) {
